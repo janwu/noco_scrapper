@@ -36,6 +36,7 @@ import os
 import re
 import sqlite3
 import sys
+import unicodedata
 from collections import Counter, defaultdict
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
@@ -106,6 +107,23 @@ def status_of(row: dict) -> Optional[str]:
         if row.get(flag):
             return status
     return None
+
+
+_FIS_TRANSLITERATION = str.maketrans({
+    "ø": "oe", "Ø": "Oe", "å": "aa", "Å": "Aa", "æ": "ae", "Æ": "Ae",
+    "ö": "oe", "Ö": "Oe", "ä": "ae", "Ä": "Ae", "ü": "ue", "Ü": "Ue", "ß": "ss",
+})
+
+
+def to_ascii(name: str) -> str:
+    """'Jørgen' → 'Joergen' — the way FIS lists spell names; other accents are dropped."""
+    name = unicodedata.normalize("NFKD", name.translate(_FIS_TRANSLITERATION))
+    return "".join(ch for ch in name if not unicodedata.combining(ch))
+
+
+def name_words(name: str) -> List[str]:
+    """The words of a name, independent of order, case, hyphens and transliteration."""
+    return re.findall(r"[a-z]+", to_ascii(name).lower())
 
 
 def split_name(full_name: str) -> Tuple[str, Optional[str]]:
@@ -216,6 +234,9 @@ class Build:
         self.result_nations: set = set()                          # nations in validated ROFs
         self.recovered_nations: Counter = Counter()               # doc_type → rows
         self.recovered_names: Counter = Counter()                 # doc_type → rows
+        self.names_by_words: Dict[Tuple[str, frozenset], set] = defaultdict(set)   # (nation, words) → names
+        self.reordered_names: Counter = Counter()                 # 'matched' / 'surname guessed' → rows
+        self.guessed_names: set = set()
 
         self.skipped_docs: List[Tuple[str, str]] = []        # (reason, file)
         self.rejected_rows: Counter = Counter()              # (doc_type, reason) → n
@@ -275,6 +296,21 @@ class Build:
             if len(nations) == 1:
                 return next(iter(nations))
         return None
+
+    def surname_first(self, name: str, nation: str) -> Tuple[str, bool]:
+        """
+        Turn a 'Firstname Surname' name into the 'SURNAME Firstname' spelling.
+        If an athlete of that nation with the same words is already known, his
+        spelling is used (which also settles double surnames); otherwise the
+        last word is taken as the surname.  Returns (name, was it a known athlete).
+        """
+        words = frozenset(name_words(name))
+        candidates = {self.athlete_aliases.get((n, nation), (n, nation))
+                      for n in self.names_by_words.get((nation, words), ())}
+        if len(candidates) == 1:
+            return next(iter(candidates))[0], True
+        parts = to_ascii(name).split()
+        return f"{parts[-1].upper()} {' '.join(parts[:-1])}", False
 
     def known_spelling(self, name: Optional[str], nation: str) -> Optional[str]:
         """'Van Loan Carl' → 'VAN LOAN Carl' if that athlete exists with this nation."""
@@ -414,8 +450,17 @@ def add_details(build: Build, comp_id: int, doc_id: int, doc: dict) -> None:
 def add_results(build: Build, comp: dict, comp_id: int, doc_id: int, meta: dict, doc: dict) -> None:
     doc_type, source = meta["doc_type"], meta["basename"]
 
+    given_first = doc.get("name_order") == "given-first"
+
     def athlete_rows(key):
         for r in doc.get(key) or []:
+            if given_first and not row_identity_problem(r, given_first=True):
+                # 'Jørgen Berget Storsveen' → 'BERGET STORSVEEN Joergen'
+                name, known = build.surname_first(clean(r["name"]), r["nation"].upper())
+                r = dict(r, name=name)
+                build.reordered_names["matched" if known else "surname guessed"] += 1
+                if not known:
+                    build.guessed_names.add(f"{name} [{r['nation']}]")
             problem = row_identity_problem(r)
             if problem and problem.startswith("name does not start"):
                 # Early lists print 'Jezersek Andrej'.  Accept the row if
@@ -540,6 +585,10 @@ def build_database(output_dir: str, build: Build) -> None:
         for nation in nations:
             cname, cnation = build.athlete_aliases.get((name, nation), (name, nation))
             build.nations_by_name[cname].add(cnation)
+
+    for name, nations in build.nations_by_name.items():
+        for nation in nations:
+            build.names_by_words[(nation, frozenset(name_words(name)))].add(name)
 
     for (codex, season_start), docs in sorted(by_comp.items(), key=lambda kv: (kv[0][1], kv[0][0])):
         comp = describe_competition(docs)
@@ -709,6 +758,12 @@ def report(build: Build, verbose: bool) -> None:
     if build.recovered_names:
         log.info("Rows with mixed-case name, matched to a known athlete: %s",
                  ", ".join(f"{t} {n}" for t, n in sorted(build.recovered_names.items())))
+
+    if build.reordered_names:
+        log.info("Rows printed 'Firstname Surname': %s",
+                 ", ".join(f"{n} {kind}" for kind, n in sorted(build.reordered_names.items())))
+        for name in sorted(build.guessed_names)[: None if verbose else 8]:
+            log.info("         surname guessed: %s", name)
 
     if build.rejected_rows:
         log.info("Rows rejected (not an athlete):")

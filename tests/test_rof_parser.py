@@ -93,6 +93,49 @@ class ReferenceFiles(unittest.TestCase):
                 self.assertEqual(max(ranked, key=lambda r: r.rank).name, want["last"])
 
 
+class KJump(unittest.TestCase):
+    """Lillehammer lists by K-Jump: 'Firstname Surname', block rebuilt from word positions."""
+
+    def parse(self, pattern):
+        matches = glob.glob(os.path.join(ROOT, pattern))
+        if not matches:
+            self.skipTest(f"PDF not downloaded: {pattern}")
+        return parse_pdf(matches[0])
+
+    def test_men(self):
+        doc = self.parse("fis_nk_coc_pdfs/2026/*/M/4245_20260214_*ROF.pdf")
+        self.assertEqual(doc.parse_errors, [])
+        self.assertEqual((doc.name_order, doc.discipline, doc.location, doc.competition_date),
+                         ("given-first", "Gundersen", "Lillehammer", "2026-02-14"))
+        rows = doc.combined_results
+        self.assertEqual(sum(1 for r in rows if r.rank is not None), 53)
+        self.assertEqual(sorted(r.status for r in rows if r.status), ["DNF", "DNS", "DSQ", "DSQ"])
+        first = rows[0]
+        self.assertEqual((first.rank, first.bib, first.name, first.nation, first.club, first.jump_points,
+                          first.jump_rank, first.time_difference, first.xc_time, first.xc_rank),
+                         (1, 8, "David Mach", "GER", "Tsv Buchenberg", 119.0, 8, "0:24", "23:44.4", 9))
+        # no club: the name sits on the number line, the nation above it
+        fifth = next(r for r in rows if r.rank == 5)
+        self.assertEqual((fifth.name, fifth.nation, fifth.club, fifth.bib), ("Iacopo Bortolas", "ITA", None, 3))
+        # second column ('Team Kollenhopp') is a sponsor team, not part of the name or club
+        eighth = next(r for r in rows if r.rank == 8)
+        self.assertEqual((eighth.name, eighth.club), ("Jørgen Berget Storsveen", "Elverum Hopp"))
+
+    def test_club_wrapping_over_two_lines(self):
+        doc = self.parse("fis_nk_coc_pdfs/2026/*/W/4244_20260214_*ROF.pdf")
+        self.assertEqual(doc.parse_errors, [])
+        second = next(r for r in doc.combined_results if r.rank == 2)
+        self.assertEqual((second.name, second.nation, second.club, second.xc_time),
+                         ("Alexa Brabec", "USA", "Steamboat Springs Winter Sports Club", "14:21.9"))
+
+    def test_date_comes_from_the_file_name(self):
+        # header says 'Mon 12 Sep 2022' for a race on 9 December (12/09 read day-first)
+        doc = self.parse("fis_nk_coc_pdfs/2023/*/W/4250_20221209_*ROF.pdf")
+        self.assertEqual(doc.parse_errors, [])
+        self.assertEqual(doc.competition_date, "2022-12-09")
+        self.assertEqual(doc.combined_results[0].date_of_birth, "2002-04-20")
+
+
 def _doc(rows, **extra):
     doc = dict(doc_type="ROF", location="Ruka", country="FIN", competition_date="2024-11-29",
                discipline="Gundersen", combined_results=rows, competitor_stats=None)

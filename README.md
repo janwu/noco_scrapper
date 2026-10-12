@@ -42,9 +42,11 @@ name and nation to use instead. Lines starting with `#` are comments.
 
 - Only the official result lists (ROF) are validated. Jump, training, trial and
   cross-country lists are loaded with a row-level check (valid name, known nation).
-- 14 result lists fail validation and are not loaded. They are not regular World Cup /
-  Continental Cup lists or use a local organiser's layout:
-  WC 2014/15 codex 4186–4189 (children's event, ranks per age class),
-  WC 2023/24 codex 4130–4131 (Junior World Championships team sprint),
-  COC 2022/23 codex 4250–4251 and COC 2025/26 codex 4244–4247, 4288–4289 (Lillehammer, local layout).
+- 6 result lists fail validation and are not loaded; none is a regular World Cup /
+  Continental Cup list:
+  WC 2014/15 codex 4186–4189 (children's event, ranks per age class) and
+  WC 2023/24 codex 4130–4131 (Junior World Championships team sprint).
+- The Lillehammer lists by K-Jump print 'Firstname Surname'. The loader matches them to
+  known athletes by their words; for an athlete seen nowhere else it takes the last word
+  as the surname (listed in the loader's report — correct them in `db/aliases/athletes.csv`).
 - Team results are shown on the competition page; an athlete's page lists individual results only.

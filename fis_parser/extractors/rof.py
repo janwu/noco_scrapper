@@ -23,6 +23,7 @@ from fis_parser.utils import (
 from fis_parser.extractors.base import BaseExtractor
 from fis_parser.extractors.rof_ewoxx import is_ewoxx_layout, parse_ewoxx_rof
 from fis_parser.extractors.rof_team import parse_team_rof
+from fis_parser.extractors.rof_kjump import is_kjump_layout, parse_kjump_rof
 from fis_parser.detector import (
     parse_filename_metadata, team_discipline_from_filename, venue_from_path,
 )
@@ -155,6 +156,16 @@ class ROFExtractor(BaseExtractor):
                     doc.team_results, unparsed = parse_team_rof(page_lines)
                     for line in unparsed:
                         doc.parse_errors.append(f"team result list: line not understood: {line!r}")
+                elif doc.discipline == 'Provisional Round':
+                    pass        # a jump list filed as ROF; the PCR document carries the data
+                elif is_kjump_layout(full_text):
+                    doc.combined_results, ewoxx_stats, unparsed = parse_kjump_rof(pdf)
+                    doc.name_order = 'given-first'
+                    doc.parse_errors.extend(unparsed)
+                    # K-Jump prints US-style dates through a day-first formatter
+                    # ('12/09/2022' becomes 'Mon 12 Sep 2022'); the file name is right.
+                    doc.competition_date = (parse_filename_metadata(self.filepath).get('date')
+                                            or doc.competition_date)
                 elif is_ewoxx_layout(page_lines[0]):
                     doc.combined_results, ewoxx_stats, unparsed = parse_ewoxx_rof(page_lines)
                     for line in unparsed:
@@ -167,7 +178,10 @@ class ROFExtractor(BaseExtractor):
                 wd, cs = self.extract_weather_summary(last_text)
                 doc.weather = wd
                 doc.competitor_stats = cs
-                if ewoxx_stats and cs.ranked_athletes is None:
+                if doc.name_order:
+                    # the generic statistics reader does not know the K-Jump footer
+                    doc.competitor_stats = cs = ewoxx_stats or CompetitorStats()
+                elif ewoxx_stats and cs.ranked_athletes is None:
                     cs.entries_athletes, cs.entries_nations = ewoxx_stats.entries_athletes, ewoxx_stats.entries_nations
                     cs.ranked_athletes, cs.ranked_nations = ewoxx_stats.ranked_athletes, ewoxx_stats.ranked_nations
 
@@ -203,8 +217,11 @@ class ROFExtractor(BaseExtractor):
             place, country = venue_from_path(self.filepath)
             doc.location = doc.location or place
             doc.country = doc.country or country
+        from_name = parse_filename_metadata(self.filepath)
         if not doc.competition_date:
-            doc.competition_date = parse_filename_metadata(self.filepath).get('date')
+            doc.competition_date = from_name.get('date')
+        if not doc.discipline:
+            doc.discipline = from_name.get('discipline_hint')
 
     def _extract_discipline(self, text: str) -> Optional[str]:
         """Extract discipline from document header lines."""
@@ -214,6 +231,8 @@ class ROFExtractor(BaseExtractor):
             if by_name:
                 return by_name
             return 'Team Sprint' if re.search(r'Team\s+Sprint', head, re.IGNORECASE) else 'Team'
+        if re.search(r'^Results\s+PCR\s*$', head, re.MULTILINE):
+            return 'Provisional Round'
         # Individual formats: only the title block is searched.  Further down,
         # club names such as 'Team Tsuchiya' or 'Sprint Club' would decide.
         title = re.split(r'\bJury\b|Competition\s+Management|^\s*(?:Rank|Name)\b', text[:1500],

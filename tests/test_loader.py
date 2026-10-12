@@ -61,6 +61,17 @@ class Helpers(unittest.TestCase):
         self.assertEqual(load_json.split_name("MOAN Magnus H."), ("MOAN", "Magnus H."))
         self.assertEqual(load_json.split_name("LI Ji"), ("LI", "Ji"))
 
+    def test_given_name_first(self):
+        b = load_json.Build({("STORSVEEN Joergen Berget", "NOR"): ("BERGET STORSVEEN Joergen", "NOR")}, {})
+        for name in ("BERGET STORSVEEN Joergen", "STORSVEEN Joergen Berget", "FLATLA Kasper Moen"):
+            b.names_by_words[("NOR", frozenset(load_json.name_words(name)))].add(name)
+        # known athlete: his spelling, through the alias list, whatever the word order
+        self.assertEqual(b.surname_first("Jørgen Berget Storsveen", "NOR"), ("BERGET STORSVEEN Joergen", True))
+        self.assertEqual(b.surname_first("Kasper Moen Flatla", "NOR"), ("FLATLA Kasper Moen", True))
+        # unknown athlete, or known only for another nation: last word is the surname
+        self.assertEqual(b.surname_first("Ingmar Wikstrøm Hilmarsen", "NOR"), ("HILMARSEN Ingmar Wikstroem", False))
+        self.assertEqual(b.surname_first("Kasper Moen Flatla", "SWE"), ("FLATLA Kasper Moen", False))
+
     def test_alias_chain(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "athletes.csv")

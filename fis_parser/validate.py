@@ -36,17 +36,23 @@ def _check_rank_sequence(ranks: List[int]) -> Optional[str]:
     return None
 
 
-def row_identity_problem(row: dict) -> Optional[str]:
-    """Why this row cannot be an athlete (name + nation), or None if it can."""
+def row_identity_problem(row: dict, given_first: bool = False) -> Optional[str]:
+    """
+    Why this row cannot be an athlete (name + nation), or None if it can.
+    given_first: the list prints 'Firstname Surname' in mixed case (K-Jump).
+    """
     name = row.get('name') or ''
     nation = row.get('nation')
     if not is_valid_athlete_name(name):
         return f"invalid athlete name {name!r}"
-    if not _SURNAME_FIRST_RE.match(name):
+    if given_first:
+        if not re.fullmatch(r"[^\W\d_][^\W\d_.'-]*(?:[ -][^\W\d_][^\W\d_.'-]*)+", name):
+            return f"not a 'Firstname Surname' name: {name!r}"
+    elif not _SURNAME_FIRST_RE.match(name):
         # Names are printed 'SURNAME Firstname'; anything else is a club,
         # header or jury line that slipped into the result list.
         return f"name does not start with an upper-case surname: {name!r}"
-    if _TWO_NAMES_RE.search(name):
+    if not given_first and _TWO_NAMES_RE.search(name):
         # 'MUENCHMEYER StephanGER KIRCHEISEN Bjoern': two table cells in one
         return f"name holds more than one person: {name!r}"
     if not nation or not re.match(r'^[A-Z]{3}$', nation) or nation in _MONTHS:
@@ -133,6 +139,10 @@ def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
         _validate_teams(doc, errors, warnings)
         return errors, warnings
 
+    if doc.get('discipline') == 'Provisional Round':
+        warnings.append("provisional round filed as official result list: not parsed")
+        return errors, warnings
+
     if not rows:
         errors.append("no result rows")
         return errors, warnings
@@ -168,8 +178,9 @@ def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
             warnings.append(f"{status} rows: parsed {got}, PDF statistics say {want}")
 
     # ── identity ────────────────────────────────────────────────────────────
+    given_first = doc.get('name_order') == 'given-first'
     for r in rows:
-        problem = row_identity_problem(r)
+        problem = row_identity_problem(r, given_first)
         if problem:
             errors.append(problem)
 

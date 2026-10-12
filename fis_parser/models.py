@@ -217,6 +217,9 @@ class ParsedDocument:
     jump_rounds: List[JumpRound] = field(default_factory=list)
     xc_results: List[CrossCountryResult] = field(default_factory=list)
     team_results: List[TeamResult] = field(default_factory=list)
+    # 'given-first' if the list prints 'Firstname Surname' (K-Jump) instead of
+    # the usual 'SURNAME Firstname'; names are then kept as printed.
+    name_order: Optional[str] = None
 
     # ── Parse metadata ───────────────────────────────────────────────────────
     warnings: List[str] = field(default_factory=list)
