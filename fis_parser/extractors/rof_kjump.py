@@ -10,11 +10,12 @@ Each athlete occupies a block around one line of numbers:
 
 Name and club share the first column and are centred vertically on the
 number line, so the name sits above it when there is a club, *on* it when
-there is none, and two lines above when the club wraps.  Text order is
-therefore useless here; the block is rebuilt from word positions:
+there is none, and two lines above when the club or the name wraps.  Text
+order is therefore useless here; the block is rebuilt from word positions:
 
     x: rank | bib | name / club | team | nation / birth | jumping … cross-country
     y: every word belongs to the nearest number line
+    name = the semibold words of the first column, club = the regular ones
 
 Names are printed 'Firstname Surname' in mixed case.  They are returned as
 printed (ParsedDocument.name_order = 'given-first'); matching them to the
@@ -72,7 +73,7 @@ def parse_kjump_rof(pdf) -> Tuple[List[CombinedResult], Optional[CompetitorStats
     stats: Optional[CompetitorStats] = None
 
     for page in pdf.pages:
-        lines = _lines(page.extract_words())
+        lines = _lines(page.extract_words(extra_attrs=['fontname']))
         found = _columns(lines)
         if not found:
             continue
@@ -125,13 +126,22 @@ def _read_block(anchor: dict, words: List[dict], col: Dict[str, float]) -> Optio
     bib = [w for w in words if on_line(w) and col['bib'] <= w['x0'] < col['name'] and w['text'].isdigit()]
     cr.bib = int(bib[0]['text']) if bib else None
 
-    # First column: name first, then the club (one or two lines)
-    first_col = _lines([w for w in words if col['name'] <= w['x0'] < col['team']])
+    # First column: the name in semibold, the club in regular type.  Both may
+    # wrap ('Henrik Elias Wikstrøm' / 'Hilmarsen'), so the typeface decides,
+    # not the line.
+    first_col = sorted((w for w in words if col['name'] <= w['x0'] < col['team']),
+                       key=lambda w: (round(w['top']), w['x0']))
     if not first_col:
         return None
-    cr.name = ' '.join(w['text'] for w in first_col[0])
-    club = ' '.join(w['text'] for line in first_col[1:] for w in line)
-    cr.club = club or None
+    bold = [w for w in first_col if re.search(r'bold', w.get('fontname') or '', re.IGNORECASE)]
+    if bold:
+        name_words = bold
+        club_words = [w for w in first_col if w not in bold]
+    else:                                   # no font information: first line is the name
+        by_line = _lines(first_col)
+        name_words, club_words = by_line[0], [w for line in by_line[1:] for w in line]
+    cr.name = ' '.join(w['text'] for w in name_words)
+    cr.club = ' '.join(w['text'] for w in club_words) or None
 
     for w in words:
         if not (col['nation'] <= w['x0'] < col['numbers']):

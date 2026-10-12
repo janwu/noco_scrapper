@@ -120,6 +120,9 @@ class KJump(unittest.TestCase):
         # second column ('Team Kollenhopp') is a sponsor team, not part of the name or club
         eighth = next(r for r in rows if r.rank == 8)
         self.assertEqual((eighth.name, eighth.club), ("Jørgen Berget Storsveen", "Elverum Hopp"))
+        # a long name wraps onto the number line; the typeface tells it from the club
+        wrapped = next(r for r in rows if r.rank == 31)
+        self.assertEqual((wrapped.name, wrapped.club), ("Henrik Elias Wikstrøm Hilmarsen", "Tolga IL"))
 
     def test_club_wrapping_over_two_lines(self):
         doc = self.parse("fis_nk_coc_pdfs/2026/*/W/4244_20260214_*ROF.pdf")
