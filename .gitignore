@@ -1,0 +1,28 @@
+# Downloaded source PDFs (≈1.2 GB, re-downloadable with the scrapers)
+fis_nk_pdfs/
+fis_nk_coc_pdfs/
+*.zip
+
+# Derived data: parsed JSON and the database built from it
+output*/
+db/*.db
+db/*.db-wal
+db/*.db-shm
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Web app build artefacts
+webapp/node_modules/
+webapp/target/
+webapp/frontend/generated/
+webapp/src/main/bundles/
+
+# Local tool settings
+.claude/settings.local.json
+.idea/
+.vscode/

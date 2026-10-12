@@ -1,0 +1,9 @@
+/* FIS Nordic Combined Results Browser - Custom Theme */
+
+.wave-start-row {
+  background-color: #fffde7 !important;
+}
+
+vaadin-grid-cell-content {
+  font-size: 0.875rem;
+}

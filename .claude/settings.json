@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \":*)",
+      "Bash(python inspect_rlll.py)",
+      "Bash(python test_rlll_wc.py)",
+      "Bash(python batch_test.py)",
+      "Bash(python check_rltr_rof.py)",
+      "Bash(python check_rof_rltr.py)"
+    ]
+  }
+}

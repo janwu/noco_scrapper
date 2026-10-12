@@ -1,0 +1,13 @@
+/* Wave-start row highlight */
+vaadin-grid::part(row).wave-start-row {
+    background-color: rgba(255, 213, 79, 0.18);
+}
+
+vaadin-grid tr.wave-start-row td {
+    background-color: rgba(255, 213, 79, 0.18) !important;
+}
+
+/* Ensure grid fills available height */
+vaadin-grid {
+    flex: 1;
+}
