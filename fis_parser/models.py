@@ -153,6 +153,33 @@ class CrossCountryResult:
 
 
 @dataclass
+class TeamMember:
+    """One athlete of a team (from a team ROF)."""
+    leg: int = 0                             # 1..4, the order printed in the list
+    bib: Optional[str] = None                # '2-1'
+    name: Optional[str] = None
+    jump_points: Optional[float] = None
+    xc_time: Optional[str] = None            # leg time, if the list prints one per leg
+
+
+@dataclass
+class TeamResult:
+    """One team in a Team / Team Sprint / Mixed Team result list."""
+    rank: Optional[int] = None
+    bib: Optional[int] = None
+    nation: Optional[str] = None
+    team_name: Optional[str] = None          # 'Norway I', 'GERMANY II', 'CAN/USA'
+    jump_points: Optional[float] = None
+    jump_rank: Optional[int] = None
+    time_difference: Optional[str] = None
+    xc_time: Optional[str] = None
+    xc_rank: Optional[int] = None
+    time_behind: Optional[str] = None
+    status: Optional[str] = None             # DNS, DNF, DSQ, LAP
+    members: List[TeamMember] = field(default_factory=list)
+
+
+@dataclass
 class ParsedDocument:
     """Unified output container for any parsed FIS document."""
     # ── Source ──────────────────────────────────────────────────────────────
@@ -189,6 +216,7 @@ class ParsedDocument:
     combined_results: List[CombinedResult] = field(default_factory=list)
     jump_rounds: List[JumpRound] = field(default_factory=list)
     xc_results: List[CrossCountryResult] = field(default_factory=list)
+    team_results: List[TeamResult] = field(default_factory=list)
 
     # ── Parse metadata ───────────────────────────────────────────────────────
     warnings: List[str] = field(default_factory=list)

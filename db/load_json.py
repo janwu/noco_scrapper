@@ -17,13 +17,14 @@ Options:
     --verbose           List every skipped document and rejected row
 
 What is loaded
-    ROF            → combined_results   (individual competitions without parse errors)
+    ROF            → combined_results   (individual competitions)
+                   → team_results + team_members   (team competitions)
     RL, PCR        → jump_round_results
     RLT            → training_jump_results
     RLTR           → trial_round_results
     RLLL           → xc_results
-Team result lists are not loaded yet (competition and document are created,
-the rows are skipped), and so is every ROF the parser flagged as broken.
+A ROF the parser flagged as broken (parse_errors) is recorded as a document,
+but its rows are not loaded.
 """
 
 import argparse
@@ -447,11 +448,11 @@ def add_results(build: Build, comp: dict, comp_id: int, doc_id: int, meta: dict,
             yield r, build.athlete(r, comp, source)
 
     if doc_type == "ROF":
-        if comp["team"]:
-            build.skipped_docs.append(("team result list (not loaded yet)", source))
-            return
         if doc.get("parse_errors"):
             build.skipped_docs.append((f"ROF failed validation: {doc['parse_errors'][0]}", source))
+            return
+        if comp["team"]:
+            add_team_results(build, comp, comp_id, doc_id, doc, source)
             return
         for r, athlete_id in athlete_rows("combined_results"):
             build.add("combined_results", comp_id, doc_id, athlete_id, clean(r.get("name")), r.get("nation"),
@@ -484,6 +485,29 @@ def add_results(build: Build, comp: dict, comp_id: int, doc_id: int, meta: dict,
                       to_int(r.get("rank")), to_int(r.get("bib")), clean(r.get("club")),
                       iso_date(r.get("date_of_birth")), r.get("total_time"), r.get("time_behind"),
                       to_float(r.get("points")), status_of(r))
+
+
+def add_team_results(build: Build, comp: dict, comp_id: int, doc_id: int, doc: dict, source: str) -> None:
+    for t in doc.get("team_results") or []:
+        team_nation = (t.get("nation") or "").upper()
+        team_id = build.add(
+            "team_results", comp_id, doc_id, to_int(t.get("rank")), to_int(t.get("bib")), team_nation,
+            clean(t.get("team_name")), to_int(t.get("jump_rank")), t.get("time_difference"),
+            to_int(t.get("xc_rank")), t.get("xc_time"), t.get("time_behind"),
+            to_float(t.get("jump_points")), status_of(t))
+        for m in t.get("members") or []:
+            name = clean(m.get("name"))
+            # Mixed-nation teams run as 'FIS'; the athlete keeps his own nation
+            nation = team_nation if team_nation in build.result_nations \
+                else build.nation_for(name, comp["nations"])
+            athlete_id = None
+            row = {"name": name, "nation": nation}
+            if nation and not row_identity_problem(row):
+                athlete_id = build.athlete(row, comp, source)
+            else:
+                build.reject("ROF", "team athlete not linked (nation unknown)", f"{name!r} in {source}")
+            build.add("team_members", team_id, athlete_id, name, nation or team_nation,
+                      to_int(m.get("leg")), m.get("xc_time"), to_float(m.get("jump_points")))
 
 
 def names_with_nation(docs: List[Tuple[dict, dict]]) -> Dict[str, set]:
@@ -599,6 +623,9 @@ COLUMNS = {
     "trial_round_results": _JUMP_COLUMNS,
     "xc_results": "id, competition_id, document_id, athlete_id, raw_name, raw_nation, rank, bib, club, "
                   "date_of_birth, total_time, time_behind, points, status",
+    "team_results": "id, competition_id, document_id, rank, bib, nation, team_name, jump_rank, "
+                    "time_difference, xc_rank, total_time, time_behind, jump_points, status",
+    "team_members": "id, team_result_id, athlete_id, raw_name, raw_nation, leg, xc_time, jump_points",
 }
 # Insert order respects foreign keys
 TABLE_ORDER = list(COLUMNS)

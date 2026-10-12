@@ -22,6 +22,7 @@ from fis_parser.utils import (
 )
 from fis_parser.extractors.base import BaseExtractor
 from fis_parser.extractors.rof_ewoxx import is_ewoxx_layout, parse_ewoxx_rof
+from fis_parser.extractors.rof_team import parse_team_rof
 from fis_parser.detector import (
     parse_filename_metadata, team_discipline_from_filename, venue_from_path,
 )
@@ -150,7 +151,11 @@ class ROFExtractor(BaseExtractor):
                 is_mass_start = doc.final_phase == 'SKI_JUMPING'
                 ewoxx_stats = None
                 page_lines = [self.page_lines(p) for p in pdf.pages]
-                if is_ewoxx_layout(page_lines[0]):
+                if (doc.discipline or '').startswith('Team'):
+                    doc.team_results, unparsed = parse_team_rof(page_lines)
+                    for line in unparsed:
+                        doc.parse_errors.append(f"team result list: line not understood: {line!r}")
+                elif is_ewoxx_layout(page_lines[0]):
                     doc.combined_results, ewoxx_stats, unparsed = parse_ewoxx_rof(page_lines)
                     for line in unparsed:
                         doc.warnings.append(f"result table: line not understood: {line!r}")
@@ -209,15 +214,19 @@ class ROFExtractor(BaseExtractor):
             if by_name:
                 return by_name
             return 'Team Sprint' if re.search(r'Team\s+Sprint', head, re.IGNORECASE) else 'Team'
+        # Individual formats: only the title block is searched.  Further down,
+        # club names such as 'Team Tsuchiya' or 'Sprint Club' would decide.
+        title = re.split(r'\bJury\b|Competition\s+Management|^\s*(?:Rank|Name)\b', text[:1500],
+                         maxsplit=1, flags=re.IGNORECASE | re.MULTILINE)[0]
         for pat, disc in [
             (r'Mass\s+Start', 'Mass Start'),
             (r'Individual\s+Compact', 'Compact'),
-            (r'Individual\s+Gundersen|Gundersen', 'Gundersen'),
-            (r'Team\s+Sprint', 'Team Sprint'),
-            (r'Team', 'Team'),
+            (r'Penalty\s+Race', 'Penalty Race'),
+            (r'Express\s+Race', 'Express Race'),
             (r'Sprint', 'Sprint'),
+            (r'Individual\s+Gundersen|Gundersen', 'Gundersen'),
         ]:
-            if re.search(pat, text[:1500], re.IGNORECASE):
+            if re.search(pat, title, re.IGNORECASE):
                 return disc
         return None
 
@@ -439,7 +448,7 @@ class ROFExtractor(BaseExtractor):
             # inside the rank column while the rank number sits just outside it.
             _FLAG_TOKENS = {'FF', 'PF', 'NPS'}
             rank_rescued = False
-            if not rank_words and rest_words and re.match(r'^\d+\.?$', rest_words[0]):
+            if not rank_words and rest_words and re.match(r'^=?\d+\.?$', rest_words[0]):   # '=3' marks a tie
                 # Rank number just outside rank column (era B WC / era C early)
                 rank_words = [rest_words[0]]
                 rest_words = rest_words[1:]

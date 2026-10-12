@@ -157,5 +157,39 @@ class EndToEnd(unittest.TestCase):
         self.assertTrue(any("failed validation" in reason for reason, _ in b.skipped_docs))
 
 
+    def test_team_competition(self):
+        event = "fis_nk_pdfs/2020/20200124_20200126_OBERSTDORF_GER/M/"
+        # An individual result list makes NOR / GER known nations and introduces one athlete
+        self.write(event + "4142_20200124_Gundersen_HS140_10.0_Km_WC_M_M_2020NK4142ROF.json", dict(
+            doc_type="ROF", source_file="i", discipline="Gundersen", location="Oberstdorf", country="GER",
+            competition_date="2020-01-24", parse_errors=[],
+            combined_results=[result(1, "RIIBER Jarl Magnus", "NOR"), result(2, "GEIGER Vinzenz", "GER")]))
+        self.write(event + "4143_20200125_Team_HS140_4x5_Km_WC_M_M_2020NK4143ROF.json", dict(
+            doc_type="ROF", source_file="t", discipline="Team", location="Oberstdorf", country="GER",
+            competition_date="2020-01-25", parse_errors=[], combined_results=[],
+            team_results=[
+                dict(rank=1, bib=1, nation="NOR", team_name="Norway", jump_points=568.0, jump_rank=1,
+                     time_difference="0:00", xc_time="51:03.4", xc_rank=4, time_behind="51:03.4", status=None,
+                     members=[dict(leg=1, bib="1-1", name="GRAABAK Joergen", jump_points=135.5, xc_time="12:42.2"),
+                              dict(leg=2, bib="1-2", name="RIIBER Jarl Magnus", jump_points=143.3, xc_time="12:54.8")]),
+                dict(rank=None, bib=4, nation="GER", team_name="Germany", jump_points=488.4, jump_rank=4,
+                     time_difference="+1:46", xc_time=None, xc_rank=None, time_behind=None, status="DNF",
+                     members=[dict(leg=1, bib="4-1", name="GEIGER Vinzenz", jump_points=106.5, xc_time=None)]),
+            ]))
+
+        b, conn = self.build()
+        one = lambda sql: conn.execute(sql).fetchone()
+        self.assertEqual(one("select format, xc_distance_km from competitions where fis_codex='4143'"), ("Team", 5.0))
+        self.assertEqual(conn.execute("select rank, nation, team_name, total_time, status from team_results "
+                                      "order by id").fetchall(),
+                         [(1, "NOR", "Norway", "51:03.4", None), (None, "GER", "Germany", None, "DNF")])
+        self.assertEqual(one("select count(*), count(athlete_id) from team_members"), (3, 3))
+        # the team athlete is the same person as in the individual competition
+        self.assertEqual(one("select count(*) from athletes where full_name='RIIBER Jarl Magnus'")[0], 1)
+        self.assertEqual(one("select count(*) from combined_results r join competitions c on c.id=r.competition_id "
+                             "where c.fis_codex='4143'")[0], 0)
+        self.assertEqual(conn.execute("pragma foreign_key_check").fetchall(), [])
+
+
 if __name__ == "__main__":
     unittest.main()

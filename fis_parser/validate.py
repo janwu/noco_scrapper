@@ -62,6 +62,59 @@ _SURNAME_FIRST_RE = re.compile(
 _TWO_NAMES_RE = re.compile(r"[^\W\d_]*[a-zà-ÿ][^\W\d_]*\s+[^\W\d_a-zà-ÿ]{3,}(?:\s|$)")
 
 
+def _validate_teams(doc: dict, errors: List[str], warnings: List[str]) -> None:
+    """Checks for a team result list (doc['team_results'])."""
+    teams = doc.get('team_results') or []
+    stats = doc.get('competitor_stats') or {}
+    if not teams:
+        errors.append("no team rows")
+        return
+    ranked = [t for t in teams if t.get('rank') is not None]
+    if not ranked:
+        errors.append(f"no ranked teams ({len(teams)} teams, all without rank)")
+        return
+    if not any(t['rank'] == 1 for t in ranked):
+        errors.append("no winner (rank 1 missing)")
+    seq = _check_rank_sequence([t['rank'] for t in ranked])
+    if seq:
+        errors.append(seq)
+
+    # Every ranked team has the same number of athletes (2 in a team sprint, else 3 or 4)
+    sizes = sorted({len(t.get('members') or []) for t in ranked})
+    if len(sizes) != 1 or sizes[0] < 2:
+        errors.append(f"teams have {sizes} athletes")
+
+    # The statistics count athletes, not teams
+    athletes = sum(len(t.get('members') or []) for t in ranked)
+    lapped = sum(len(t.get('members') or []) for t in ranked if t.get('status') == 'LAP')
+    expected = stats.get('ranked_athletes')
+    if expected is not None and expected not in (athletes, athletes - lapped):
+        errors.append(f"athletes in ranked teams: parsed {athletes} ({lapped} lapped), "
+                      f"PDF statistics say {expected}")
+
+    for t in teams:
+        label = t.get('team_name') or t.get('nation')
+        nation = t.get('nation')
+        if not nation or not re.match(r'^[A-Z]{3}$', nation) or nation in _MONTHS:
+            errors.append(f"invalid nation {nation!r} for team {label!r}")
+        if t.get('rank') is None and not t.get('status'):
+            errors.append(f"team without rank and without status: {label!r}")
+        for m in t.get('members') or []:
+            problem = row_identity_problem({'name': m.get('name'), 'nation': nation or 'XXX'})
+            if problem:
+                errors.append(f"team {label!r}: {problem}")
+
+    finished = [t for t in ranked if t.get('status') != 'LAP']
+    for field in ('bib', 'jump_points', 'xc_time', 'time_behind'):
+        missing = sum(1 for t in finished if t.get(field) in (None, ''))
+        if finished and missing / len(finished) > _FIELD_GAP_TOLERANCE:
+            warnings.append(f"{field} missing in {missing} of {len(finished)} ranked teams")
+    members = [m for t in ranked for m in t.get('members') or []]
+    missing = sum(1 for m in members if m.get('jump_points') is None)
+    if members and missing / len(members) > _FIELD_GAP_TOLERANCE:
+        warnings.append(f"jump_points missing for {missing} of {len(members)} team athletes")
+
+
 def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
     """Return (errors, warnings) for a parsed ROF document given as a dict."""
     errors: List[str] = []
@@ -77,9 +130,7 @@ def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
         errors.append(f"header: location is not a place: {location!r}")
 
     if is_team_discipline(doc.get('discipline')):
-        # Team result lists have no parser of their own yet; whatever rows
-        # the individual parser picked up are neither complete nor checked.
-        warnings.append("team competition: result rows not parsed")
+        _validate_teams(doc, errors, warnings)
         return errors, warnings
 
     if not rows:

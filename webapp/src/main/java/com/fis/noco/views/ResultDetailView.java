@@ -2,11 +2,15 @@ package com.fis.noco.views;
 
 import com.fis.noco.entity.CombinedResult;
 import com.fis.noco.entity.Competition;
+import com.fis.noco.entity.TeamMember;
+import com.fis.noco.entity.TeamResult;
 import com.fis.noco.service.CompetitionService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
@@ -74,6 +78,16 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
             addMeta(metaRow, "XC Distance", competition.getXcDistanceKm() + " km");
         if (competition.getHillSizeM() != null)
             addMeta(metaRow, "Hill Size", competition.getHillSizeM() + " m");
+
+        if (CompetitionService.isTeamFormat(competition.getFormat())) {
+            List<TeamResult> teams = competitionService.getTeamResultsForCompetition(competition.getId());
+            H3 teamsTitle = new H3("Results (" + teams.size() + " teams)");
+            teamsTitle.addClassNames(LumoUtility.Margin.Top.MEDIUM, LumoUtility.Margin.Bottom.XSMALL);
+            Grid<TeamResult> teamGrid = createTeamGrid(teams);
+            add(backButton, header, metaRow, teamsTitle, teamGrid);
+            expand(teamGrid);
+            return;
+        }
 
         List<CombinedResult> results = competitionService.getResultsForCompetition(competition.getId());
 
@@ -163,6 +177,70 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
 
         grid.setItems(results);
         return grid;
+    }
+
+    private Grid<TeamResult> createTeamGrid(List<TeamResult> teams) {
+        Grid<TeamResult> grid = new Grid<>(TeamResult.class, false);
+        grid.setSizeFull();
+        grid.setSelectionMode(Grid.SelectionMode.NONE);
+
+        grid.addColumn(TeamResult::getRank)
+                .setHeader("Rank").setAutoWidth(true).setFlexGrow(0);
+        grid.addColumn(TeamResult::getBib)
+                .setHeader("Bib").setAutoWidth(true).setFlexGrow(0);
+        grid.addComponentColumn(t -> {
+            Span team = new Span(new NationFlag(t.getNation(), false), new Span(t.getDisplayName()));
+            team.getStyle().set("display", "inline-flex").set("align-items", "center")
+                    .set("gap", "0.5em").set("font-weight", "bold");
+            return team;
+        }).setHeader("Team").setAutoWidth(true);
+        grid.addComponentColumn(this::memberList)
+                .setHeader("Athletes (jump points · leg time)").setAutoWidth(true).setFlexGrow(1);
+        grid.addColumn(TeamResult::getJumpPoints)
+                .setHeader("Jump Pts").setAutoWidth(true);
+        grid.addColumn(TeamResult::getJumpRank)
+                .setHeader("Jump Rank").setAutoWidth(true);
+        grid.addColumn(TeamResult::getTimeDifference)
+                .setHeader("Time Diff").setAutoWidth(true);
+        grid.addColumn(TeamResult::getXcTime)
+                .setHeader("XC Time").setAutoWidth(true);
+        grid.addColumn(TeamResult::getXcRank)
+                .setHeader("XC Rank").setAutoWidth(true);
+        grid.addColumn(TeamResult::getTimeBehind)
+                .setHeader("Time Behind").setAutoWidth(true);
+        grid.addComponentColumn(t -> statusBadge(t.getStatus()))
+                .setHeader("Status").setAutoWidth(true);
+
+        grid.setItems(teams);
+        return grid;
+    }
+
+    /** The athletes of a team, one per line, each linked to the athlete page. */
+    private Div memberList(TeamResult team) {
+        Div list = new Div();
+        list.getStyle().set("display", "flex").set("flex-direction", "column")
+                .set("font-size", "var(--lumo-font-size-s)").set("line-height", "1.5");
+        for (TeamMember m : team.getMembers()) {
+            Div line = new Div();
+            line.getStyle().set("display", "flex").set("gap", "0.6em").set("align-items", "baseline");
+            if (m.getAthlete() != null) {
+                Anchor link = new Anchor("athlete/" + m.getAthlete().getId(), m.getDisplayName());
+                link.getStyle().set("text-decoration", "none");
+                line.add(link);
+            } else {
+                line.add(new Span(m.getDisplayName()));
+            }
+            StringBuilder detail = new StringBuilder();
+            if (m.getJumpPoints() != null) detail.append(m.getJumpPoints());
+            if (m.getXcTime() != null) detail.append(detail.length() > 0 ? " · " : "").append(m.getXcTime());
+            if (detail.length() > 0) {
+                Span detailSpan = new Span(detail.toString());
+                detailSpan.getStyle().set("color", "var(--lumo-secondary-text-color)");
+                line.add(detailSpan);
+            }
+            list.add(line);
+        }
+        return list;
     }
 
     private Span statusBadge(String status) {

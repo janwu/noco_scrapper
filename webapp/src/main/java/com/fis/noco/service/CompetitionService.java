@@ -3,9 +3,11 @@ package com.fis.noco.service;
 import com.fis.noco.entity.CombinedResult;
 import com.fis.noco.entity.Competition;
 import com.fis.noco.entity.Season;
+import com.fis.noco.entity.TeamResult;
 import com.fis.noco.repository.CombinedResultRepository;
 import com.fis.noco.repository.CompetitionRepository;
 import com.fis.noco.repository.SeasonRepository;
+import com.fis.noco.repository.TeamResultRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,13 +27,25 @@ public class CompetitionService {
     private final CompetitionRepository competitionRepository;
     private final SeasonRepository seasonRepository;
     private final CombinedResultRepository combinedResultRepository;
+    private final TeamResultRepository teamResultRepository;
 
     public CompetitionService(CompetitionRepository competitionRepository,
                               SeasonRepository seasonRepository,
-                              CombinedResultRepository combinedResultRepository) {
+                              CombinedResultRepository combinedResultRepository,
+                              TeamResultRepository teamResultRepository) {
         this.competitionRepository = competitionRepository;
         this.seasonRepository = seasonRepository;
         this.combinedResultRepository = combinedResultRepository;
+        this.teamResultRepository = teamResultRepository;
+    }
+
+    /** Team, Team Sprint and Mixed Team competitions are stored as teams, not as single athletes. */
+    public static boolean isTeamFormat(String format) {
+        return format != null && format.startsWith("Team");
+    }
+
+    public List<TeamResult> getTeamResultsForCompetition(Long competitionId) {
+        return teamResultRepository.findByCompetitionIdOrderByRank(competitionId);
     }
 
     public List<Season> getAllSeasons() {
@@ -61,8 +75,10 @@ public class CompetitionService {
         return combinedResultRepository.findByCompetitionIdOrderByRank(competitionId);
     }
 
+    /** Number of result rows: athletes in an individual competition, teams in a team competition. */
     public long countResultsForCompetition(Long competitionId) {
-        return combinedResultRepository.countByCompetitionId(competitionId);
+        long athletes = combinedResultRepository.countByCompetitionId(competitionId);
+        return athletes > 0 ? athletes : teamResultRepository.countByCompetitionId(competitionId);
     }
 
     // Classic FIS table (seasons up to 2022/23): top 30 score

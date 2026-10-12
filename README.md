@@ -40,7 +40,11 @@ name and nation to use instead. Lines starting with `#` are comments.
 
 ## Known gaps
 
-- Team competitions: the competition is listed, the result rows are not parsed yet.
 - Only the official result lists (ROF) are validated. Jump, training, trial and
   cross-country lists are loaded with a row-level check (valid name, known nation).
-- WC 2014/15 codex 4186–4189 is a children's event with per-age-class ranks; it is skipped.
+- 14 result lists fail validation and are not loaded. They are not regular World Cup /
+  Continental Cup lists or use a local organiser's layout:
+  WC 2014/15 codex 4186–4189 (children's event, ranks per age class),
+  WC 2023/24 codex 4130–4131 (Junior World Championships team sprint),
+  COC 2022/23 codex 4250–4251 and COC 2025/26 codex 4244–4247, 4288–4289 (Lillehammer, local layout).
+- Team results are shown on the competition page; an athlete's page lists individual results only.

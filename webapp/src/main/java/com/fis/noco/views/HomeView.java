@@ -2,6 +2,7 @@ package com.fis.noco.views;
 
 import com.fis.noco.entity.CombinedResult;
 import com.fis.noco.entity.Competition;
+import com.fis.noco.entity.TeamResult;
 import com.fis.noco.service.CompetitionService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -117,6 +118,16 @@ public class HomeView extends VerticalLayout {
         headerRow.add(locationDiv, formatBadge);
         card.add(headerRow);
 
+        if (CompetitionService.isTeamFormat(format)) {
+            card.add(buildTeamRows(competitionService.getTeamResultsForCompetition(comp.getId())));
+            Button teamLink = new Button("Full results →");
+            teamLink.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+            teamLink.getStyle().set("margin-top", "var(--lumo-space-xs)");
+            teamLink.addClickListener(e -> UI.getCurrent().navigate(ResultDetailView.class, comp.getId()));
+            card.add(teamLink);
+            return card;
+        }
+
         // Results table
         List<CombinedResult> results = competitionService.getResultsForCompetition(comp.getId());
         List<CombinedResult> ranked = results.stream()
@@ -157,6 +168,35 @@ public class HomeView extends VerticalLayout {
         card.add(fullLink);
 
         return card;
+    }
+
+    /** Podium of a team competition: rank, flag, team name, time behind. */
+    private Div buildTeamRows(List<TeamResult> teams) {
+        Div container = new Div();
+        container.getStyle().set("margin-top", "var(--lumo-space-xs)");
+        teams.stream().filter(t -> t.getRank() != null).limit(TOP3).forEach(t -> {
+            Div row = new Div();
+            row.getStyle()
+                    .set("display", "flex")
+                    .set("align-items", "center")
+                    .set("gap", "var(--lumo-space-s)")
+                    .set("padding", "3px 0")
+                    .set("border-bottom", "1px solid var(--lumo-contrast-5pct)");
+            Span rankSpan = new Span(String.valueOf(t.getRank()));
+            rankSpan.getStyle().set("width", "24px").set("text-align", "right")
+                    .set("font-weight", "bold").set("color", rankColor(t.getRank())).set("flex-shrink", "0");
+            Span nameSpan = new Span(t.getDisplayName());
+            nameSpan.getStyle().set("flex", "1").set("font-size", "var(--lumo-font-size-s)");
+            NationFlag flag = new NationFlag(t.getNation(), false);
+            flag.getStyle().set("flex-shrink", "0").set("width", "30px");
+            Span behind = new Span(t.getTimeBehind() != null ? t.getTimeBehind() : "");
+            behind.addClassNames(LumoUtility.FontSize.XSMALL);
+            behind.getStyle().set("flex-shrink", "0").set("text-align", "right").set("min-width", "52px")
+                    .set("color", "var(--lumo-secondary-text-color)");
+            row.add(rankSpan, nameSpan, flag, behind);
+            container.add(row);
+        });
+        return container;
     }
 
     private Div buildResultRows(List<CombinedResult> results, boolean isMassStart) {
