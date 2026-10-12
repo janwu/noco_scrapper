@@ -21,6 +21,65 @@ from fis_parser.utils import (
     find_line_index, group_words_into_rows, row_text, is_valid_athlete_name,
 )
 from fis_parser.extractors.base import BaseExtractor
+from fis_parser.extractors.rof_ewoxx import is_ewoxx_layout, parse_ewoxx_rof
+from fis_parser.detector import (
+    parse_filename_metadata, team_discipline_from_filename, venue_from_path,
+)
+
+# Column headers that only occur in team result lists
+_TEAM_TABLE_RE = re.compile(
+    r'Team\s+Leg|TEAM\s+TEAM|Team\s+Time|^(?:RANK\s+)?BIB\s+(?:NSA|NOC|Nat|Nation)\s+(?:CODE|Name|Jump)\b'
+    r'|^RANK\s+BIBNAME\s+TIME\b|Bib\s+-\s+Name|^Rank\s+Jump\s+Time\s+Team\b',
+    re.IGNORECASE | re.MULTILINE)
+# First line of any block that can follow the DNS/DNF/DSQ lists
+_AFTER_RESULTS_RE = re.compile(
+    r'Jury\b|Competition\s*(?:/|Management)|Weather\b|Temperatures?\b|Air\s+Snow\b|Snow\s+Air\b'
+    r'|Statistics\b|Time\s+Base\b|Legend\b|Translation\b|Remarks?\b',
+    re.IGNORECASE)
+# Lines that belong to the page, not to the result list
+_PAGE_FURNITURE_RE = re.compile(
+    r'Timing\s+and\s+Data|Data\s+(?:Service|Provider|processing)|Timing\s+Provider|Report\s+Created'
+    r'|www\.|fis-ski\.com|^\s*Bib\s+Name\s*$|\bPage\s+\d+\s*(?:/|of|from)\s*\d+',
+    re.IGNORECASE)
+# Title block repeated at the top of every page.  Only consulted while a
+# DNS/DNF/DSQ list is open, i.e. on a continuation page before the list goes on.
+_PAGE_TITLE_RE = re.compile(
+    r'\bFIS\b|WORLD\s+CUP|CONTINENTAL\s+CUP|\bCompetition\b|^\s*(?:Official\s+)?Results\b'
+    r'|Start\s+Time|End\s+Time|\([A-Z]{3}\)|presented\s+by|^\s*REVISED\b',
+    re.IGNORECASE)
+# Column headers of an individual result list
+_INDIVIDUAL_TABLE_RE = re.compile(
+    r'^(?:RANK\s+BIB\s+)?NAME\s+(?:NSA|NOC|Nat)\b|^Name\s+Jump\b|^Rank\s+Name\s+(?:Nation|FIS-Code)\b',
+    re.IGNORECASE | re.MULTILINE)
+
+
+def _has_surname(name: str) -> bool:
+    """
+    True if the name starts with an all-caps surname ('MENZ Matthias').
+    Used where a list continues on the next page and the page title
+    ('"WARSTEINER" FIS WORLD CUP ...', '15th World Cup Competition') would
+    otherwise pass as 'name + three-letter code'.
+    """
+    first = name.split()[0] if name.split() else ''
+    letters = first.replace('-', '').replace("'", '').replace('.', '')
+    return len(letters) >= 2 and letters.isalpha() and letters.isupper()
+
+
+def _normalise_name_case(results: List[CombinedResult]) -> None:
+    """
+    A few early mass-start lists print 'Ackermann Ronny' instead of
+    'ACKERMANN Ronny'.  If that is the style of the whole list, upper-case
+    the surname so the athlete matches his other results.
+    """
+    named = [r for r in results if r.name]
+    plain = [r for r in named if re.match(r"^[^\W\d_][^\W\d_A-Z]+(?:-[^\W\d_]+)?\s+\S", r.name)]
+    if not named or len(plain) < 0.8 * len(named):
+        return
+    for r in plain:
+        first, rest = r.name.split(None, 1)
+        if rest.split()[-1].isupper():
+            continue                       # 'Lisa EDER': first name first — leave alone
+        r.name = f"{first.upper()} {rest}"
 
 
 class ROFExtractor(BaseExtractor):
@@ -50,6 +109,7 @@ class ROFExtractor(BaseExtractor):
                 # Event name / discipline from page 1 header
                 doc.event_name = self._extract_event_name(full_text)
                 doc.discipline = self._extract_discipline(full_text)
+                self._apply_path_fallbacks(doc)
                 doc.final_phase = self._infer_final_phase(doc.discipline)
 
                 # Course info
@@ -88,13 +148,23 @@ class ROFExtractor(BaseExtractor):
 
                 # Results — walk all pages
                 is_mass_start = doc.final_phase == 'SKI_JUMPING'
-                doc.combined_results = self._extract_results(pdf, doc.format_era, is_mass_start)
+                ewoxx_stats = None
+                page_lines = [self.page_lines(p) for p in pdf.pages]
+                if is_ewoxx_layout(page_lines[0]):
+                    doc.combined_results, ewoxx_stats, unparsed = parse_ewoxx_rof(page_lines)
+                    for line in unparsed:
+                        doc.warnings.append(f"result table: line not understood: {line!r}")
+                else:
+                    doc.combined_results = self._extract_results(pdf, doc.format_era, is_mass_start)
 
                 # Weather + stats — always last page
                 last_text = self.page_text(pdf.pages[-1])
                 wd, cs = self.extract_weather_summary(last_text)
                 doc.weather = wd
                 doc.competitor_stats = cs
+                if ewoxx_stats and cs.ranked_athletes is None:
+                    cs.entries_athletes, cs.entries_nations = ewoxx_stats.entries_athletes, ewoxx_stats.entries_nations
+                    cs.ranked_athletes, cs.ranked_nations = ewoxx_stats.ranked_athletes, ewoxx_stats.ranked_nations
 
         except Exception as exc:
             doc.parse_errors.append(f"ROF parse error: {exc}")
@@ -122,8 +192,23 @@ class ROFExtractor(BaseExtractor):
                 return clean_name(m.group(1))
         return None
 
+    def _apply_path_fallbacks(self, doc: ParsedDocument) -> None:
+        """Fill header fields the PDF does not state from folder / file name."""
+        if not doc.location or not doc.country:
+            place, country = venue_from_path(self.filepath)
+            doc.location = doc.location or place
+            doc.country = doc.country or country
+        if not doc.competition_date:
+            doc.competition_date = parse_filename_metadata(self.filepath).get('date')
+
     def _extract_discipline(self, text: str) -> Optional[str]:
         """Extract discipline from document header lines."""
+        head = text[:3000]
+        by_name = team_discipline_from_filename(self.filepath)
+        if _TEAM_TABLE_RE.search(head) or (by_name and not _INDIVIDUAL_TABLE_RE.search(head)):
+            if by_name:
+                return by_name
+            return 'Team Sprint' if re.search(r'Team\s+Sprint', head, re.IGNORECASE) else 'Team'
         for pat, disc in [
             (r'Mass\s+Start', 'Mass Start'),
             (r'Individual\s+Compact', 'Compact'),
@@ -148,8 +233,13 @@ class ROFExtractor(BaseExtractor):
         dns_names: List[str] = []
         dnf_data: List[dict] = []
         dsq_data: List[dict] = []
+        # 'DNS' / 'DNF' / 'DSQ' while such a list is still open at a page
+        # break; 'END' once the block after the result list was reached.
+        open_section: Optional[str] = None
 
         for page in pdf.pages:
+            if open_section == 'END':
+                break
             text = self.page_text(page)
             lines = text.splitlines()
 
@@ -170,17 +260,14 @@ class ROFExtractor(BaseExtractor):
             words = page.extract_words()
             rows = group_words_into_rows(words, y_tol=7)
 
-            if era in ('D', 'E'):
-                parsed = self._parse_modern_rows(rows, era, is_mass_start)
-            elif era in ('B', 'C'):
-                parsed = self._parse_modern_rows(rows, era, is_mass_start)
-            elif era == 'A':
+            if era in ('A', 'B', 'C', 'D', 'E'):
                 # Era A uses the same NSA/NOC-scan approach as modern eras.
                 # _parse_era_a_rows computes page_w per-row (wrong scale),
                 # causing bib to land in the name column.
-                parsed = self._parse_modern_rows(rows, era, is_mass_start)
+                parsed = self._parse_modern_rows(rows, era, is_mass_start, open_section)
             else:
                 parsed = self._parse_era_a_rows(rows)
+            open_section = parsed.get('open_section')
 
             results.extend(parsed['results'])
             dsq_data.extend(parsed.get('dsq', []))
@@ -232,9 +319,12 @@ class ROFExtractor(BaseExtractor):
             else:
                 results.append(CombinedResult(name=item, status='DNS'))
 
+        if is_mass_start:
+            _normalise_name_case(results)
         return results
 
-    def _parse_modern_rows(self, rows: List[List[dict]], era: str, is_mass_start: bool = False) -> dict:
+    def _parse_modern_rows(self, rows: List[List[dict]], era: str, is_mass_start: bool = False,
+                           open_section: Optional[str] = None) -> dict:
         """
         Parse result rows for Eras B-E (modern Swiss Timing layout).
 
@@ -264,9 +354,13 @@ class ROFExtractor(BaseExtractor):
         IN_ROW1 = 1
         state = IDLE
         current = None
-        in_dsq_section = False
-        in_dnf_section = False
-        in_dns_section = False
+        # A DNS/DNF/DSQ list that started on the previous page continues here
+        # without repeating its heading.
+        in_dsq_section = open_section == 'DSQ'
+        in_dnf_section = open_section == 'DNF'
+        in_dns_section = open_section == 'DNS'
+        section_carried = open_section is not None
+        ended = False
         # Pre-row name/nation from separate sub-rows (some PDFs split name+NSA
         # across two lines above the data row)
         pending_pre_name: Optional[str] = None
@@ -351,14 +445,14 @@ class ROFExtractor(BaseExtractor):
                 rest_words = rest_words[1:]
                 rank_rescued = True
             elif (rank_words and all(t in _FLAG_TOKENS for t in rank_words)
-                  and rest_words and re.match(r'^\d+$', rest_words[0])):
+                  and rest_words and re.match(r'^\d+\.?$', rest_words[0])):
                 # Flag in rank column, rank number just outside (e.g. rank_words=['FF'], rest_words[0]='19')
                 rank_words = rank_words + [rest_words[0]]
                 rest_words = rest_words[1:]
                 rank_rescued = True
             elif (not rank_words and len(rest_words) >= 2
                   and rest_words[0] in _FLAG_TOKENS
-                  and re.match(r'^\d+$', rest_words[1])):
+                  and re.match(r'^\d+\.?$', rest_words[1])):
                 # Both flag and rank number outside rank column (smaller page scale pushes FF right of X_RANK_MAX)
                 rank_words = rest_words[:2]
                 rest_words = rest_words[2:]
@@ -503,6 +597,20 @@ class ROFExtractor(BaseExtractor):
                     cr.jump_rank = parse_int(nums[1])
                     cr.time_difference = nums[2]
                     cr.xc_time = nums[3]
+                elif (len(nums) == 3 and not is_mass_start
+                      and nums[1].isdigit() and re.match(r'^\d+:\d{2}$', nums[2])):
+                    # Lapped, old layout: jump points, jump rank and start
+                    # difference are printed, the time columns stay empty.
+                    cr.jump_points = parse_float(nums[0])
+                    cr.jump_rank = parse_int(nums[1])
+                    cr.time_difference = nums[2]
+                    cr.status = 'LAP'
+
+                # Lapped, newer layout: 'LAP' in the time column.  Lapped
+                # athletes keep their printed rank but have no XC time.
+                if cr.xc_time == 'LAP':
+                    cr.xc_time = None
+                    cr.status = 'LAP'
 
             return cr
 
@@ -518,11 +626,28 @@ class ROFExtractor(BaseExtractor):
             # last athlete row when y_tol=5, injecting venue into the name field.
             if re.match(r'^\d{1,2}\s+[A-Z]{3}\s+\d{4}\s+/', rt):
                 continue
+            # Timing-provider / report footer and the 'Bib Name' sub-header of
+            # the DNS/DNF/DSQ lists.  A footer is not the end of the result
+            # list: an open list continues on the next page.
+            if _PAGE_FURNITURE_RE.search(rt):
+                continue
 
             # Check section markers
             marker = is_section_marker(rt)
             if marker == 'END':
+                ended = in_dsq_section or in_dnf_section or in_dns_section
                 break
+            # The DNS/DNF/DSQ lists are the last part of the result list;
+            # whatever block follows them (jury, weather, legend) ends it.
+            # Not checked before, because in eras A-D the jury
+            # block sits on page 1 *above* the ranked athletes.
+            if (in_dsq_section or in_dnf_section or in_dns_section) \
+                    and _AFTER_RESULTS_RE.match(rt.strip()):
+                ended = True
+                break
+            if (in_dsq_section or in_dnf_section or in_dns_section) and not marker \
+                    and _PAGE_TITLE_RE.search(rt):
+                continue
             if marker == 'DSQ':
                 in_dsq_section = True
                 in_dnf_section = in_dns_section = False
@@ -541,7 +666,10 @@ class ROFExtractor(BaseExtractor):
 
             if is_header_row(rt):
                 state = IDLE
-                in_dsq_section = in_dnf_section = in_dns_section = False
+                # The column header is repeated on every page; it only closes
+                # a list that was opened by a (false) heading on this page.
+                if not section_carried:
+                    in_dsq_section = in_dnf_section = in_dns_section = False
                 # Also clear any stale pre-row name (e.g. 'Official Results'
                 # page header on continuation pages must not infect next athlete)
                 pending_pre_name = None
@@ -564,7 +692,7 @@ class ROFExtractor(BaseExtractor):
                 nsa_m = re.match(r'(.+?)\s+([A-Z]{3})(?:\s|$)', remainder)
                 if nsa_m:
                     nm = clean_name(nsa_m.group(1))
-                    if is_valid_athlete_name(nm):
+                    if is_valid_athlete_name(nm) and _has_surname(nm):
                         dsq.append({
                             'bib': bib_val,
                             'name': nm,
@@ -581,7 +709,7 @@ class ROFExtractor(BaseExtractor):
                 nsa_m = re.match(r'(.+?)\s+([A-Z]{3})(?:\s|$)', remainder)
                 if nsa_m:
                     nm = clean_name(nsa_m.group(1))
-                    if is_valid_athlete_name(nm):
+                    if is_valid_athlete_name(nm) and _has_surname(nm):
                         parts = remainder[nsa_m.end():].split()
                         dnf.append({
                             'bib': bib_val,
@@ -611,8 +739,17 @@ class ROFExtractor(BaseExtractor):
                         name_toks.append(tok)
                     else:
                         num_toks.append(tok)
+                if nsa_found and not name_toks:
+                    # Three-letter surname taken for the nation ('12 KIL Joanna POL')
+                    nxt = next((j for j, t in enumerate(num_toks) if re.match(r'^[A-Z]{3}$', t)), None)
+                    if nxt is not None:
+                        name_toks = [nsa_tok] + num_toks[:nxt]
+                        nsa_tok = num_toks[nxt]
+                        num_toks = num_toks[nxt + 1:]
                 parsed_name = clean_name(' '.join(name_toks))
-                if is_valid_athlete_name(parsed_name):
+                # Every athlete line carries the nation; lines without one are
+                # remarks ('early at start') or page furniture.
+                if nsa_found and is_valid_athlete_name(parsed_name) and _has_surname(parsed_name):
                     dns.append({
                         'bib': bib_val,
                         'name': parsed_name,
@@ -778,7 +915,9 @@ class ROFExtractor(BaseExtractor):
         if current and current.name:
             results.append(current)
 
-        return {'results': results, 'dsq': dsq, 'dnf': dnf, 'dns': dns}
+        still_open = ('END' if ended else 'DSQ' if in_dsq_section else 'DNF' if in_dnf_section
+                      else 'DNS' if in_dns_section else None)
+        return {'results': results, 'dsq': dsq, 'dnf': dnf, 'dns': dns, 'open_section': still_open}
 
     def _parse_era_a_rows(self, rows: List[List[dict]]) -> dict:
         """

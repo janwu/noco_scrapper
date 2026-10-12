@@ -361,9 +361,13 @@ class BaseExtractor:
 
         # Location: 'Ramsau am Dachstein (AUT)' — search first 600 chars
         # Use [^\n(] to avoid spanning newlines or eating extra `(` groups
-        m = re.search(r'([\w][^\n(]{2,}?)\s*\(([A-Z]{3})\)', text[:600])
+        # Only the title block counts: further down, 'WEHLING Ulrich (FIS)' in
+        # the jury list has the same 'text (XXX)' shape as a venue.
+        title = re.split(r'\bJury\b|Competition\s+Management', text[:600], maxsplit=1)[0]
+        m = re.search(r'([\w][^\n(]{2,}?)\s*\(([A-Z]{3})\)', title)
         if m:
-            info['location'] = clean_name(m.group(1))
+            # Early COC files write 'in Vancouver-Whistler (CAN) at 17.12.2008'
+            info['location'] = re.sub(r'^in\s+', '', clean_name(m.group(1)))
             info['country'] = m.group(2)
 
         # Date patterns: 'SAT 28 NOV 2025', 'FRI 26 NOV 2021', '28 NOV 2025'
@@ -373,6 +377,8 @@ class BaseExtractor:
         )
         if not m:
             m = re.search(r'(\d{1,2}\s+[A-Z]{3}\s+\d{4})', text)
+        if not m:
+            m = re.search(r'\bat\s+(\d{1,2}\.\d{2}\.\d{4})', text[:600])
         if m:
             info['competition_date'] = normalise_date(m.group(1))
 

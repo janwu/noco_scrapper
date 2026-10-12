@@ -88,15 +88,15 @@ def normalise_date(s: str) -> Optional[str]:
         return None
     s = s.strip()
     # 'D MMM YYYY' or 'DD MMM YYYY'
-    m = re.match(r'(\d{1,2})\s+([A-Z]{3})\s+(\d{4})$', s)
+    m = re.match(r'(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$', s)
     if m:
-        day, mon, year = m.group(1), m.group(2), m.group(3)
+        day, mon, year = m.group(1), m.group(2).upper(), m.group(3)
         if mon in _MONTH_MAP:
             return f"{year}-{_MONTH_MAP[mon]}-{int(day):02d}"
     # 'DD.MM.YYYY'
-    m = re.match(r'(\d{2})\.(\d{2})\.(\d{4})$', s)
+    m = re.match(r'(\d{1,2})\.(\d{2})\.(\d{4})$', s)
     if m:
-        return f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+        return f"{m.group(3)}-{m.group(2)}-{int(m.group(1)):02d}"
     return s   # return as-is if unrecognised
 
 
@@ -244,6 +244,8 @@ _GARBAGE_NAME_RE = re.compile(
                                                    # club name with trailing bib number
     | ^\s*C\.S\.\s+                                # Italian "Centro Sportivo" club prefix (C.S. CARABINIERI, C.S. ESERCITO, etc.)
     | ^\s*POINTS\s*$                               # stray column-header fragment (Compact format PDF row y≈145)
+    | ^\s*(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*$
+                                                   # lone month: revision stamp '16 DEC 15:13' or a DOB fragment
     """,
     re.VERBOSE | re.IGNORECASE,
 )

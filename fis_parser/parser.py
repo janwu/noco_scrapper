@@ -1,10 +1,12 @@
 """
 Central dispatch: detect document type and call the appropriate extractor.
 """
+import dataclasses
 from pathlib import Path
 
 from fis_parser.detector import detect_doc_type_from_filename
 from fis_parser.models import ParsedDocument
+from fis_parser.validate import validate
 
 
 def parse_pdf(filepath: str) -> ParsedDocument:
@@ -13,7 +15,18 @@ def parse_pdf(filepath: str) -> ParsedDocument:
 
     Document type is inferred from the filename.  If detection fails the
     file is attempted with the ROF extractor as a last resort.
+
+    The parsed rows are checked for plausibility; violations are appended
+    to doc.parse_errors / doc.warnings (see fis_parser.validate).
     """
+    doc = _extract(filepath)
+    errors, warnings = validate(dataclasses.asdict(doc))
+    doc.parse_errors.extend(errors)
+    doc.warnings.extend(warnings)
+    return doc
+
+
+def _extract(filepath: str) -> ParsedDocument:
     doc_type = detect_doc_type_from_filename(filepath)
 
     if doc_type == 'ROF':

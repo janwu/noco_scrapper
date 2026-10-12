@@ -4,7 +4,7 @@ from filename and/or PDF content.
 """
 import re
 import os
-from typing import Tuple
+from typing import Optional, Tuple
 
 # ── Document type from filename suffix ────────────────────────────────────────
 
@@ -179,3 +179,36 @@ def parse_filename_metadata(filepath: str) -> dict:
         meta['discipline_hint'] = 'Provisional Round'
 
     return meta
+
+
+# ── Fallbacks from the download folder / file name ────────────────────────────
+
+_EVENT_DIR_RE = re.compile(r'^\d{8}_\d{8}_(?P<place>.+)_(?P<country>[A-Z]{3})$')
+
+
+def venue_from_path(filepath: str) -> Tuple[Optional[str], Optional[str]]:
+    """
+    The scraper stores every event in a folder '<from>_<to>_<PLACE>_<NAT>'
+    (e.g. '20031129_20031130_RUKA_FIN').  Returns ('Ruka', 'FIN'), or
+    (None, None) if no such folder is part of the path.
+    """
+    for part in reversed(filepath.replace('\\', '/').split('/')[:-1]):
+        m = _EVENT_DIR_RE.match(part)
+        if m:
+            return m.group('place').replace('_', ' ').title(), m.group('country')
+    return None, None
+
+
+def team_discipline_from_filename(filepath: str) -> Optional[str]:
+    """
+    'Team' / 'Team Sprint' if the file name describes a team event, else None.
+    The PDF text is no help here: 'Team' also appears in club names of
+    individual competitions, and team events are often titled 'Gundersen'.
+    """
+    name = os.path.basename(filepath)
+    relay = re.search(r'_(\d)x[\d.]+', name)
+    if re.search(r'Team[_ ]Sprint', name, re.IGNORECASE) or (relay and relay.group(1) == '2'):
+        return 'Team Sprint'
+    if re.search(r'(?:^|_)(?:Mixed_)?Team(?:_|$)', name, re.IGNORECASE) or relay:
+        return 'Team'
+    return None

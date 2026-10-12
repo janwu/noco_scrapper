@@ -21,8 +21,10 @@ import json
 import logging
 import multiprocessing
 import os
+import re
 import sys
 import traceback
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -59,6 +61,12 @@ def _to_serialisable(obj):
     return obj
 
 
+def _message_kind(message: str) -> str:
+    """'ranked rows: parsed 50, PDF statistics say 49' → 'ranked rows: parsed N, PDF statistics say N'."""
+    kind = re.sub(r"'[^']*'|\"[^\"]*\"", '…', message.splitlines()[0])
+    return re.sub(r'\d+', 'N', kind)[:100]
+
+
 def save_json(doc, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     data = _to_serialisable(doc)
@@ -82,6 +90,7 @@ def _parse_one(args: Tuple[str, str, bool]) -> dict:
         'json_out': json_out,
         'doc_type': None,
         'errors': [],
+        'warnings': [],
         'skipped': False,
         'elapsed_ms': 0,
     }
@@ -96,6 +105,7 @@ def _parse_one(args: Tuple[str, str, bool]) -> dict:
         doc = parse_pdf(pdf_path)
         result['doc_type'] = doc.doc_type
         result['errors'] = doc.parse_errors
+        result['warnings'] = doc.warnings
         save_json(doc, Path(json_out))
     except Exception as exc:
         result['errors'] = [f"FATAL: {exc}", traceback.format_exc()]
@@ -222,6 +232,16 @@ def main() -> int:
     log.info("─" * 60)
     log.info("Processed %d files: %d OK, %d errors, %d skipped",
              total, total - errors - skipped, errors, skipped)
+
+    # Which checks failed how often (one count per file, numbers and names blanked)
+    for label, key in (("Errors", 'errors'), ("Warnings", 'warnings')):
+        kinds = Counter()
+        for r in results:
+            kinds.update({_message_kind(m) for m in r[key]})
+        if kinds:
+            log.info("%s by kind (files):", label)
+            for kind, n in kinds.most_common():
+                log.info("  %5d  %s", n, kind)
 
     return 0 if errors == 0 else 2
 
