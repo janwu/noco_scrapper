@@ -167,17 +167,24 @@ class BaseExtractor:
 
     def extract_course_info(self, text: str) -> CourseInfo:
         ci = CourseInfo()
+        # The value follows the label on the same line, with or without a
+        # colon and an abbreviation: 'Height Difference 44 m',
+        # 'Height Difference: 39 m', 'HEIGHT DIFFERENCE (HD) 52m'.
+        # (Requiring a colon made every field pick up the next colon in the
+        # text, e.g. the minutes of a later time.)
+        sep = r'[ \t]*(?:\([A-Z]{2}\))?[ \t]*:?[ \t]*'
         patterns = [
-            (r'Height\s+Difference[^:]*:\s*([\d\.]+)', 'height_difference_m'),
-            (r'Maximum\s+Climb[^:]*:\s*([\d\.]+)', 'maximum_climb_m'),
-            (r'Total\s+Climb[^:]*:\s*([\d\.]+)', 'total_climb_m'),
-            (r'(?:Length\s+of\s+Lap|Course\s+Length)[^:]*:\s*([\d\s]+)', 'lap_length_m'),
-            (r'Number\s+of\s+Laps[^:]*:\s*(\d+)', 'number_of_laps'),
+            (r'Height\s+Difference' + sep + r'(\d+)(?:[.,]\d+)?\s*m\b', 'height_difference_m'),
+            (r'Maximum\s+Climb' + sep + r'(\d+)(?:[.,]\d+)?\s*m\b', 'maximum_climb_m'),
+            (r'Total\s+Climb' + sep + r'(\d+)(?:[.,]\d+)?\s*m\b', 'total_climb_m'),
+            # '2 500 m', '2.500 m', '2500m'
+            (r'(?:Length\s+of\s+Lap|Course\s+Length)' + sep + r'(\d[\d .]*?)\s*m\b', 'lap_length_m'),
+            (r'Number\s+of\s+Laps' + sep + r'(\d+)\b', 'number_of_laps'),
         ]
         for pattern, attr in patterns:
             m = re.search(pattern, text, re.IGNORECASE)
             if m:
-                val = m.group(1).replace(' ', '')
+                val = m.group(1).replace(' ', '').replace('.', '')
                 setattr(ci, attr, parse_int(val))
         return ci
 

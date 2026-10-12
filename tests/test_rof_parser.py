@@ -113,8 +113,8 @@ class Validation(unittest.TestCase):
         return validate_rof(doc)[0]
 
     def test_clean_list_with_tie(self):
-        rows = [_row(1, "A B"), _row(2, "C D"), _row(2, "E F"), _row(4, "G H"),
-                _row(None, "I J", status="DNS")]
+        rows = [_row(1, "ALFA Bo"), _row(2, "CHARLIE Di"), _row(2, "ECHO Fi"), _row(4, "GOLF Hi"),
+                _row(None, "INDIA Jo", status="DNS")]
         self.assertEqual(self.errors(_doc(rows)), [])
 
     def test_empty_list(self):
@@ -126,11 +126,11 @@ class Validation(unittest.TestCase):
         self.assertTrue(any("statistics say 34" in e for e in errors))
 
     def test_rank_gap(self):
-        errors = self.errors(_doc([_row(1, "A B"), _row(2, "C D"), _row(5, "E F")]))
+        errors = self.errors(_doc([_row(1, "ALFA Bo"), _row(2, "CHARLIE Di"), _row(5, "ECHO Fi")]))
         self.assertTrue(any("rank sequence broken" in e for e in errors))
 
     def test_lapped_counted_either_way(self):
-        rows = [_row(1, "A B"), _row(2, "C D", status="LAP", xc_time=None, time_behind=None)]
+        rows = [_row(1, "ALFA Bo"), _row(2, "CHARLIE Di", status="LAP", xc_time=None, time_behind=None)]
         for stated in (1, 2):
             self.assertEqual(self.errors(_doc(rows, competitor_stats={"ranked_athletes": stated})), [])
 
@@ -139,10 +139,10 @@ class Validation(unittest.TestCase):
                              ("Timing and Data Service by EWOXX fis-ski.com", "FIS"),
                              ("DEC", "GER"), ("WESTVOLD HANSEN Gyda", None)):
             with self.subTest(name=name):
-                self.assertNotEqual(self.errors(_doc([_row(1, "A B"), _row(2, name, nation)])), [])
+                self.assertNotEqual(self.errors(_doc([_row(1, "ALFA Bo"), _row(2, name, nation)])), [])
 
     def test_location_is_an_official(self):
-        errors = self.errors(_doc([_row(1, "A B")], location="Race Director WEHLING Ulrich"))
+        errors = self.errors(_doc([_row(1, "ALFA Bo")], location="Race Director WEHLING Ulrich"))
         self.assertTrue(any("not a place" in e for e in errors))
 
 

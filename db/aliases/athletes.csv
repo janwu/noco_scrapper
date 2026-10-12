@@ -1,0 +1,111 @@
+name,nation,canonical_name,canonical_nation
+Denis Agunov,RUS,AGUNOV Denis,RUS
+Maria Aleksandrova,RUS,ALEKSANDROVA Maria,RUS
+Anna Aleksanrova,RUS,ALEKSANROVA Anna,RUS
+ARISTOVA Olga,SCE,ARISTOVA Olga,RUS
+Tonje Bakke,NOR,BAKKE Tonje,NOR
+Annemari Bendi,EST,BENDI Annemarii,EST
+BORISOV Timofei,RUS,BORISOV Timofey,RUS
+Ludvik Braathen,NOR,BRAATHEN Ludvik,NOR
+Ludvik Bråtehn,NOR,BRAATHEN Ludvik,NOR
+Trym Brandsegg-Lein,NOR,BRANDSEGG LEIN Trym,NOR
+Matej Cejchan,CZE,CEJCHAN Matej,CZE
+COOPER Mani,SCE,COOPER Mani,GBR
+DELANEY Collin,USA,DELANEY Colin,USA
+Katerina Dlouha,CZE,DLOUHA Katerina,CZE
+Lisa EDER,AUT,EDER Lisa,AUT
+FIELD Cliff,USA,FIELD Clifford,USA
+Mille Moen Flatla,NOR,FLATLA Mille Moen,NOR
+GANTICK Alec,USA,GANTIC Aleck,USA
+GANTICK Aleck,USA,GANTIC Aleck,USA
+Ida Marie Hagen,NOR,HAGEN Ida Marie,NOR
+Brage Hammerstad,NOR,HAMMERSTAD Brage,NOR
+Morten Aleksander Harkinn,NOR,HARKINN Morten Aleksander,NOR
+Triinu Hausenberg,EST,HAUSENBERG Triinu,EST
+Ivo-Niklas Hermanson,EST,HERMANSON Ivo-Niklas,EST
+Fabian Hinterberger,AUT,HINTERBERGER Fabian,AUT
+Ladisav Horacek,CZE,HORACEK Ladislav,CZE
+Andreas Ilves,EST,ILVES Andreas,EST
+ILVES Kristian,EST,ILVES Kristjan,EST
+Fredrik Jevne,NOR,JEVNE Fredrik,NOR
+JOEBSTL Thomas Wolfgang,AUT,JOEBSTL Thomas,AUT
+KAGU Markus,SCE,KAGU Markus,EST
+Wille Karhumaa,FIN,KARHUMAA Wille,FIN
+Atte Kettunen,FIN,KETTUNEN Atte,FIN
+KOBAYASHI Junshiroh,JPN,KOBAYASHI Junshiro,JPN
+Lukas Kohlberger,CZE,KOHLBERGER Lukas,CZE
+KUDREVICH Vladimir,BLR,KUDREVICH Uladzimir,BLR
+Sofia Kuznetcova,RUS,KUZNETCOVA Sofia,RUS
+Bjørnar Kvaal,NOR,KVAAL Bjoernar,NOR
+Pernille Kvernmo,NOR,KVERNMO Pernille,NOR
+Mari Leinan Lund,NOR,LEINAN LUND Mari,NOR
+LOOMIS Benjamin,USA,LOOMIS Ben,USA
+Halvor Lutnæs,NOR,LUTNES Halvor,NOR
+Kevin Maltsev,EST,MALTSEV Kevin,EST
+MATVEEV Dmitri,RUS,MATVEEV Dimitry,RUS
+Hanna Midtsundstad,NOR,MIDTSUNDSTAD Hanna,NOR
+MOAN Magnus,NOR,MOAN Magnus H.,NOR
+MOAN Magnus Hovdal,NOR,MOAN Magnus H.,NOR
+Timna Moser,AUT,MOSER Timna,AUT
+NADYMOVA Stefaniya,SCE,NADYMOVA Stefaniya,RUS
+NAESVOLD Leif Torbjoern,SCE,NAESVOLD Leif Torbjoern,NOR
+Marius Norsveen,NOR,NORDSVEEN Marius,NOR
+Glafira Noskova,RUS,NOSKOVA Glafira,RUS
+Thea Øihaugen,NOR,OEIHAUGEN Thea,NOR
+Benjamin Østvold,NOR,OESTVOLD Benjamin,NOR
+Sebastian Østvold,NOR,OESTVOLD Sebastian,NOR
+Jens Lurås Oftebro,NOR,OFTEBRO Jens Luraas,NOR
+Iver Olaussen,NOR,OLAUSSEN Iver,NOR
+Silje Opseth,NOR,OPSETH Silje,NOR
+Emil Ottesen,NOR,OTTESEN Emil,NOR
+OVSYANNIKOV Alexander,RUS,OVSYANNIKOV Alexandr,RUS
+PARK Je-Un,KOR,PARK Jeun,KOR
+PARK Je-un,KOR,PARK Jeun,KOR
+PIHO Han Hendrik,EST,PIHO Han-Hendrik,EST
+Airiin Pikk,EST,PIKK Airiin,EST
+PRONIN Ivan,SCE,PRONIN Ivan,RUS
+PYLYPCHUK Andriy,UKR,PYLYPCHUK Andrii,UKR
+Thomas Rettenegger,AUT,RETTENEGGER Thomas,AUT
+SALMELA Olli,SCE,SALMELA Olli,FIN
+Stephen Schumann,USA,SCHUMANN Stephen,USA
+Jared Shumate,USA,SHUMATE Jared,USA
+SIEGEMUND Nick,SCE,SIEGEMUND Nick,GER
+SKAARSET Lars Ivar,SCE,SKAARSET Lars Ivar,NOR
+Karoline Bjerke Skatvedt,NOR,SKATVEDT Karoline Bjerke,NOR
+Andreas Skoglund,NOR,SKOGLUND Andreas,NOR
+Larisa Skriabina,RUS,SKRIABINA Larisa,RUS
+Eskil Solheim,NOR,SOLHEIM Eskil,NOR
+Marius Solvik,NOR,SOLVIK Marius,NOR
+Jørgen Oliver Strøm,NOR,STROEM Joergen Oliver,NOR
+SUN Jianping,SCE,SUN Jianping,CHN
+TIIRMAA Karl August,EST,TIIRMAA Karl-August,EST
+TIKHONOVICH Alexandra,RUS,TIKHONOVICH Aleksandra,RUS
+Oskar Wøien,NOR,WAIEN Oskar,NOR
+Peder Wøien,NOR,WAIEN Peder,NOR
+Gyda Westvold Hansen,NOR,WESTVOLD HANSEN Gyda,NOR
+YAHIN Ernest,SCE,YAHIN Ernest,RUS
+ZHAO Jiawen,SCE,ZHAO Jiawen,CHN
+# --- 2026-10: same birth date + nation, spelling variants of one name ---
+KLEMETSEN Havard,NOR,KLEMETSEN Haavard,NOR
+MOAN Magnus-H.,NOR,MOAN Magnus H.,NOR
+TANDE Petter,NOR,TANDE Petter L.,NOR
+RASMUSSEN Aam Torkild,NOR,AAM Torkild Rasmussen,NOR
+RASMUSSEN Torkild A.,NOR,AAM Torkild Rasmussen,NOR
+PICHLMAYR Marco,AUT,PICHLMAYER Marco,AUT
+TUPPURAINEN Villle,FIN,TUPPURAINEN Ville,FIN
+SANDOEY Sturla- Magnus,NOR,SANDOEY Sturla Markhus,NOR
+JANCIK Lucas,CZE,JANCIK Lukas,CZE
+WOELFE Julian,GER,WOELFLE Julian,GER
+IAKHIN Ernest,RUS,YAHIN Ernest,RUS
+SHILKOV Mikhail,RUS,SCHILKOV Mikhail,RUS
+SOETVIK Sivdre,NOR,SOETVIK Sindre Ure,NOR
+ALANDER Arttu,FIN,AALANDER Arttu,FIN
+OVSYANNIKOV Alexandr,RUS,OVSIANNIKOV Aleksandr,RUS
+MUEHLETHALER Laurent,FRA,MUHLETHALER Laurent,FRA
+AEHTAEVAE Rasmus,FIN,AHTAVA Rasmus,FIN
+LUND Marte Leinan,NOR,LEINAN LUND Marte,NOR
+LUND Even Leinan,NOR,LEINAN LUND Even,NOR
+STROEMHAUG Per Einar Skjaeret,NOR,SKJAERET STROMHAUG Per Einar,NOR
+OEIHAUGEN Harald Martin,NOR,OIHAUGEN Harald Martin,NOR
+STORSVEEN Joergen Berget,NOR,BERGET STORSVEEN Joergen,NOR
+MILLER Alex,USA,MILLER Alexander,USA

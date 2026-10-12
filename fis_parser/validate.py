@@ -36,18 +36,30 @@ def _check_rank_sequence(ranks: List[int]) -> Optional[str]:
     return None
 
 
-def _bad_identity(row: dict) -> Optional[str]:
+def row_identity_problem(row: dict) -> Optional[str]:
+    """Why this row cannot be an athlete (name + nation), or None if it can."""
     name = row.get('name') or ''
     nation = row.get('nation')
     if not is_valid_athlete_name(name):
         return f"invalid athlete name {name!r}"
-    if not re.match(r"^[^\W\d_a-z][^\Wa-z_]*[\s\-']", name):
+    if not _SURNAME_FIRST_RE.match(name):
         # Names are printed 'SURNAME Firstname'; anything else is a club,
         # header or jury line that slipped into the result list.
         return f"name does not start with an upper-case surname: {name!r}"
+    if _TWO_NAMES_RE.search(name):
+        # 'MUENCHMEYER StephanGER KIRCHEISEN Bjoern': two table cells in one
+        return f"name holds more than one person: {name!r}"
     if not nation or not re.match(r'^[A-Z]{3}$', nation) or nation in _MONTHS:
         return f"invalid nation {nation!r} for {name!r}"
     return None
+
+
+# 'MOAN Magnus', 'LI Ji', "O'BRIEN Tom", 'O CONNELL Kathleen', 'McKINNON Joe' —
+# but not 'E Loeng Geir' (judge letter + name) or 'Lisa EDER'
+_SURNAME_FIRST_RE = re.compile(
+    r"^(?:Mc)?[^\W\d_a-z](?:[^\Wa-z_]+[\s\-']|'[^\W\d_a-z]|\s[^\W\d_a-z]{2})")
+# first name (has lower case) followed by another all-caps word of 3+ letters
+_TWO_NAMES_RE = re.compile(r"[^\W\d_]*[a-zà-ÿ][^\W\d_]*\s+[^\W\d_a-zà-ÿ]{3,}(?:\s|$)")
 
 
 def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
@@ -64,14 +76,14 @@ def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
     if re.search(r'Director|Delegate|Coordinator|Chief\s+of|^in\s', location):
         errors.append(f"header: location is not a place: {location!r}")
 
-    if not rows:
-        errors.append("no result rows")
+    if is_team_discipline(doc.get('discipline')):
+        # Team result lists have no parser of their own yet; whatever rows
+        # the individual parser picked up are neither complete nor checked.
+        warnings.append("team competition: result rows not parsed")
         return errors, warnings
 
-    if is_team_discipline(doc.get('discipline')):
-        # Team layouts are stored athlete-by-athlete for now; the individual
-        # checks below do not apply to them.
-        warnings.append("team competition: result rows not validated")
+    if not rows:
+        errors.append("no result rows")
         return errors, warnings
 
     ranked = [r for r in rows if r.get('rank') is not None]
@@ -106,7 +118,7 @@ def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
 
     # ── identity ────────────────────────────────────────────────────────────
     for r in rows:
-        problem = _bad_identity(r)
+        problem = row_identity_problem(r)
         if problem:
             errors.append(problem)
 

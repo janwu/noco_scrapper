@@ -231,7 +231,7 @@ CREATE TABLE combined_results (
     xc_rank             SMALLINT,       -- rank in XC leg
     time_behind         VARCHAR(20),    -- final gap to winner
     wave_start          SMALLINT,       -- pursuit wave number (Mass Start)
-    status              VARCHAR(10)     -- NULL=finished | 'DNS' | 'DNF' | 'DSQ' | 'DNQ'
+    status              VARCHAR(10)     -- NULL=finished | 'DNS' | 'DNF' | 'DSQ' | 'DNQ' | 'LAP' (lapped, rank kept)
 );
 
 CREATE INDEX idx_combined_competition  ON combined_results(competition_id);
@@ -268,6 +268,7 @@ CREATE TABLE jump_round_results (
     pursuit_time_diff VARCHAR(20),      -- time advantage for XC pursuit start
     dns             BOOLEAN NOT NULL DEFAULT FALSE,
     dsq             BOOLEAN NOT NULL DEFAULT FALSE,
+    dsq_reason      VARCHAR(300),
     fall            BOOLEAN NOT NULL DEFAULT FALSE
 );
 
@@ -302,6 +303,7 @@ CREATE TABLE training_jump_results (
     total_points    NUMERIC(7,2),
     dns             BOOLEAN NOT NULL DEFAULT FALSE,
     dsq             BOOLEAN NOT NULL DEFAULT FALSE,
+    dsq_reason      VARCHAR(300),
     fall            BOOLEAN NOT NULL DEFAULT FALSE
 );
 
@@ -337,6 +339,7 @@ CREATE TABLE trial_round_results (
     total_points    NUMERIC(7,2),
     dns             BOOLEAN NOT NULL DEFAULT FALSE,
     dsq             BOOLEAN NOT NULL DEFAULT FALSE,
+    dsq_reason      VARCHAR(300),
     fall            BOOLEAN NOT NULL DEFAULT FALSE
 );
 
