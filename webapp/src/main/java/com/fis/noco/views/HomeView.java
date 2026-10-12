@@ -96,7 +96,11 @@ public class HomeView extends VerticalLayout {
                 .set("align-items", "baseline").set("margin-bottom", "var(--lumo-space-xs)");
 
         Div locationDiv = new Div();
-        Span locationSpan = new Span(location + (country.isBlank() ? "" : ", " + country));
+        Span locationSpan = new Span(new Span(location));
+        if (!country.isBlank()) {
+            locationSpan.add(new NationFlag(country, false));
+        }
+        locationSpan.getStyle().set("display", "inline-flex").set("align-items", "center").set("gap", "0.4em");
         locationSpan.addClassNames(LumoUtility.FontWeight.BOLD, LumoUtility.FontSize.MEDIUM);
         Span dateSpan = new Span(" · " + date);
         dateSpan.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
@@ -204,7 +208,7 @@ public class HomeView extends VerticalLayout {
             }
 
             // Nation
-            Span nationSpan = new Span(r.getDisplayNation());
+            NationFlag nationSpan = new NationFlag(r.getDisplayNation(), false);
             nationSpan.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.XSMALL);
             nationSpan.getStyle().set("flex-shrink", "0").set("width", "30px");
 

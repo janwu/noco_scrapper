@@ -69,6 +69,7 @@
     "@vaadin/virtual-list": "24.3.12",
     "construct-style-sheets-polyfill": "3.1.0",
     "date-fns": "2.29.3",
+    "flag-icons": "7.5.0",
     "lit": "3.1.2"
   },
   "devDependencies": {
@@ -157,6 +158,7 @@
       "@vaadin/virtual-list": "24.3.12",
       "construct-style-sheets-polyfill": "3.1.0",
       "date-fns": "2.29.3",
+      "flag-icons": "7.5.0",
       "lit": "3.1.2"
     },
     "devDependencies": {
@@ -177,7 +179,7 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "78200d59bf14276afb55c4bd2b98173ba0ec1bb0a3611558b1c38fc6b6925c04"
+    "hash": "8cdda1db818639fe45ab89fb874506419c119ba1523f449313b39422ca7df133"
   },
   "overrides": {
     "@vaadin/bundles": "$@vaadin/bundles",
@@ -246,6 +248,7 @@
     "lit": "$lit",
     "@polymer/polymer": "$@polymer/polymer",
     "@vaadin/vaadin-themable-mixin": "$@vaadin/vaadin-themable-mixin",
-    "date-fns": "$date-fns"
+    "date-fns": "$date-fns",
+    "flag-icons": "$flag-icons"
   }
 }

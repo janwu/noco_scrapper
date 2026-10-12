@@ -62,7 +62,7 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         infoRow.setSpacing(true);
 
         if (athlete.getNationality() != null) {
-            Span nat = new Span("Nationality: " + athlete.getNationality());
+            NationFlag nat = new NationFlag(athlete.getNationality());
             nat.addClassNames(LumoUtility.FontWeight.BOLD);
             infoRow.add(nat);
         }

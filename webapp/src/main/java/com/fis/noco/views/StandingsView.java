@@ -105,11 +105,12 @@ public class StandingsView extends VerticalLayout {
         }).setHeader("Athlete").setWidth("200px").setFlexGrow(1).setSortable(true)
                 .setComparator(StandingsEntry::getAthleteName);
 
-        grid.addColumn(StandingsEntry::getNation)
+        grid.addComponentColumn(e -> new NationFlag(e.getNation()))
                 .setHeader("Nation")
-                .setWidth("70px")
+                .setWidth("90px")
                 .setFlexGrow(0)
-                .setSortable(true);
+                .setSortable(true)
+                .setComparator(StandingsEntry::getNation);
 
         grid.addColumn(StandingsEntry::getTotalPoints)
                 .setHeader("Total")

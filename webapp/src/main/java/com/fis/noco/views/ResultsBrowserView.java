@@ -102,7 +102,7 @@ public class ResultsBrowserView extends VerticalLayout {
         competitionGrid.addColumn(Competition::getDisplayLocation)
                 .setHeader("Location").setAutoWidth(true).setSortable(true);
 
-        competitionGrid.addColumn(Competition::getDisplayCountry)
+        competitionGrid.addComponentColumn(c -> new NationFlag(c.getDisplayCountry()))
                 .setHeader("Country").setAutoWidth(true);
 
         competitionGrid.addColumn(Competition::getFormat)

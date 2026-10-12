@@ -52,10 +52,9 @@ public class AthleteSearchView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setSortable(true);
 
-        grid.addColumn(Athlete::getNationality)
+        grid.addComponentColumn(a -> new NationFlag(a.getNationality()))
                 .setHeader("Nationality")
-                .setAutoWidth(true)
-                .setSortable(true);
+                .setAutoWidth(true);
 
         grid.addColumn(Athlete::getGender)
                 .setHeader("Gender")

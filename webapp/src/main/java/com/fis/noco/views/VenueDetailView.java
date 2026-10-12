@@ -58,7 +58,7 @@ public class VenueDetailView extends VerticalLayout implements HasUrlParameter<L
         infoRow.setSpacing(true);
 
         if (venue.getCountry() != null) {
-            Span country = new Span("Country: " + venue.getCountry());
+            NationFlag country = new NationFlag(venue.getCountry());
             country.addClassNames(LumoUtility.FontWeight.BOLD);
             infoRow.add(country);
         }

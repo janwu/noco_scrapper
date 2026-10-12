@@ -53,7 +53,11 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
         String country = competition.getDisplayCountry();
         String date = competition.getCompetitionDate() != null ? competition.getCompetitionDate() : "";
 
-        H2 header = new H2(location + (country.isBlank() ? "" : ", " + country));
+        H2 header = new H2(new Span(location));
+        if (!country.isBlank()) {
+            header.add(new NationFlag(country));
+        }
+        header.getStyle().set("display", "flex").set("align-items", "center").set("gap", "0.5em");
         header.addClassNames(LumoUtility.Margin.Bottom.XSMALL);
 
         HorizontalLayout metaRow = new HorizontalLayout();
@@ -110,7 +114,7 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
         grid.addColumn(CombinedResult::getDisplayName)
                 .setHeader("Name").setAutoWidth(true).setSortable(true);
 
-        grid.addColumn(CombinedResult::getDisplayNation)
+        grid.addComponentColumn(r -> new NationFlag(r.getDisplayNation()))
                 .setHeader("Nation").setAutoWidth(true);
 
         if (isMassStart) {
