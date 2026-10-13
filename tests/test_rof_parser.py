@@ -93,6 +93,36 @@ class ReferenceFiles(unittest.TestCase):
                 self.assertEqual(max(ranked, key=lambda r: r.rank).name, want["last"])
 
 
+class ExtraColumns(unittest.TestCase):
+    """Layouts with a column more than usual: every value behind it must stay in its field."""
+
+    # (file, what is special, first two rows: name, start gap, XC time, XC rank, time behind)
+    CASES = [
+        ("fis_nk_pdfs/2022/*/M/4139_*ROF.pdf", "TRIPLE points before the time behind",
+         [("RIIBER Jarl Magnus", "0:00", "19:03.8", 18, "19:03.8"), ("GEIGER Vinzenz", "1:23", "18:06.2", 1, "+25.4")]),
+        ("fis_nk_pdfs/2014/*/M/4115_*ROF.pdf", "TRIPLE points, 2014 layout, '=27' tie in the XC rank",
+         [("FRENZEL Eric", "0:14", "12:23.4", 27, "12:37.4"), ("MOAN Magnus H.", "0:50", "11:55.8", 1, "+8.4")]),
+        ("fis_nk_pdfs/2006/*/M/4103_*ROF.pdf", "sprint: start gap as time and as distance in metres",
+         [("MOAN Magnus", "1:04", "19:17.4", 2, "20:21.4"), ("GRAESLI Ola Morten", "0:22", "20:00.2", 11, "+0.8")]),
+        ("fis_nk_coc_pdfs/2012/*/M/4021_*ROF.pdf", "ewoxx: winner's total printed with a plus sign",
+         [("KLAPFER Lukas", "01:00", "28:04.0", 2, "28:36.0"),
+          ("JOHANSEN Truls Soenstehagen", "01:30", "28:00.1", 1, "+00:26.1")]),
+    ]
+
+    def test_times_stay_in_their_fields(self):
+        for pattern, special, expected in self.CASES:
+            with self.subTest(special=special):
+                matches = glob.glob(os.path.join(ROOT, pattern))
+                if not matches:
+                    self.skipTest(f"PDF not downloaded: {pattern}")
+                doc = parse_pdf(matches[0])
+                self.assertEqual(doc.parse_errors, [])
+                self.assertFalse([w for w in doc.warnings if "dropped" in w])
+                rows = [(r.name, r.time_difference, r.xc_time, r.xc_rank, r.time_behind)
+                        for r in doc.combined_results[:2]]
+                self.assertEqual(rows, expected)
+
+
 class KJump(unittest.TestCase):
     """Lillehammer lists by K-Jump: 'Firstname Surname', block rebuilt from word positions."""
 
@@ -126,6 +156,7 @@ class KJump(unittest.TestCase):
 
     def test_club_wrapping_over_two_lines(self):
         doc = self.parse("fis_nk_coc_pdfs/2026/*/W/4244_20260214_*ROF.pdf")
+        self.assertEqual(doc.warnings, [])
         self.assertEqual(doc.parse_errors, [])
         second = next(r for r in doc.combined_results if r.rank == 2)
         self.assertEqual((second.name, second.nation, second.club, second.xc_time),
@@ -148,7 +179,9 @@ def _doc(rows, **extra):
 
 def _row(rank, name="ACKERMANN Ronny", nation="GER", status=None, **extra):
     row = dict(rank=rank, name=name, nation=nation, status=status, bib=rank or 99,
-               jump_points=100.0, xc_time="25:00.0", time_behind="+1.0")
+               jump_points=100.0, xc_time="25:00.0", time_difference="0:10",
+               # the winner's line carries his total time, everyone else a gap
+               time_behind="25:10.0" if rank == 1 else "+1.0")
     row.update(extra)
     return row
 
@@ -186,6 +219,19 @@ class Validation(unittest.TestCase):
                              ("DEC", "GER"), ("WESTVOLD HANSEN Gyda", None)):
             with self.subTest(name=name):
                 self.assertNotEqual(self.errors(_doc([_row(1, "ALFA Bo"), _row(2, name, nation)])), [])
+
+    def test_values_in_the_wrong_column(self):
+        # TRIPLE points where the gap belongs, a start distance where the time belongs
+        rows = [_row(1, "ALFA Bo"), _row(2, "CHARLIE Di", time_behind="-2.1"),
+                _row(3, "ECHO Fi", xc_time="384")]
+        errors = self.errors(_doc(rows))
+        self.assertTrue(any("time_behind is not a gap" in e and "'-2.1'" in e for e in errors))
+        self.assertTrue(any("xc_time is not a time" in e and "'384'" in e for e in errors))
+
+    def test_mass_start_gaps_are_points(self):
+        rows = [_row(1, "ALFA Bo", time_behind="0.0", time_difference="0.0"),
+                _row(2, "CHARLIE Di", time_behind="-13.5", time_difference="-5.0")]
+        self.assertEqual(self.errors(_doc(rows, discipline="Mass Start")), [])
 
     def test_location_is_an_official(self):
         errors = self.errors(_doc([_row(1, "ALFA Bo")], location="Race Director WEHLING Ulrich"))

@@ -167,6 +167,8 @@ def parse_filename_metadata(filepath: str) -> dict:
     desc_lower = name.lower()
     if 'mass_start' in desc_lower or 'massstart' in desc_lower:
         meta['discipline_hint'] = 'Mass Start'
+    elif 'express_race' in desc_lower:
+        meta['discipline_hint'] = 'Express Race'
     elif 'gundersen' in desc_lower:
         meta['discipline_hint'] = 'Gundersen'
     elif 'compact' in desc_lower:

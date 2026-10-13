@@ -198,8 +198,64 @@ def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
             missing = sum(1 for r in finished if r.get(field) in (None, ''))
             if missing / len(finished) > _FIELD_GAP_TOLERANCE:
                 warnings.append(f"{field} missing in {missing} of {len(finished)} finishers")
+        _check_time_formats(doc, rows, errors, warnings)
 
     return errors, warnings
+
+
+CLOCK_RE = re.compile(r'^(?:\d+:)?\d{1,2}:\d{2}\.\d$')             # 23:44.4, 1:02:13.5
+START_GAP_RE = re.compile(r'^\+?\d{1,2}:\d{2}$')                    # 0:24, +1:07, 00:38
+FINISH_GAP_RE = re.compile(r'^\+(?:(?:\d+:)?\d{1,2}:)?\d{1,2}\.\d$')    # +41.6, +1:24.5, +00:03.9
+_POINTS_RE = re.compile(r'^[+-]?\d+\.\d+$')                         # mass start: gaps are points
+_COUNT_RE = re.compile(r'^\d+$')                                    # penalty race: penalty laps
+
+_WHAT = {'xc_time': 'a time', 'time_difference': 'a start gap', 'time_behind': 'a gap to the winner'}
+
+
+def _get(row, field):
+    return row.get(field) if isinstance(row, dict) else getattr(row, field)
+
+
+def time_format_problems(discipline: Optional[str], rows) -> List[tuple]:
+    """
+    (row, field) for every time value that cannot be what its field says.
+    Works on dicts and on CombinedResult objects.
+
+    A filled field is not yet a right one: when a layout has an extra column
+    (the TRIPLE points, a sprint's start distance) every value after it
+    slides one column to the left and a points value ends up as a time.
+    """
+    mass_start = discipline == 'Mass Start'
+    problems = []
+    for row in rows:
+        ranked = _get(row, 'rank') is not None
+        expected = {'xc_time': CLOCK_RE}
+        if mass_start:
+            # cross-country comes first; the gaps are jump-equivalent points
+            expected['time_behind'] = _POINTS_RE
+        else:
+            expected['time_difference'] = _COUNT_RE if discipline == 'Penalty Race' else START_GAP_RE
+            # the winner's line carries his total time instead of a gap
+            expected['time_behind'] = CLOCK_RE if _get(row, 'rank') == 1 else FINISH_GAP_RE
+        for field, pattern in expected.items():
+            value = _get(row, field)
+            if value in (None, ''):
+                continue
+            if field == 'time_behind' and (not ranked or value in ('0.0', '+0.0')):
+                continue
+            if not pattern.match(value):
+                problems.append((row, field))
+    return problems
+
+
+def _check_time_formats(doc: dict, rows: List[dict], errors: List[str], warnings: List[str]) -> None:
+    bad: dict = {}
+    for row, field in time_format_problems(doc.get('discipline'), rows):
+        bad.setdefault(field, []).append(row[field])
+    for field, values in bad.items():
+        filled = sum(1 for r in rows if r.get(field) not in (None, ''))
+        message = f"{field} is not {_WHAT[field]} in {len(values)} of {filled} rows, e.g. {values[0]!r}"
+        (errors if len(values) / filled > _FIELD_GAP_TOLERANCE else warnings).append(message)
 
 
 def validate(doc: dict) -> Tuple[List[str], List[str]]:

@@ -147,6 +147,9 @@ def parse_ewoxx_rof(pages: List[List[str]]) -> Tuple[List[CombinedResult], Optio
                     if m:
                         current.time_difference = m.group('diff')
                         current.time_behind = m.group('behind').replace(' ', '')
+                        if current.rank == 1:
+                            # the winner's total time, sometimes printed '+28:36.0'
+                            current.time_behind = current.time_behind.lstrip('+')
                         expect = 3
                         continue
                 if current is not None and expect in (2, 3):
@@ -199,6 +202,12 @@ def parse_ewoxx_rof(pages: List[List[str]]) -> Tuple[List[CombinedResult], Optio
         # A page break never splits an athlete block
         close()
 
+    # A photo finish for first place prints the total time on both lines
+    # instead of a gap for the second athlete.
+    winner_total = next((r.time_behind for r in results if r.rank == 1), None)
+    for r in results:
+        if r.rank and r.rank > 1 and winner_total and r.time_behind == winner_total:
+            r.time_behind = '+0.0'
     return results, stats, unparsed
 
 

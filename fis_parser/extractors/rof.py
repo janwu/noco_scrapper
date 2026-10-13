@@ -23,6 +23,7 @@ from fis_parser.utils import (
 from fis_parser.extractors.base import BaseExtractor
 from fis_parser.extractors.rof_ewoxx import is_ewoxx_layout, parse_ewoxx_rof
 from fis_parser.extractors.rof_team import parse_team_rof
+from fis_parser.validate import CLOCK_RE, FINISH_GAP_RE, time_format_problems
 from fis_parser.extractors.rof_kjump import is_kjump_layout, parse_kjump_rof
 from fis_parser.detector import (
     parse_filename_metadata, team_discipline_from_filename, venue_from_path,
@@ -173,6 +174,8 @@ class ROFExtractor(BaseExtractor):
                 else:
                     doc.combined_results = self._extract_results(pdf, doc.format_era, is_mass_start)
 
+                self._drop_misplaced_times(doc)
+
                 # Weather + stats — always last page
                 last_text = self.page_text(pdf.pages[-1])
                 wd, cs = self.extract_weather_summary(last_text)
@@ -210,6 +213,21 @@ class ROFExtractor(BaseExtractor):
             if m:
                 return clean_name(m.group(1))
         return None
+
+    def _drop_misplaced_times(self, doc: ParsedDocument) -> None:
+        """
+        In a layout this parser does not know column by column (express race,
+        jump-table sprints) the numbers behind the name land in the wrong
+        fields.  Rank and name are still right, so the row is kept — but a
+        value that cannot be what its field says is dropped rather than
+        stored as a wrong time, and the document says so.
+        """
+        dropped = 0
+        for row, field in time_format_problems(doc.discipline, doc.combined_results):
+            setattr(row, field, None)
+            dropped += 1
+        if dropped:
+            doc.warnings.append(f"layout not fully understood: {dropped} time values dropped")
 
     def _apply_path_fallbacks(self, doc: ParsedDocument) -> None:
         """Fill header fields the PDF does not state from folder / file name."""
@@ -613,13 +631,21 @@ class ROFExtractor(BaseExtractor):
                         cr.jump_points = parse_float(nums[-2])
                     cr.time_behind = nums[-1]  # raw total pts, post-processed to diff
             else:
+                # Sprints 2005-2008 print the start gap twice, as time and as
+                # distance in metres ('1:04 384 19:17.4'); drop the distance.
+                if len(nums) >= 7 and not CLOCK_RE.match(nums[3]) and CLOCK_RE.match(nums[4]):
+                    nums = nums[:3] + nums[4:]
                 if len(nums) >= 6:
                     cr.jump_points = parse_float(nums[0])
                     cr.jump_rank = parse_int(nums[1])
                     cr.time_difference = nums[2]
                     cr.xc_time = nums[3]
                     cr.xc_rank = parse_int(nums[4].strip('='))
-                    cr.time_behind = nums[5]
+                    # The TRIPLE lists (Seefeld) have a points column between the
+                    # rank and the time behind ('18 6.2 19:03.8', '1 -2.1 +8.4'):
+                    # the time behind is the last value that is a time.
+                    tail = [n for n in nums[5:] if FINISH_GAP_RE.match(n) or CLOCK_RE.match(n)]
+                    cr.time_behind = tail[-1] if tail else nums[5]
                 elif len(nums) >= 4:
                     cr.jump_points = parse_float(nums[0])
                     cr.jump_rank = parse_int(nums[1])
