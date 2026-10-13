@@ -189,7 +189,7 @@ public class HomeView extends VerticalLayout {
             nameSpan.getStyle().set("flex", "1").set("font-size", "var(--lumo-font-size-s)");
             NationFlag flag = new NationFlag(t.getNation(), false);
             flag.getStyle().set("flex-shrink", "0").set("width", "30px");
-            Span behind = new Span(t.getTimeBehind() != null ? t.getTimeBehind() : "");
+            Span behind = new Span(t.getFinishGap());
             behind.addClassNames(LumoUtility.FontSize.XSMALL);
             behind.getStyle().set("flex-shrink", "0").set("text-align", "right").set("min-width", "52px")
                     .set("color", "var(--lumo-secondary-text-color)");
@@ -253,8 +253,7 @@ public class HomeView extends VerticalLayout {
             nationSpan.getStyle().set("flex-shrink", "0").set("width", "30px");
 
             // Diff
-            String diff = isMassStart ? r.getTimeBehind() : r.getTimeDifference();
-            Span diffSpan = new Span(diff != null ? diff : "");
+            Span diffSpan = new Span(r.getFinishGap());
             diffSpan.addClassNames(LumoUtility.FontSize.XSMALL);
             diffSpan.getStyle()
                     .set("flex-shrink", "0")

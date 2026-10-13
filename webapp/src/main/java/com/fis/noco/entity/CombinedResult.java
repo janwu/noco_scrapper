@@ -92,6 +92,24 @@ public class CombinedResult {
         return rawName != null ? rawName : "";
     }
 
+    /**
+     * Gap to the winner at the finish: "0.0" for the winner, "+41.6" for the others,
+     * empty for athletes without a finish (DNS, DNF, DSQ, lapped).
+     *
+     * Not to be confused with {@link #getTimeDifference()}, the start gap after the
+     * jumping part.  The result lists print the winner's total time where the others
+     * have their gap, which is why the stored value cannot be shown as it is.
+     */
+    public String getFinishGap() {
+        if (status != null && !status.isBlank()) {
+            return "";
+        }
+        if (rank != null && rank == 1) {
+            return "0.0";
+        }
+        return timeBehind != null ? timeBehind : "";
+    }
+
     public String getDisplayNation() {
         if (athlete != null && athlete.getNationality() != null) {
             return athlete.getNationality();

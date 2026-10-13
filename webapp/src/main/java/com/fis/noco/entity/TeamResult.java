@@ -70,6 +70,17 @@ public class TeamResult {
     public String getStatus() { return status; }
     public List<TeamMember> getMembers() { return members; }
 
+    /** Gap to the winning team at the finish: "0.0" for the winner, empty without a finish. */
+    public String getFinishGap() {
+        if (status != null && !status.isBlank()) {
+            return "";
+        }
+        if (rank != null && rank == 1) {
+            return "0.0";
+        }
+        return timeBehind != null ? timeBehind : "";
+    }
+
     /** 'Norway I' — the name as printed, or the nation code if the list has none. */
     public String getDisplayName() {
         return teamName != null && !teamName.isBlank() ? teamName : (nation != null ? nation : "");

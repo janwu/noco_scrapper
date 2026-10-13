@@ -241,10 +241,8 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
                 .setHeader("With").setAutoWidth(true).setFlexGrow(1);
         grid.addColumn(m -> m.getTeamResult().getRank())
                 .setHeader("Rank").setAutoWidth(true).setSortable(true);
-        grid.addColumn(m -> {
-            TeamResult t = m.getTeamResult();
-            return t.getStatus() != null && !t.getStatus().isBlank() ? "" : t.getTimeBehind();
-        }).setHeader("Behind").setAutoWidth(true);
+        grid.addColumn(m -> m.getTeamResult().getFinishGap())
+                .setHeader("Behind").setAutoWidth(true);
         grid.addColumn(TeamMember::getJumpPoints)
                 .setHeader("Own Jump Pts").setAutoWidth(true);
         grid.addColumn(TeamMember::getXcTime)
@@ -376,14 +374,9 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         grid.addColumn(CombinedResult::getRank)
                 .setHeader("Rank").setAutoWidth(true).setSortable(true);
 
-        // For Mass Start show final points diff; for all other formats show time diff from leader.
-        // DNS/DNF/DSQ athletes have no meaningful finish diff — suppress it.
-        grid.addColumn(r -> {
-            if (r.getStatus() != null && !r.getStatus().isBlank()) return "";
-            Competition c = r.getCompetition();
-            boolean ms = c != null && "Mass Start".equals(c.getFormat());
-            return ms ? r.getTimeBehind() : r.getTimeDifference();
-        }).setHeader("Diff").setAutoWidth(true).setKey("diff");
+        // Gap to the winner at the finish: time, or points in a Mass Start
+        grid.addColumn(CombinedResult::getFinishGap)
+                .setHeader("Behind").setAutoWidth(true).setKey("diff");
 
         grid.addComponentColumn(r -> statusBadge(r.getStatus()))
                 .setHeader("Status").setAutoWidth(true);

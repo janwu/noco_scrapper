@@ -144,7 +144,7 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
                     .setHeader("SJ Points").setAutoWidth(true).setSortable(true);
             grid.addColumn(CombinedResult::getJumpRank)
                     .setHeader("SJ Rank").setAutoWidth(true).setSortable(true);
-            grid.addColumn(CombinedResult::getTimeBehind)
+            grid.addColumn(CombinedResult::getFinishGap)
                     .setHeader("Final Pts Diff").setAutoWidth(true);
         } else {
             // Gundersen / Compact / Sprint / Penalty Race: SJ is first, XC is the final phase
@@ -153,13 +153,13 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
             grid.addColumn(CombinedResult::getJumpRank)
                     .setHeader("Jump Rank").setAutoWidth(true).setSortable(true);
             grid.addColumn(CombinedResult::getTimeDifference)
-                    .setHeader("Time Diff").setAutoWidth(true);
+                    .setHeader("Start Gap").setAutoWidth(true);
             grid.addColumn(CombinedResult::getXcTime)
                     .setHeader("XC Time").setAutoWidth(true).setSortable(true);
             grid.addColumn(CombinedResult::getXcRank)
                     .setHeader("XC Rank").setAutoWidth(true).setSortable(true);
-            grid.addColumn(CombinedResult::getTimeBehind)
-                    .setHeader("Time Behind").setAutoWidth(true);
+            grid.addColumn(CombinedResult::getFinishGap)
+                    .setHeader("Behind").setAutoWidth(true);
             grid.addColumn(r -> r.isWaveStart() ? "Yes" : "")
                     .setHeader("Wave Start").setAutoWidth(true);
         }
@@ -201,13 +201,13 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
         grid.addColumn(TeamResult::getJumpRank)
                 .setHeader("Jump Rank").setAutoWidth(true);
         grid.addColumn(TeamResult::getTimeDifference)
-                .setHeader("Time Diff").setAutoWidth(true);
+                .setHeader("Start Gap").setAutoWidth(true);
         grid.addColumn(TeamResult::getXcTime)
                 .setHeader("XC Time").setAutoWidth(true);
         grid.addColumn(TeamResult::getXcRank)
                 .setHeader("XC Rank").setAutoWidth(true);
-        grid.addColumn(TeamResult::getTimeBehind)
-                .setHeader("Time Behind").setAutoWidth(true);
+        grid.addColumn(TeamResult::getFinishGap)
+                .setHeader("Behind").setAutoWidth(true);
         grid.addComponentColumn(t -> statusBadge(t.getStatus()))
                 .setHeader("Status").setAutoWidth(true);
 
