@@ -123,6 +123,69 @@ class ExtraColumns(unittest.TestCase):
                 self.assertEqual(rows, expected)
 
 
+class JumpLast(unittest.TestCase):
+    """Mass Start and Super Sprint: race first, ranked by points; and the Express Race."""
+
+    # (file, layout, discipline, ranked, first two rows:
+    #  name, jump points, jump rank, race points gap, race time, race rank, total gap)
+    CASES = [
+        ("fis_nk_pdfs/2008/*/M/4104_*ROF.pdf", "two jumping rounds, race points instead of a gap", "Mass Start", 47,
+         [("TANDE Petter L.", 133.8, 5, "-3.0", "25:44.2", 4, "0.0"),
+          ("KOIVURANTA Anssi", 137.4, 3, "-11.5", "26:18.1", 10, "-4.9")]),
+        ("fis_nk_pdfs/2008/*/M/4136_*ROF.pdf", "race given in points only, no time printed", "Mass Start", 37,
+         [("FRENZEL Eric", 74.4, 2, "-7.8", None, None, "0.0"),
+          ("ACKERMANN Ronny", 71.4, 3, "-8.0", None, None, "-3.2")]),
+        ("fis_nk_pdfs/2019/*/M/4120_*ROF.pdf", "only the total printed; round = total without the race gap",
+         "Mass Start", 47,
+         [("RIIBER Jarl Magnus", 138.3, 1, "-6.5", "25:15.1", 5, "0.0"),
+          ("FRENZEL Eric", 126.2, 5, "-2.5", "24:58.8", 3, "-8.1")]),
+        ("fis_nk_pdfs/2025/*/M/4143_*ROF.pdf", "round and total behind the race time, gate points column",
+         "Mass Start", 58,
+         [("GEIGER Vinzenz", 155.6, 3, "-0.2", "23:40.7", 2, "0.0"),
+          ("RIIBER Jarl Magnus", 156.0, 2, "-1.7", "23:46.6", 10, "-1.1")]),
+        ("fis_nk_pdfs/2026/*/M/4123_*ROF.pdf", "club and birth date on the rank line", "Mass Start", 57,
+         [("RETTENEGGER Thomas", 126.3, 1, "-1.0", "22:41.8", 7, "0.0"),
+          ("THANNHEIMER Wendelin", 122.3, 4, "-1.3", "22:42.8", 8, "-4.3")]),
+        ("fis_nk_coc_pdfs/2023/*/M/4189_*ROF.pdf", "super sprint, ewoxx", "Super Sprint", 46,
+         [("RETTENEGGER Thomas", 135.7, 2, "-5.0", "11:52.0", 3, "0.0"),
+          ("OESTVOLD Sebastian", 137.3, 1, "-9.0", "12:08.0", 6, "-2.4")]),
+    ]
+
+    def test_points_and_gaps(self):
+        for pattern, layout, discipline, ranked, expected in self.CASES:
+            with self.subTest(layout=layout):
+                matches = glob.glob(os.path.join(ROOT, pattern))
+                if not matches:
+                    self.skipTest(f"PDF not downloaded: {pattern}")
+                doc = parse_pdf(matches[0])
+                self.assertEqual(doc.parse_errors, [])
+                self.assertEqual(doc.discipline, discipline)
+                self.assertEqual(sum(1 for r in doc.combined_results if r.rank is not None), ranked)
+                rows = [(r.name, r.jump_points, r.jump_rank, r.time_difference, r.xc_time, r.xc_rank, r.time_behind)
+                        for r in doc.combined_results[:2]]
+                self.assertEqual(rows, expected)
+
+    def test_express_race(self):
+        matches = glob.glob(os.path.join(ROOT, "fis_nk_coc_pdfs/2026/*/M/4238_*ROF.pdf"))
+        if not matches:
+            self.skipTest("PDF not downloaded")
+        doc = parse_pdf(matches[0])
+        self.assertEqual(doc.parse_errors, [])
+        self.assertEqual(doc.discipline, "Express Race")
+        rows = doc.combined_results
+        self.assertEqual(sum(1 for r in rows if r.rank is not None), 62)
+        self.assertEqual(sorted(r.status for r in rows if r.status), ["DNS"] * 3 + ["DSQ"] * 3)
+        # of the heats, the last one the athlete raced is kept
+        self.assertEqual(
+            [(r.rank, r.bib, r.name, r.jump_points, r.jump_rank, r.time_difference, r.xc_time, r.time_behind)
+             for r in rows[:2]],
+            [(1, 2, "GFRERER Andreas", 126.6, 2, "00:03", "3:00.9", "3:01.9"),
+             (2, 3, "DOLEZAL Lukas", 122.5, 3, "00:06", "3:02.4", "+0.5")])
+        eliminated = next(r for r in rows if r.rank == 41)          # out after the first heat
+        self.assertEqual((eliminated.name, eliminated.xc_time, eliminated.time_behind),
+                         ("STEINER Johannes", "3:07.3", "+55.4"))
+
+
 class KJump(unittest.TestCase):
     """Lillehammer lists by K-Jump: 'Firstname Surname', block rebuilt from word positions."""
 
@@ -227,6 +290,15 @@ class Validation(unittest.TestCase):
         errors = self.errors(_doc(rows))
         self.assertTrue(any("time_behind is not a gap" in e and "'-2.1'" in e for e in errors))
         self.assertTrue(any("xc_time is not a time" in e and "'384'" in e for e in errors))
+
+    def test_rank_and_value_must_agree(self):
+        # the distance of one round stored as the jump points: ranks no longer fit
+        rows = [_row(i + 1, f"ALFA{chr(65 + i)} Bo", jump_rank=i + 1, jump_points=p)
+                for i, p in enumerate([96.0, 130.0, 101.5, 127.0, 99.0, 125.5])]
+        errors = self.errors(_doc(rows))
+        self.assertTrue(any("jump_points does not follow jump_rank" in e for e in errors))
+        rows = [_row(i + 1, f"ALFA{chr(65 + i)} Bo", jump_rank=i + 1, jump_points=130.0 - i) for i in range(6)]
+        self.assertEqual(self.errors(_doc(rows)), [])
 
     def test_mass_start_gaps_are_points(self):
         rows = [_row(1, "ALFA Bo", time_behind="0.0", time_difference="0.0"),

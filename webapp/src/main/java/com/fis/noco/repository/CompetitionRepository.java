@@ -51,7 +51,7 @@ public interface CompetitionRepository extends JpaRepository<Competition, Long> 
 
     @Query("SELECT c FROM Competition c LEFT JOIN FETCH c.season LEFT JOIN FETCH c.venue " +
            "WHERE c.circuit = 'WC' AND c.gender = :gender AND c.season.id = :seasonId " +
-           "AND c.format IN ('Gundersen', 'Compact', 'Mass Start') " +
+           "AND c.format IN ('Gundersen', 'Compact', 'Mass Start', 'Sprint', 'Penalty Race') " +
            "ORDER BY c.competitionDate ASC")
     List<Competition> findWCIndividualBySeasonAndGender(@Param("seasonId") Long seasonId,
                                                         @Param("gender") String gender);

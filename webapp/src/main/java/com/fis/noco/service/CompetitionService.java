@@ -44,6 +44,14 @@ public class CompetitionService {
         return format != null && format.startsWith("Team");
     }
 
+    /**
+     * Mass Start and Super Sprint: the race comes first and is converted into points,
+     * the jump decides.  Their gaps are points, not times.
+     */
+    public static boolean isJumpLast(String format) {
+        return "Mass Start".equals(format) || "Super Sprint".equals(format);
+    }
+
     public List<TeamResult> getTeamResultsForCompetition(Long competitionId) {
         return teamResultRepository.findByCompetitionIdOrderByRank(competitionId);
     }

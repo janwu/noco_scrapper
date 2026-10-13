@@ -94,7 +94,7 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
         H3 resultsTitle = new H3("Results (" + results.size() + " athletes)");
         resultsTitle.addClassNames(LumoUtility.Margin.Top.MEDIUM, LumoUtility.Margin.Bottom.XSMALL);
 
-        boolean isMassStart = "Mass Start".equals(competition.getFormat());
+        boolean isMassStart = CompetitionService.isJumpLast(competition.getFormat());
         Grid<CombinedResult> grid = createResultsGrid(results, isMassStart);
 
         add(backButton, header, metaRow, resultsTitle, grid);

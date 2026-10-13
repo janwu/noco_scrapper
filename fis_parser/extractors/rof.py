@@ -23,7 +23,9 @@ from fis_parser.utils import (
 from fis_parser.extractors.base import BaseExtractor
 from fis_parser.extractors.rof_ewoxx import is_ewoxx_layout, parse_ewoxx_rof
 from fis_parser.extractors.rof_team import parse_team_rof
-from fis_parser.validate import CLOCK_RE, FINISH_GAP_RE, time_format_problems
+from fis_parser.extractors.rof_express import is_express_layout, parse_express_rof
+from fis_parser.extractors.rof_massstart import is_jump_last_layout, parse_jump_last_rof
+from fis_parser.validate import CLOCK_RE, FINISH_GAP_RE, is_jump_last, time_format_problems
 from fis_parser.extractors.rof_kjump import is_kjump_layout, parse_kjump_rof
 from fis_parser.detector import (
     parse_filename_metadata, team_discipline_from_filename, venue_from_path,
@@ -167,6 +169,15 @@ class ROFExtractor(BaseExtractor):
                     # ('12/09/2022' becomes 'Mon 12 Sep 2022'); the file name is right.
                     doc.competition_date = (parse_filename_metadata(self.filepath).get('date')
                                             or doc.competition_date)
+                elif is_express_layout(full_text):
+                    doc.combined_results, unparsed = parse_express_rof(page_lines)
+                    for line in unparsed:
+                        doc.parse_errors.append(f"express race list: line not understood: {line!r}")
+                elif is_jump_last_layout(full_text):
+                    # Mass Start / Super Sprint: the race first, ranked by points
+                    doc.combined_results, unparsed = parse_jump_last_rof(page_lines)
+                    for line in unparsed:
+                        doc.parse_errors.append(f"mass start list: line not understood: {line!r}")
                 elif is_ewoxx_layout(page_lines[0]):
                     doc.combined_results, ewoxx_stats, unparsed = parse_ewoxx_rof(page_lines)
                     for line in unparsed:
@@ -225,7 +236,9 @@ class ROFExtractor(BaseExtractor):
         dropped = 0
         for row, field in time_format_problems(doc.discipline, doc.combined_results):
             setattr(row, field, None)
-            dropped += 1
+            # Under DNS / DSQ the text behind the name is a reason ('SCE4 Suit'),
+            # not a column; dropping it there says nothing about the layout.
+            dropped += row.rank is not None
         if dropped:
             doc.warnings.append(f"layout not fully understood: {dropped} time values dropped")
 
@@ -259,7 +272,8 @@ class ROFExtractor(BaseExtractor):
             (r'Mass\s+Start', 'Mass Start'),
             (r'Individual\s+Compact', 'Compact'),
             (r'Penalty\s+Race', 'Penalty Race'),
-            (r'Express\s+Race', 'Express Race'),
+            (r'\bExpress\b', 'Express Race'),
+            (r'Super\s+Sprint', 'Super Sprint'),
             (r'Sprint', 'Sprint'),
             (r'Individual\s+Gundersen|Gundersen', 'Gundersen'),
         ]:
@@ -268,7 +282,7 @@ class ROFExtractor(BaseExtractor):
         return None
 
     def _infer_final_phase(self, discipline: Optional[str]) -> str:
-        if discipline and 'Mass Start' in discipline:
+        if is_jump_last(discipline):
             return 'SKI_JUMPING'
         return 'CROSS_COUNTRY'
 

@@ -135,7 +135,7 @@ public class HomeView extends VerticalLayout {
                 .sorted((a, b) -> Integer.compare(a.getRank(), b.getRank()))
                 .toList();
 
-        boolean isMassStart = "Mass Start".equals(format);
+        boolean isMassStart = CompetitionService.isJumpLast(format);
 
         Div top3Div = buildResultRows(ranked.stream().limit(TOP3).toList(), isMassStart);
         card.add(top3Div);

@@ -26,6 +26,14 @@ def is_team_discipline(discipline: Optional[str]) -> bool:
     return bool(discipline) and discipline.startswith('Team')
 
 
+def is_jump_last(discipline: Optional[str]) -> bool:
+    """
+    Mass Start and Super Sprint: the race comes first and is converted into
+    points, the jump decides.  Gaps in these lists are points, not times.
+    """
+    return discipline in ('Mass Start', 'Super Sprint')
+
+
 def _check_rank_sequence(ranks: List[int]) -> Optional[str]:
     """Ranks must run 1..N; ties repeat a rank and skip the following ones."""
     ordered = sorted(ranks)
@@ -199,6 +207,8 @@ def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
             if missing / len(finished) > _FIELD_GAP_TOLERANCE:
                 warnings.append(f"{field} missing in {missing} of {len(finished)} finishers")
         _check_time_formats(doc, rows, errors, warnings)
+        _check_order(finished, 'jump_rank', 'jump_points', False, errors, warnings)
+        _check_order(finished, 'xc_rank', 'xc_time', True, errors, warnings)
 
     return errors, warnings
 
@@ -225,7 +235,7 @@ def time_format_problems(discipline: Optional[str], rows) -> List[tuple]:
     (the TRIPLE points, a sprint's start distance) every value after it
     slides one column to the left and a points value ends up as a time.
     """
-    mass_start = discipline == 'Mass Start'
+    mass_start = is_jump_last(discipline)
     problems = []
     for row in rows:
         ranked = _get(row, 'rank') is not None
@@ -256,6 +266,44 @@ def _check_time_formats(doc: dict, rows: List[dict], errors: List[str], warnings
         filled = sum(1 for r in rows if r.get(field) not in (None, ''))
         message = f"{field} is not {_WHAT[field]} in {len(values)} of {filled} rows, e.g. {values[0]!r}"
         (errors if len(values) / filled > _FIELD_GAP_TOLERANCE else warnings).append(message)
+
+
+def _seconds(clock: str) -> Optional[float]:
+    try:
+        total = 0.0
+        for part in clock.split(':'):
+            total = total * 60 + float(part)
+        return total
+    except (ValueError, AttributeError):
+        return None
+
+
+def _check_order(rows: List[dict], rank_field: str, value_field: str, ascending: bool,
+                 errors: List[str], warnings: List[str]) -> None:
+    """
+    A rank and the value it ranks must tell the same story: the better jump
+    rank has the higher points, the better cross-country rank the shorter
+    time.  If they do not, one of the two columns holds something else
+    (a distance instead of points, the points of a single round, ...).
+    """
+    pairs = []
+    for r in rows:
+        rank, value = r.get(rank_field), r.get(value_field)
+        if value_field == 'xc_time' and value:
+            value = _seconds(value)
+        if rank is not None and value is not None:
+            pairs.append((rank, value))
+    if len(pairs) < 5:
+        return
+    pairs.sort()
+    wrong = 0
+    for (rank_a, a), (rank_b, b) in zip(pairs, pairs[1:]):
+        if rank_a != rank_b and (a > b if ascending else a < b):
+            wrong += 1
+    if not wrong:
+        return
+    message = f"{value_field} does not follow {rank_field} for {wrong} of {len(pairs) - 1} neighbours"
+    (errors if wrong / (len(pairs) - 1) > _FIELD_GAP_TOLERANCE else warnings).append(message)
 
 
 def validate(doc: dict) -> Tuple[List[str], List[str]]:
