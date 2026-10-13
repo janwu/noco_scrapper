@@ -2,8 +2,10 @@ package com.fis.noco.service;
 
 import com.fis.noco.entity.Athlete;
 import com.fis.noco.entity.CombinedResult;
+import com.fis.noco.entity.TeamMember;
 import com.fis.noco.repository.AthleteRepository;
 import com.fis.noco.repository.CombinedResultRepository;
+import com.fis.noco.repository.TeamResultRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -19,11 +21,19 @@ public class AthleteService {
 
     private final AthleteRepository athleteRepository;
     private final CombinedResultRepository combinedResultRepository;
+    private final TeamResultRepository teamResultRepository;
 
     public AthleteService(AthleteRepository athleteRepository,
-                          CombinedResultRepository combinedResultRepository) {
+                          CombinedResultRepository combinedResultRepository,
+                          TeamResultRepository teamResultRepository) {
         this.athleteRepository = athleteRepository;
         this.combinedResultRepository = combinedResultRepository;
+        this.teamResultRepository = teamResultRepository;
+    }
+
+    /** Team, Team Sprint and Mixed Team starts in both circuits, newest first. */
+    public List<TeamMember> getTeamStarts(Long athleteId) {
+        return teamResultRepository.findTeamStartsByAthleteId(athleteId);
     }
 
     public Page<Athlete> searchAthletes(String query, int page, int pageSize) {

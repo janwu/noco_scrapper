@@ -3,6 +3,8 @@ package com.fis.noco.views;
 import com.fis.noco.entity.Athlete;
 import com.fis.noco.entity.CombinedResult;
 import com.fis.noco.entity.Competition;
+import com.fis.noco.entity.TeamMember;
+import com.fis.noco.entity.TeamResult;
 import com.fis.noco.service.AthleteService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -27,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Route(value = "athlete", layout = MainLayout.class)
 @PageTitle("Athlete Detail | FIS Nordic Combined")
@@ -79,12 +82,21 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         List<CombinedResult> wcResults = athleteService.getWorldCupResults(athlete.getId());
         List<CombinedResult> cocResults = athleteService.getContinentalCupResults(athlete.getId());
 
-        add(backButton, nameHeader, infoRow, buildStatsRow(athlete, wcResults, cocResults));
+        List<TeamMember> teamStarts = athleteService.getTeamStarts(athlete.getId());
+
+        HorizontalLayout statsRow = buildStatsRow(athlete, wcResults, cocResults);
+        if (!teamStarts.isEmpty()) {
+            statsRow.add(buildTeamStatsBlock(teamStarts));
+        }
+        add(backButton, nameHeader, infoRow, statsRow);
 
         TabSheet tabSheet = new TabSheet();
         tabSheet.setSizeFull();
         tabSheet.add("World Cup (" + wcResults.size() + ")", createFilteredResultsPanel(wcResults));
         tabSheet.add("Continental Cup (" + cocResults.size() + ")", createFilteredResultsPanel(cocResults));
+        if (!teamStarts.isEmpty()) {
+            tabSheet.add("Team (" + teamStarts.size() + ")", createTeamStartsPanel(teamStarts, athlete));
+        }
 
         add(tabSheet);
         expand(tabSheet);
@@ -166,6 +178,103 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
 
         block.add(stats);
         return block;
+    }
+
+    /** Team starts are counted apart: a team win is not an individual win. */
+    private VerticalLayout buildTeamStatsBlock(List<TeamMember> starts) {
+        long wins  = starts.stream().filter(m -> rankOf(m) != null && rankOf(m) == 1).count();
+        long top3  = starts.stream().filter(m -> rankOf(m) != null && rankOf(m) <= 3).count();
+        long wc    = starts.stream().filter(m -> "WC".equals(m.getTeamResult().getCompetition().getCircuit())).count();
+
+        VerticalLayout block = new VerticalLayout();
+        block.setPadding(true);
+        block.setSpacing(false);
+        block.setWidth(null);
+        block.getStyle()
+                .set("border", "1px solid var(--lumo-contrast-20pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("background", "var(--lumo-contrast-5pct)");
+
+        H4 header = new H4("Team");
+        header.addClassNames(LumoUtility.Margin.Bottom.XSMALL, LumoUtility.Margin.Top.NONE);
+        block.add(header);
+
+        HorizontalLayout stats = new HorizontalLayout();
+        stats.setSpacing(true);
+        stats.add(statBadge("Starts", starts.size()));
+        stats.add(statBadge("Wins", wins));
+        stats.add(statBadge("Top 3", top3));
+        stats.add(statBadge("World Cup", wc));
+        stats.add(statBadge("Cont. Cup", starts.size() - wc));
+        block.add(stats);
+        return block;
+    }
+
+    private static Integer rankOf(TeamMember m) {
+        return m.getTeamResult().getRank();
+    }
+
+    private VerticalLayout createTeamStartsPanel(List<TeamMember> starts, Athlete athlete) {
+        Grid<TeamMember> grid = new Grid<>(TeamMember.class, false);
+        grid.setSizeFull();
+        grid.setMinHeight("400px");
+
+        grid.addColumn(m -> m.getTeamResult().getCompetition().getCompetitionDate())
+                .setHeader("Date").setAutoWidth(true).setSortable(true);
+        grid.addColumn(m -> "WC".equals(m.getTeamResult().getCompetition().getCircuit()) ? "World Cup" : "Cont. Cup")
+                .setHeader("Circuit").setAutoWidth(true).setSortable(true);
+        grid.addColumn(m -> m.getTeamResult().getCompetition().getDisplayLocation())
+                .setHeader("Location").setAutoWidth(true);
+        grid.addColumn(m -> m.getTeamResult().getCompetition().getFormat())
+                .setHeader("Format").setAutoWidth(true).setSortable(true);
+        grid.addComponentColumn(m -> {
+            TeamResult t = m.getTeamResult();
+            Span team = new Span(new NationFlag(t.getNation(), false), new Span(t.getDisplayName()));
+            team.getStyle().set("display", "inline-flex").set("align-items", "center").set("gap", "0.5em");
+            return team;
+        }).setHeader("Team").setAutoWidth(true);
+        grid.addColumn(m -> m.getTeamResult().getMembers().stream()
+                        .filter(mate -> mate.getAthlete() == null
+                                || !mate.getAthlete().getId().equals(athlete.getId()))
+                        .map(TeamMember::getDisplayName)
+                        .collect(Collectors.joining(", ")))
+                .setHeader("With").setAutoWidth(true).setFlexGrow(1);
+        grid.addColumn(m -> m.getTeamResult().getRank())
+                .setHeader("Rank").setAutoWidth(true).setSortable(true);
+        grid.addColumn(m -> {
+            TeamResult t = m.getTeamResult();
+            return t.getStatus() != null && !t.getStatus().isBlank() ? "" : t.getTimeBehind();
+        }).setHeader("Behind").setAutoWidth(true);
+        grid.addColumn(TeamMember::getJumpPoints)
+                .setHeader("Own Jump Pts").setAutoWidth(true);
+        grid.addColumn(TeamMember::getXcTime)
+                .setHeader("Own Leg").setAutoWidth(true);
+        grid.addComponentColumn(m -> statusBadge(m.getTeamResult().getStatus()))
+                .setHeader("Status").setAutoWidth(true);
+
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(m ->
+                UI.getCurrent().navigate(ResultDetailView.class, m.getTeamResult().getCompetition().getId())));
+
+        RadioButtonGroup<String> filter = new RadioButtonGroup<>();
+        filter.setItems("All", "Wins", "Top 3");
+        filter.setValue("All");
+        filter.addValueChangeListener(e -> grid.setItems(switch (e.getValue()) {
+            case "Wins"  -> starts.stream().filter(m -> rankOf(m) != null && rankOf(m) == 1).toList();
+            case "Top 3" -> starts.stream().filter(m -> rankOf(m) != null && rankOf(m) <= 3).toList();
+            default      -> starts;
+        }));
+        HorizontalLayout filterRow = new HorizontalLayout(new Span("Filter: "), filter);
+        filterRow.setAlignItems(Alignment.CENTER);
+        filterRow.setSpacing(true);
+        filterRow.addClassNames(LumoUtility.Padding.Bottom.XSMALL);
+
+        grid.setItems(starts);
+        VerticalLayout panel = new VerticalLayout(filterRow, grid);
+        panel.setSizeFull();
+        panel.setPadding(false);
+        panel.setSpacing(false);
+        panel.expand(grid);
+        return panel;
     }
 
     private VerticalLayout statBadge(String label, long value) {
