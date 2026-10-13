@@ -10,6 +10,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Paragraph;
@@ -77,6 +78,14 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         }
         if (athlete.getActiveClub() != null) {
             infoRow.add(new Span("Club: " + athlete.getActiveClub()));
+        }
+        if (athlete.getFisId() != null && !athlete.getFisId().isBlank()) {
+            // fis_id holds the competitor id of the FIS database (from the cup standings)
+            Anchor fisLink = new Anchor(
+                    "https://www.fis-ski.com/DB/general/athlete-biography.html?sectorcode=NK&competitorid="
+                            + athlete.getFisId(), "FIS profile ↗");
+            fisLink.setTarget("_blank");
+            infoRow.add(fisLink);
         }
 
         List<CombinedResult> wcResults = athleteService.getWorldCupResults(athlete.getId());

@@ -237,6 +237,8 @@ class Build:
         self.names_by_words: Dict[Tuple[str, frozenset], set] = defaultdict(set)   # (nation, words) → names
         self.reordered_names: Counter = Counter()                 # 'matched' / 'surname guessed' → rows
         self.guessed_names: set = set()
+        self.standings_rows: Counter = Counter()                  # matched to an athlete? → rows
+        self.standings_unmatched: set = set()
 
         self.skipped_docs: List[Tuple[str, str]] = []        # (reason, file)
         self.rejected_rows: Counter = Counter()              # (doc_type, reason) → n
@@ -296,6 +298,26 @@ class Build:
             if len(nations) == 1:
                 return next(iter(nations))
         return None
+
+    def find_athlete(self, name: str, nation: str) -> Optional[dict]:
+        """
+        An athlete already built from the result lists, looked up by a name
+        from another source (the FIS database).  Tried in turn: the exact
+        name, the same words in another order or spelling ('Jørgen' /
+        'Joergen'), and the name alone if only one nation ever carried it
+        (athletes who changed nation).
+        """
+        key = self.athlete_aliases.get((name, nation), (name, nation))
+        if key in self.athletes:
+            return self.athletes[key]
+        candidates = {self.athlete_aliases.get((n, nation), (n, nation))
+                      for n in self.names_by_words.get((nation, frozenset(name_words(name))), ())}
+        nations = self.nations_by_name.get(name) or ()
+        if not candidates and len(nations) == 1:
+            other = next(iter(nations))
+            candidates = {self.athlete_aliases.get((name, other), (name, other))}
+        found = [self.athletes[c] for c in candidates if c in self.athletes]
+        return found[0] if len(found) == 1 else None
 
     def surname_first(self, name: str, nation: str) -> Tuple[str, bool]:
         """
@@ -566,7 +588,35 @@ def names_with_nation(docs: List[Tuple[dict, dict]]) -> Dict[str, set]:
     return found
 
 
-def build_database(output_dir: str, build: Build) -> None:
+def add_standings(build: Build, standings_dir: Optional[str]) -> None:
+    """
+    Official cup standings downloaded by fis_nk_standings_scraper.py.
+    Athletes are matched to those of the result lists; the FIS competitor id
+    comes along and is stored with the athlete.
+    """
+    if not standings_dir or not os.path.isdir(standings_dir):
+        log.warning("No cup standings directory (%s) — cup_standings stays empty", standings_dir)
+        return
+    for path in sorted(glob.glob(os.path.join(standings_dir, "*.json"))):
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        season_end = int(data["season"])
+        season_id = build.season(season_end - 1, f"{season_end - 1}/{season_end}")
+        for row in data["rows"]:
+            name, nation = clean(row["name"]), (row.get("nation") or "").upper()
+            athlete = build.find_athlete(name, nation)
+            if athlete is None:
+                build.standings_unmatched.add(f"{name} [{nation}]")
+            else:
+                athlete.setdefault("fis_id", row.get("competitor_id"))
+            for code, standing in row["standings"].items():
+                build.add("cup_standings", season_id, data["cup"], data["gender"], code,
+                          data["disciplines"].get(code), standing["rank"], standing.get("points"),
+                          athlete["id"] if athlete else None, name, nation, row.get("competitor_id"))
+                build.standings_rows[athlete is not None] += 1
+
+
+def build_database(output_dir: str, build: Build, standings_dir: Optional[str] = None) -> None:
     by_comp = read_documents(output_dir, build)
     log.info("Read %d documents for %d competitions", sum(map(len, by_comp.values())), len(by_comp))
 
@@ -621,6 +671,8 @@ def build_database(output_dir: str, build: Build) -> None:
             add_details(build, comp_id, doc_id, doc)
             add_results(build, comp, comp_id, doc_id, meta, doc)
 
+    add_standings(build, standings_dir)
+
     # Dimension tables are complete only now
     for (name, country), venue_id in build.venues.items():
         build.rows["venues"].append((venue_id, name, country))
@@ -630,7 +682,8 @@ def build_database(output_dir: str, build: Build) -> None:
         last, first = split_name(a["name"])
         gender = a["genders"].most_common(1)[0][0] if a["genders"] else None
         dob = a["dobs"].most_common(1)[0][0] if a["dobs"] else None
-        build.rows["athletes"].append((a["id"], last, first, a["name"], a["nation"], gender, dob, a["club"]))
+        build.rows["athletes"].append((a["id"], last, first, a["name"], a["nation"], gender, dob, a["club"],
+                                       a.get("fis_id")))
     for (raw_name, raw_nation), (athlete_id, source) in build.athlete_variants.items():
         build.add("athlete_name_variants", athlete_id, raw_name, raw_nation, source)
 
@@ -648,7 +701,7 @@ COLUMNS = {
     "seasons": "id, start_year, label",
     "venues": "id, name, country",
     "venue_name_variants": "id, venue_id, name_variant, country, first_seen_file",
-    "athletes": "id, last_name, first_name, full_name, nationality, gender, birth_date, active_club",
+    "athletes": "id, last_name, first_name, full_name, nationality, gender, birth_date, active_club, fis_id",
     "athlete_name_variants": "id, athlete_id, name_variant, nationality, first_seen_file",
     "competitions": "id, season_id, venue_id, fis_codex, circuit, gender, competition_date, raw_location, "
                     "raw_country, format, hill_size_m, xc_distance_km, event_name",
@@ -675,6 +728,8 @@ COLUMNS = {
     "team_results": "id, competition_id, document_id, rank, bib, nation, team_name, jump_rank, "
                     "time_difference, xc_rank, total_time, time_behind, jump_points, status",
     "team_members": "id, team_result_id, athlete_id, raw_name, raw_nation, leg, xc_time, jump_points",
+    "cup_standings": "id, season_id, circuit, gender, discipline_code, discipline_name, rank, points, "
+                     "athlete_id, raw_name, raw_nation, fis_competitor_id",
 }
 # Insert order respects foreign keys
 TABLE_ORDER = list(COLUMNS)
@@ -765,6 +820,12 @@ def report(build: Build, verbose: bool) -> None:
         for name in sorted(build.guessed_names)[: None if verbose else 8]:
             log.info("         surname guessed: %s", name)
 
+    if build.standings_rows:
+        log.info("Cup standings: %d rows linked to an athlete, %d not (%d athletes without a result here)",
+                 build.standings_rows[True], build.standings_rows[False], len(build.standings_unmatched))
+        for name in sorted(build.standings_unmatched)[: None if verbose else 8]:
+            log.info("         not found: %s", name)
+
     if build.rejected_rows:
         log.info("Rows rejected (not an athlete):")
         for (doc_type, reason), n in sorted(build.rejected_rows.items(), key=lambda kv: -kv[1]):
@@ -780,6 +841,8 @@ def main() -> int:
     ap.add_argument("--output-dir", default="output", help="Directory with JSON files (default: output)")
     ap.add_argument("--aliases-dir", default=os.path.join(DB_DIR, "aliases"),
                     help="Directory with athletes.csv and venues.csv (default: db/aliases)")
+    ap.add_argument("--standings-dir", default="fis_nk_standings",
+                    help="Directory with cup standings JSON (default: fis_nk_standings)")
     ap.add_argument("--reset", action="store_true", help=argparse.SUPPRESS)   # always a full rebuild now
     ap.add_argument("--verbose", "-v", action="store_true")
     args = ap.parse_args()
@@ -794,7 +857,7 @@ def main() -> int:
     build = Build(load_aliases(os.path.join(args.aliases_dir, "athletes.csv")),
                   load_aliases(os.path.join(args.aliases_dir, "venues.csv")))
     log.info("Aliases: %d athletes, %d venues", len(build.athlete_aliases), len(build.venue_aliases))
-    build_database(args.output_dir, build)
+    build_database(args.output_dir, build, args.standings_dir)
     if args.sqlite:
         write_sqlite(build, args.sqlite)
     else:

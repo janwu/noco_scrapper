@@ -1,0 +1,408 @@
+{
+ "cup": "COC",
+ "season": 2025,
+ "gender": "W",
+ "source_url": "https://www.fis-ski.com/DB/nordic-combined/cup-standings.html?sectorcode=NK&seasoncode=2025&cupcode=COC&disciplinecode=ALL&gendercode=W&nationcode=",
+ "fetched": "2026-10-13",
+ "disciplines": {
+  "ALL": "Overall"
+ },
+ "rows": [
+  {
+   "competitor_id": "196463",
+   "name": "MAURUS Sophia",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 1,
+     "points": 537
+    }
+   }
+  },
+  {
+   "competitor_id": "221562",
+   "name": "NAEHRING Marie",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 2,
+     "points": 414
+    }
+   }
+  },
+  {
+   "competitor_id": "196396",
+   "name": "DEJORI Daniela",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 3,
+     "points": 390
+    }
+   }
+  },
+  {
+   "competitor_id": "220118",
+   "name": "GIANMOENA Veronica",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 4,
+     "points": 376
+    }
+   }
+  },
+  {
+   "competitor_id": "262081",
+   "name": "PARIS Anaelle",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 5,
+     "points": 274
+    }
+   }
+  },
+  {
+   "competitor_id": "227624",
+   "name": "PLETZ Laura",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 6,
+     "points": 273
+    }
+   }
+  },
+  {
+   "competitor_id": "212961",
+   "name": "VERBIC Silva",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 7,
+     "points": 242
+    }
+   }
+  },
+  {
+   "competitor_id": "236101",
+   "name": "MENTIL Clara",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 8,
+     "points": 232
+    }
+   }
+  },
+  {
+   "competitor_id": "255089",
+   "name": "GROSSMANN Lilly",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 9,
+     "points": 220
+    }
+   }
+  },
+  {
+   "competitor_id": "262114",
+   "name": "EGGENSBERGER Sofia",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 10,
+     "points": 206
+    }
+   }
+  },
+  {
+   "competitor_id": "262732",
+   "name": "KERKO Anna",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 11,
+     "points": 195
+    }
+   }
+  },
+  {
+   "competitor_id": "254637",
+   "name": "SCHMIDT Julia",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 12,
+     "points": 194
+    }
+   }
+  },
+  {
+   "competitor_id": "230226",
+   "name": "GOEPFERT Trine",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 13,
+     "points": 190
+    }
+   }
+  },
+  {
+   "competitor_id": "254558",
+   "name": "GREDLER Anna-Sophia",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 14,
+     "points": 180
+    }
+   }
+  },
+  {
+   "competitor_id": "235847",
+   "name": "KIL Joanna",
+   "nation": "POL",
+   "standings": {
+    "ALL": {
+     "rank": 15,
+     "points": 152
+    }
+   }
+  },
+  {
+   "competitor_id": "292756",
+   "name": "TORVINEN Petra",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 16,
+     "points": 149
+    }
+   }
+  },
+  {
+   "competitor_id": "274749",
+   "name": "KOZLOVA Karina",
+   "nation": "UKR",
+   "standings": {
+    "ALL": {
+     "rank": 17,
+     "points": 148
+    }
+   }
+  },
+  {
+   "competitor_id": "262113",
+   "name": "LOH Maja",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 18,
+     "points": 144
+    }
+   }
+  },
+  {
+   "competitor_id": "271381",
+   "name": "BAUD Romane",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 19,
+     "points": 129
+    }
+   }
+  },
+  {
+   "competitor_id": "277793",
+   "name": "MCKINNON Kai",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 20,
+     "points": 125
+    }
+   }
+  },
+  {
+   "competitor_id": "262082",
+   "name": "DROZ VINCENT Marion",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 21,
+     "points": 115
+    }
+   }
+  },
+  {
+   "competitor_id": "254546",
+   "name": "GRUBER Katharina",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 22,
+     "points": 106
+    }
+   }
+  },
+  {
+   "competitor_id": "251741",
+   "name": "ARMBRUSTER Nathalie",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 23,
+     "points": 100
+    }
+   }
+  },
+  {
+   "competitor_id": "272454",
+   "name": "LIKOZAR BRANKOVIC Masa",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 23,
+     "points": 100
+    }
+   }
+  },
+  {
+   "competitor_id": "263929",
+   "name": "OSMEROVA Julie",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 25,
+     "points": 98
+    }
+   }
+  },
+  {
+   "competitor_id": "275133",
+   "name": "GRAESLI Ingrid",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 26,
+     "points": 92
+    }
+   }
+  },
+  {
+   "competitor_id": "236415",
+   "name": "HAECKEL Anne",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 27,
+     "points": 90
+    }
+   }
+  },
+  {
+   "competitor_id": "263977",
+   "name": "MALOVRH Tia",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 28,
+     "points": 80
+    }
+   }
+  },
+  {
+   "competitor_id": "196875",
+   "name": "MIDTSUNDSTAD Hanna",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 29,
+     "points": 78
+    }
+   }
+  },
+  {
+   "competitor_id": "251563",
+   "name": "SENONER Anna",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 29,
+     "points": 78
+    }
+   }
+  },
+  {
+   "competitor_id": "222390",
+   "name": "HRADILOVA Jolana",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 31,
+     "points": 62
+    }
+   }
+  },
+  {
+   "competitor_id": "261497",
+   "name": "BRABEC Haley",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 32,
+     "points": 52
+    }
+   }
+  },
+  {
+   "competitor_id": "254624",
+   "name": "BELZ Giulia",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 33,
+     "points": 51
+    }
+   }
+  },
+  {
+   "competitor_id": "230279",
+   "name": "HUBINGER Eva",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 34,
+     "points": 50
+    }
+   }
+  },
+  {
+   "competitor_id": "239425",
+   "name": "RATHGEB Anja",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 35,
+     "points": 34
+    }
+   }
+  },
+  {
+   "competitor_id": "277714",
+   "name": "WILSON Ella",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 36,
+     "points": 26
+    }
+   }
+  }
+ ]
+}

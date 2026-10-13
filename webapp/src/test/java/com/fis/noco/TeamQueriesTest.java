@@ -63,6 +63,31 @@ class TeamQueriesTest {
     }
 
     @Test
+    void officialStandingsOfASeason() {
+        assumeDatabase();
+        Long seasonId = jdbc.queryForObject("select id from seasons where start_year = 2023", Long.class);
+
+        List<String[]> rankings = competitionService.getRankingsOfSeason(seasonId, "WC", "M");
+        assertEquals("ALL", rankings.get(0)[0]);                       // overall first
+        assertTrue(rankings.size() > 1);                               // plus the trophies of that season
+
+        List<com.fis.noco.service.StandingsEntry> standings =
+                competitionService.getStandings(seasonId, "WC", "M", "ALL");
+        com.fis.noco.service.StandingsEntry winner = standings.get(0);
+        assertEquals(1, winner.getPosition());
+        assertEquals("RIIBER Jarl Magnus", winner.getAthleteName());   // 2023/24, as published by FIS
+        assertEquals(1870, winner.getTotalPoints());
+        assertNotNull(winner.getAthleteId());
+
+        // the columns: his rank in the individual competitions of that season
+        var competitions = competitionService.getIndividualCompetitions(seasonId, "WC", "M");
+        assertFalse(competitions.isEmpty());
+        long raced = competitions.stream().filter(c -> winner.getRankInCompetition(c.getId()) != null).count();
+        assertTrue(raced > 10);
+        competitions.forEach(c -> assertNotNull(c.getDisplayLocation()));
+    }
+
+    @Test
     void teamStartsOfAnAthlete() {
         assumeDatabase();
         Long athleteId = jdbc.queryForObject(

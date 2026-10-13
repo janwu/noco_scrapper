@@ -1,0 +1,584 @@
+{
+ "cup": "COC",
+ "season": 2024,
+ "gender": "W",
+ "source_url": "https://www.fis-ski.com/DB/nordic-combined/cup-standings.html?sectorcode=NK&seasoncode=2024&cupcode=COC&disciplinecode=ALL&gendercode=W&nationcode=",
+ "fetched": "2026-10-13",
+ "disciplines": {
+  "ALL": "Overall"
+ },
+ "rows": [
+  {
+   "competitor_id": "235847",
+   "name": "KIL Joanna",
+   "nation": "POL",
+   "standings": {
+    "ALL": {
+     "rank": 1,
+     "points": 550
+    }
+   }
+  },
+  {
+   "competitor_id": "196463",
+   "name": "MAURUS Sophia",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 2,
+     "points": 352
+    }
+   }
+  },
+  {
+   "competitor_id": "221562",
+   "name": "NAEHRING Marie",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 3,
+     "points": 333
+    }
+   }
+  },
+  {
+   "competitor_id": "220986",
+   "name": "PINZANI Greta",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 4,
+     "points": 332
+    }
+   }
+  },
+  {
+   "competitor_id": "196875",
+   "name": "MIDTSUNDSTAD Hanna",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 5,
+     "points": 296
+    }
+   }
+  },
+  {
+   "competitor_id": "230378",
+   "name": "BRABEC Alexa",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 6,
+     "points": 277
+    }
+   }
+  },
+  {
+   "competitor_id": "227624",
+   "name": "PLETZ Laura",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 7,
+     "points": 251
+    }
+   }
+  },
+  {
+   "competitor_id": "212961",
+   "name": "VERBIC Silva",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 8,
+     "points": 218
+    }
+   }
+  },
+  {
+   "competitor_id": "262733",
+   "name": "KORHONEN Minja",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 9,
+     "points": 200
+    }
+   }
+  },
+  {
+   "competitor_id": "217157",
+   "name": "HIRNER Lisa",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 10,
+     "points": 190
+    }
+   }
+  },
+  {
+   "competitor_id": "251524",
+   "name": "PURKER Claudia",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 10,
+     "points": 190
+    }
+   }
+  },
+  {
+   "competitor_id": "254558",
+   "name": "GREDLER Anna-Sophia",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 12,
+     "points": 182
+    }
+   }
+  },
+  {
+   "competitor_id": "219215",
+   "name": "HAGEN Mille Marie",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 13,
+     "points": 179
+    }
+   }
+  },
+  {
+   "competitor_id": "230380",
+   "name": "MALACINSKI Annika",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 14,
+     "points": 170
+    }
+   }
+  },
+  {
+   "competitor_id": "254653",
+   "name": "HAECKEL Thea",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 15,
+     "points": 152
+    }
+   }
+  },
+  {
+   "competitor_id": "262114",
+   "name": "EGGENSBERGER Sofia",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 16,
+     "points": 150
+    }
+   }
+  },
+  {
+   "competitor_id": "254637",
+   "name": "SCHMIDT Julia",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 17,
+     "points": 143
+    }
+   }
+  },
+  {
+   "competitor_id": "263102",
+   "name": "HOLZER Eva-Maria",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 18,
+     "points": 125
+    }
+   }
+  },
+  {
+   "competitor_id": "271467",
+   "name": "HIRVONEN Heta",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 19,
+     "points": 120
+    }
+   }
+  },
+  {
+   "competitor_id": "239425",
+   "name": "RATHGEB Anja",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 20,
+     "points": 115
+    }
+   }
+  },
+  {
+   "competitor_id": "268602",
+   "name": "STEINER Amelie",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 21,
+     "points": 108
+    }
+   }
+  },
+  {
+   "competitor_id": "238456",
+   "name": "IKEDA Hazuki",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 22,
+     "points": 107
+    }
+   }
+  },
+  {
+   "competitor_id": "276234",
+   "name": "KAINUMA Yuzuki",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 22,
+     "points": 107
+    }
+   }
+  },
+  {
+   "competitor_id": "240218",
+   "name": "LOH Ronja",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 24,
+     "points": 106
+    }
+   }
+  },
+  {
+   "competitor_id": "282043",
+   "name": "LAITINEN Nonna",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 24,
+     "points": 106
+    }
+   }
+  },
+  {
+   "competitor_id": "264068",
+   "name": "KLUMPP Fabienne",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 26,
+     "points": 105
+    }
+   }
+  },
+  {
+   "competitor_id": "236415",
+   "name": "HAECKEL Anne",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 27,
+     "points": 104
+    }
+   }
+  },
+  {
+   "competitor_id": "263977",
+   "name": "MALOVRH Tia",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 28,
+     "points": 101
+    }
+   }
+  },
+  {
+   "competitor_id": "196537",
+   "name": "NOWAK Jenny",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 29,
+     "points": 100
+    }
+   }
+  },
+  {
+   "competitor_id": "270099",
+   "name": "YAMAZAKI Jui",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 29,
+     "points": 100
+    }
+   }
+  },
+  {
+   "competitor_id": "267181",
+   "name": "LAATE Ingrid",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 31,
+     "points": 95
+    }
+   }
+  },
+  {
+   "competitor_id": "261360",
+   "name": "FUJIWARA Yuzuka",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 32,
+     "points": 87
+    }
+   }
+  },
+  {
+   "competitor_id": "254851",
+   "name": "STRUEMPFEL Elisabeth",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 33,
+     "points": 80
+    }
+   }
+  },
+  {
+   "competitor_id": "262113",
+   "name": "LOH Maja",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 34,
+     "points": 73
+    }
+   }
+  },
+  {
+   "competitor_id": "209673",
+   "name": "LEINAN LUND Marte",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 35,
+     "points": 70
+    }
+   }
+  },
+  {
+   "competitor_id": "257772",
+   "name": "DELUGAN Giada",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 35,
+     "points": 70
+    }
+   }
+  },
+  {
+   "competitor_id": "271468",
+   "name": "NURMELA Lumia",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 35,
+     "points": 70
+    }
+   }
+  },
+  {
+   "competitor_id": "271453",
+   "name": "EVANS Nora Helene",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 38,
+     "points": 66
+    }
+   }
+  },
+  {
+   "competitor_id": "261497",
+   "name": "BRABEC Haley",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 39,
+     "points": 64
+    }
+   }
+  },
+  {
+   "competitor_id": "255089",
+   "name": "GROSSMANN Lilly",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 40,
+     "points": 62
+    }
+   }
+  },
+  {
+   "competitor_id": "230226",
+   "name": "GOEPFERT Trine",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 41,
+     "points": 60
+    }
+   }
+  },
+  {
+   "competitor_id": "254679",
+   "name": "SUSNIK Brina",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 41,
+     "points": 60
+    }
+   }
+  },
+  {
+   "competitor_id": "212812",
+   "name": "KOLDOVSKA Tereza",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 43,
+     "points": 58
+    }
+   }
+  },
+  {
+   "competitor_id": "251563",
+   "name": "SENONER Anna",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 43,
+     "points": 58
+    }
+   }
+  },
+  {
+   "competitor_id": "267669",
+   "name": "LOEKEN Josefine",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 45,
+     "points": 54
+    }
+   }
+  },
+  {
+   "competitor_id": "254546",
+   "name": "GRUBER Katharina",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 45,
+     "points": 54
+    }
+   }
+  },
+  {
+   "competitor_id": "266788",
+   "name": "GJENDAHL Mariell",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 47,
+     "points": 50
+    }
+   }
+  },
+  {
+   "competitor_id": "239621",
+   "name": "BURGER Magdalena",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 48,
+     "points": 49
+    }
+   }
+  },
+  {
+   "competitor_id": "262053",
+   "name": "DEL BIANCO Ludovica",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 49,
+     "points": 44
+    }
+   }
+  },
+  {
+   "competitor_id": "283269",
+   "name": "KOVSHIRINA Anastassiya",
+   "nation": "KAZ",
+   "standings": {
+    "ALL": {
+     "rank": 50,
+     "points": 33
+    }
+   }
+  },
+  {
+   "competitor_id": "254624",
+   "name": "BELZ Giulia",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 51,
+     "points": 28
+    }
+   }
+  },
+  {
+   "competitor_id": "281612",
+   "name": "RULEVA Viktoriya",
+   "nation": "KAZ",
+   "standings": {
+    "ALL": {
+     "rank": 52,
+     "points": 20
+    }
+   }
+  }
+ ]
+}

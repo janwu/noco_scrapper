@@ -111,3 +111,14 @@ STORSVEEN Joergen Berget,NOR,BERGET STORSVEEN Joergen,NOR
 MILLER Alex,USA,MILLER Alexander,USA
 # --- words run together in a jump list ---
 HILMARSEN HenrikEliasWikstroem,NOR,HILMARSEN Henrik Elias Wikstroem,NOR
+# --- spellings of the FIS database (cup standings) that differ from the result lists ---
+BRYNEMO Preben Fj re,NOR,BRYNEMO Preben Fjaere,NOR
+CHLUM Patric,CZE,CHLUM Patrik,CZE
+ERICHSEN Kris,USA,ERICHSEN Kristoffer,USA
+FADEEV Alexey,RUS,FADEEV Alexej,RUS
+HEINRICH Taylor,CAN,HENRICH Taylor,CAN
+MARKENGBAKKEN Ivar,NOR,MARKENGBAKKEN Iver,NOR
+ORTER Philip,AUT,ORTER Philipp,AUT
+RUNDSVEEN Jon-Richard,NOR,RUNDSVENN Jon-Richard,NOR
+VANLOAN Carl,USA,VAN LOAN Carl,USA
+VAN Loan Carl,USA,VAN LOAN Carl,USA

@@ -8,10 +8,18 @@ fis_nk_scraper.py / fis_nk_coc_scraper.py     PDFs      → fis_nk_pdfs/, fis_nk
 run_parser.py            (fis_parser/)        PDFs      → output/**/*.json
 db/load_json.py          (db/aliases/*.csv)   JSON      → db/noco.db
 webapp/                                       db/noco.db → Vaadin site
+
+fis_nk_standings_scraper.py                   FIS database → fis_nk_standings/*.json
+                                              (official cup standings, also read by load_json.py)
 ```
 
 The PDFs, `output/` and the database are not in the repository: the PDFs can
 be downloaded again, everything else is rebuilt from them.
+
+Cup standings are not computed from the results. The points rules changed over
+the years and tours such as the Seefeld Triple score differently, so the final
+standings FIS publishes are downloaded and loaded as they are
+(`python fis_nk_standings_scraper.py --seasons 2026` refreshes a season).
 
 ## Rebuilding the data
 

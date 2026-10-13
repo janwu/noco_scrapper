@@ -29,11 +29,11 @@ public interface CombinedResultRepository extends JpaRepository<CombinedResult, 
 
     @Query("SELECT r FROM CombinedResult r LEFT JOIN FETCH r.athlete LEFT JOIN FETCH r.competition c " +
            "LEFT JOIN FETCH c.venue " +
-           "WHERE c.circuit = 'WC' AND c.gender = :gender " +
+           "WHERE c.circuit = :circuit AND c.gender = :gender " +
            "AND c.season.id = :seasonId " +
-           "AND c.format IN ('Gundersen', 'Compact', 'Mass Start', 'Sprint', 'Penalty Race') " +
            "AND r.rank IS NOT NULL " +
            "ORDER BY c.competitionDate ASC, r.rank ASC")
-    List<CombinedResult> findRankedWCResultsBySeasonAndGender(@Param("seasonId") Long seasonId,
+    List<CombinedResult> findRankedResultsBySeason(@Param("seasonId") Long seasonId,
+                                                   @Param("circuit") String circuit,
                                                               @Param("gender") String gender);
 }

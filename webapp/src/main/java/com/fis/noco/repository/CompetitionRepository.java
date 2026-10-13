@@ -50,9 +50,10 @@ public interface CompetitionRepository extends JpaRepository<Competition, Long> 
     java.util.Optional<Competition> findByIdWithDetails(@Param("id") Long id);
 
     @Query("SELECT c FROM Competition c LEFT JOIN FETCH c.season LEFT JOIN FETCH c.venue " +
-           "WHERE c.circuit = 'WC' AND c.gender = :gender AND c.season.id = :seasonId " +
-           "AND c.format IN ('Gundersen', 'Compact', 'Mass Start', 'Sprint', 'Penalty Race') " +
+           "WHERE c.circuit = :circuit AND c.gender = :gender AND c.season.id = :seasonId " +
+           "AND c.format NOT LIKE 'Team%' " + LISTED +
            "ORDER BY c.competitionDate ASC")
-    List<Competition> findWCIndividualBySeasonAndGender(@Param("seasonId") Long seasonId,
+    List<Competition> findIndividualBySeason(@Param("seasonId") Long seasonId,
+                                             @Param("circuit") String circuit,
                                                         @Param("gender") String gender);
 }

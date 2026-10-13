@@ -399,6 +399,31 @@ CREATE TABLE team_members (
 );
 
 -- =============================================================
+-- CUP STANDINGS
+-- =============================================================
+
+-- Official final standings as published by FIS (fis_nk_standings_scraper.py).
+-- Not computed from the results: the points rules changed over the years and
+-- tours such as the Seefeld Triple score differently.
+CREATE TABLE cup_standings (
+    id                SERIAL PRIMARY KEY,
+    season_id         INT NOT NULL REFERENCES seasons(id),
+    circuit           VARCHAR(200)    NOT NULL,          -- 'WC' | 'COC'
+    gender            VARCHAR(200)    NOT NULL,          -- 'M' | 'W'
+    discipline_code   VARCHAR(200)    NOT NULL,          -- 'ALL' overall | 'SP' | 'IC' | 'MS' | 'BJT' | 'BST' | 'WGP'
+    discipline_name   VARCHAR(200),                      -- 'Overall', 'Best Jumper Trophy', ...
+    rank              INT NOT NULL,
+    points            INT,
+    athlete_id        INT REFERENCES athletes(id),   -- NULL: athlete has no result in the database
+    raw_name          VARCHAR(200),
+    raw_nation        VARCHAR(200),
+    fis_competitor_id VARCHAR(200)
+);
+
+CREATE INDEX idx_cup_standings_lookup ON cup_standings(season_id, circuit, gender, discipline_code);
+CREATE INDEX idx_cup_standings_athlete ON cup_standings(athlete_id);
+
+-- =============================================================
 -- ATHLETE STATISTICS VIEWS
 -- =============================================================
 

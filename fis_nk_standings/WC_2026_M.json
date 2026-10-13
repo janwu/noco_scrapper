@@ -1,0 +1,1892 @@
+{
+ "cup": "WC",
+ "season": 2026,
+ "gender": "M",
+ "source_url": "https://www.fis-ski.com/DB/nordic-combined/cup-standings.html?sectorcode=NK&seasoncode=2026&cupcode=WC&disciplinecode=ALL&gendercode=M&nationcode=",
+ "fetched": "2026-10-13",
+ "disciplines": {
+  "ALL": "Overall",
+  "MS": "Mass Start Trophy",
+  "IC": "Individual Compact",
+  "BJT": "Best Jumper Trophy",
+  "BST": "Best Skier Trophy"
+ },
+ "rows": [
+  {
+   "competitor_id": "209403",
+   "name": "LAMPARTER Johannes",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 1,
+     "points": 1382
+    },
+    "MS": {
+     "rank": 1,
+     "points": 315
+    },
+    "IC": {
+     "rank": 1,
+     "points": 470
+    },
+    "BJT": {
+     "rank": 2,
+     "points": 1223
+    },
+    "BST": {
+     "rank": 10,
+     "points": 772
+    }
+   }
+  },
+  {
+   "competitor_id": "182614",
+   "name": "OFTEBRO Jens Luraas",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 2,
+     "points": 1229
+    },
+    "MS": {
+     "rank": 5,
+     "points": 236
+    },
+    "IC": {
+     "rank": 2,
+     "points": 370
+    },
+    "BJT": {
+     "rank": 15,
+     "points": 558
+    },
+    "BST": {
+     "rank": 1,
+     "points": 1433
+    }
+   }
+  },
+  {
+   "competitor_id": "200998",
+   "name": "OFTEBRO Einar Luraas",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 3,
+     "points": 1080
+    },
+    "MS": {
+     "rank": 8,
+     "points": 198
+    },
+    "IC": {
+     "rank": 5,
+     "points": 311
+    },
+    "BJT": {
+     "rank": 5,
+     "points": 790
+    },
+    "BST": {
+     "rank": 5,
+     "points": 949
+    }
+   }
+  },
+  {
+   "competitor_id": "171139",
+   "name": "HEROLA Ilkka",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 4,
+     "points": 1008
+    },
+    "MS": {
+     "rank": 7,
+     "points": 213
+    },
+    "IC": {
+     "rank": 3,
+     "points": 323
+    },
+    "BJT": {
+     "rank": 3,
+     "points": 885
+    },
+    "BST": {
+     "rank": 12,
+     "points": 706
+    }
+   }
+  },
+  {
+   "competitor_id": "174966",
+   "name": "SCHMID Julian",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 5,
+     "points": 940
+    },
+    "MS": {
+     "rank": 4,
+     "points": 245
+    },
+    "IC": {
+     "rank": 6,
+     "points": 258
+    },
+    "BJT": {
+     "rank": 11,
+     "points": 661
+    },
+    "BST": {
+     "rank": 9,
+     "points": 796
+    }
+   }
+  },
+  {
+   "competitor_id": "105277",
+   "name": "RYDZEK Johannes",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 6,
+     "points": 934
+    },
+    "MS": {
+     "rank": 11,
+     "points": 165
+    },
+    "IC": {
+     "rank": 4,
+     "points": 322
+    },
+    "BJT": {
+     "rank": 13,
+     "points": 645
+    },
+    "BST": {
+     "rank": 2,
+     "points": 991
+    }
+   }
+  },
+  {
+   "competitor_id": "182840",
+   "name": "RETTENEGGER Thomas",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 7,
+     "points": 924
+    },
+    "MS": {
+     "rank": 2,
+     "points": 304
+    },
+    "IC": {
+     "rank": 10,
+     "points": 225
+    },
+    "BJT": {
+     "rank": 1,
+     "points": 1394
+    },
+    "BST": {
+     "rank": 18,
+     "points": 349
+    }
+   }
+  },
+  {
+   "competitor_id": "196343",
+   "name": "RETTENEGGER Stefan",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 8,
+     "points": 901
+    },
+    "MS": {
+     "rank": 3,
+     "points": 258
+    },
+    "IC": {
+     "rank": 8,
+     "points": 254
+    },
+    "BJT": {
+     "rank": 7,
+     "points": 761
+    },
+    "BST": {
+     "rank": 4,
+     "points": 958
+    }
+   }
+  },
+  {
+   "competitor_id": "157487",
+   "name": "GEIGER Vinzenz",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 9,
+     "points": 755
+    },
+    "MS": {
+     "rank": 9,
+     "points": 173
+    },
+    "IC": {
+     "rank": 9,
+     "points": 226
+    },
+    "BJT": {
+     "rank": 22,
+     "points": 330
+    },
+    "BST": {
+     "rank": 8,
+     "points": 863
+    }
+   }
+  },
+  {
+   "competitor_id": "189544",
+   "name": "SKOGLUND Andreas",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 10,
+     "points": 670
+    },
+    "MS": {
+     "rank": 14,
+     "points": 131
+    },
+    "IC": {
+     "rank": 13,
+     "points": 153
+    },
+    "BJT": {
+     "rank": 23,
+     "points": 322
+    },
+    "BST": {
+     "rank": 3,
+     "points": 973
+    }
+   }
+  },
+  {
+   "competitor_id": "174965",
+   "name": "THANNHEIMER Wendelin",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 11,
+     "points": 655
+    },
+    "MS": {
+     "rank": 6,
+     "points": 213
+    },
+    "IC": {
+     "rank": 11,
+     "points": 190
+    },
+    "BJT": {
+     "rank": 9,
+     "points": 732
+    },
+    "BST": {
+     "rank": 17,
+     "points": 351
+    }
+   }
+  },
+  {
+   "competitor_id": "161576",
+   "name": "ILVES Kristjan",
+   "nation": "EST",
+   "standings": {
+    "ALL": {
+     "rank": 12,
+     "points": 633
+    },
+    "MS": {
+     "rank": 15,
+     "points": 113
+    },
+    "IC": {
+     "rank": 7,
+     "points": 258
+    },
+    "BJT": {
+     "rank": 18,
+     "points": 471
+    },
+    "BST": {
+     "rank": 11,
+     "points": 728
+    }
+   }
+  },
+  {
+   "competitor_id": "181024",
+   "name": "HIRVONEN Eero",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 13,
+     "points": 541
+    },
+    "MS": {
+     "rank": 19,
+     "points": 101
+    },
+    "IC": {
+     "rank": 12,
+     "points": 176
+    },
+    "BJT": {
+     "rank": 32,
+     "points": 199
+    },
+    "BST": {
+     "rank": 6,
+     "points": 900
+    }
+   }
+  },
+  {
+   "competitor_id": "137790",
+   "name": "REHRL Franz-Josef",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 14,
+     "points": 509
+    },
+    "MS": {
+     "rank": 12,
+     "points": 143
+    },
+    "IC": {
+     "rank": 14,
+     "points": 128
+    },
+    "BJT": {
+     "rank": 4,
+     "points": 860
+    },
+    "BST": {
+     "rank": 32,
+     "points": 174
+    }
+   }
+  },
+  {
+   "competitor_id": "149550",
+   "name": "FRITZ Martin",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 15,
+     "points": 504
+    },
+    "MS": {
+     "rank": 10,
+     "points": 169
+    },
+    "IC": {
+     "rank": 15,
+     "points": 125
+    },
+    "BJT": {
+     "rank": 12,
+     "points": 647
+    },
+    "BST": {
+     "rank": 25,
+     "points": 270
+    }
+   }
+  },
+  {
+   "competitor_id": "240104",
+   "name": "STENZEL Richard",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 16,
+     "points": 430
+    },
+    "MS": {
+     "rank": 13,
+     "points": 132
+    },
+    "IC": {
+     "rank": 20,
+     "points": 100
+    },
+    "BJT": {
+     "rank": 14,
+     "points": 581
+    },
+    "BST": {
+     "rank": 24,
+     "points": 270
+    }
+   }
+  },
+  {
+   "competitor_id": "188895",
+   "name": "MACH David",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 17,
+     "points": 424
+    },
+    "MS": {
+     "rank": 20,
+     "points": 96
+    },
+    "IC": {
+     "rank": 16,
+     "points": 124
+    },
+    "BJT": {
+     "rank": 16,
+     "points": 532
+    },
+    "BST": {
+     "rank": 20,
+     "points": 328
+    }
+   }
+  },
+  {
+   "competitor_id": "230274",
+   "name": "WALCHER Paul",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 18,
+     "points": 360
+    },
+    "MS": {
+     "rank": 17,
+     "points": 102
+    },
+    "IC": {
+     "rank": 22,
+     "points": 92
+    },
+    "BJT": {
+     "rank": 6,
+     "points": 777
+    },
+    "BST": {
+     "rank": 37,
+     "points": 134
+    }
+   }
+  },
+  {
+   "competitor_id": "134848",
+   "name": "GREIDERER Lukas",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 19,
+     "points": 343
+    },
+    "MS": {
+     "rank": 18,
+     "points": 102
+    },
+    "IC": {
+     "rank": 17,
+     "points": 121
+    },
+    "BJT": {
+     "rank": 25,
+     "points": 285
+    },
+    "BST": {
+     "rank": 21,
+     "points": 319
+    }
+   }
+  },
+  {
+   "competitor_id": "187354",
+   "name": "YAMAMOTO Ryota",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 20,
+     "points": 335
+    },
+    "MS": {
+     "rank": 21,
+     "points": 93
+    },
+    "IC": {
+     "rank": 21,
+     "points": 98
+    },
+    "BJT": {
+     "rank": 10,
+     "points": 713
+    },
+    "BST": {
+     "rank": 38,
+     "points": 134
+    }
+   }
+  },
+  {
+   "competitor_id": "201750",
+   "name": "OBERMEYR Fabio",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 21,
+     "points": 324
+    },
+    "MS": {
+     "rank": 24,
+     "points": 70
+    },
+    "IC": {
+     "rank": 19,
+     "points": 110
+    },
+    "BJT": {
+     "rank": 49,
+     "points": 46
+    },
+    "BST": {
+     "rank": 13,
+     "points": 694
+    }
+   }
+  },
+  {
+   "competitor_id": "182620",
+   "name": "SKOGLUND Aleksander",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 22,
+     "points": 305
+    },
+    "MS": {
+     "rank": 26,
+     "points": 67
+    },
+    "IC": {
+     "rank": 18,
+     "points": 115
+    },
+    "BJT": {
+     "rank": 57,
+     "points": 30
+    },
+    "BST": {
+     "rank": 7,
+     "points": 882
+    }
+   }
+  },
+  {
+   "competitor_id": "204628",
+   "name": "MALACINSKI Niklas",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 23,
+     "points": 303
+    },
+    "MS": {
+     "rank": 30,
+     "points": 56
+    },
+    "IC": {
+     "rank": 23,
+     "points": 90
+    },
+    "BJT": {
+     "rank": 21,
+     "points": 351
+    },
+    "BST": {
+     "rank": 23,
+     "points": 274
+    }
+   }
+  },
+  {
+   "competitor_id": "124114",
+   "name": "COSTA Samuel",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 24,
+     "points": 298
+    },
+    "MS": {
+     "rank": 22,
+     "points": 84
+    },
+    "IC": {
+     "rank": 24,
+     "points": 85
+    },
+    "BJT": {
+     "rank": 45,
+     "points": 65
+    },
+    "BST": {
+     "rank": 14,
+     "points": 569
+    }
+   }
+  },
+  {
+   "competitor_id": "153563",
+   "name": "ANDERSEN Espen",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 25,
+     "points": 290
+    },
+    "MS": {
+     "rank": 37,
+     "points": 29
+    },
+    "IC": {
+     "rank": 26,
+     "points": 66
+    },
+    "BJT": {
+     "rank": 27,
+     "points": 261
+    },
+    "BST": {
+     "rank": 19,
+     "points": 329
+    }
+   }
+  },
+  {
+   "competitor_id": "215211",
+   "name": "MACH Simon",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 26,
+     "points": 286
+    },
+    "MS": {
+     "rank": 29,
+     "points": 57
+    },
+    "IC": {
+     "rank": 30,
+     "points": 54
+    },
+    "BJT": {
+     "rank": 19,
+     "points": 432
+    },
+    "BST": {
+     "rank": 29,
+     "points": 206
+    }
+   }
+  },
+  {
+   "competitor_id": "218411",
+   "name": "HEINIS Marco",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 27,
+     "points": 250
+    },
+    "MS": {
+     "rank": 27,
+     "points": 66
+    },
+    "IC": {
+     "rank": 29,
+     "points": 58
+    },
+    "BJT": {
+     "rank": 8,
+     "points": 744
+    },
+    "BST": {
+     "rank": 54,
+     "points": 35
+    }
+   }
+  },
+  {
+   "competitor_id": "212920",
+   "name": "STROEM Eidar Johan",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 28,
+     "points": 226
+    },
+    "MS": {
+     "rank": 16,
+     "points": 104
+    },
+    "IC": {
+     "rank": 35,
+     "points": 47
+    },
+    "BJT": {
+     "rank": 28,
+     "points": 238
+    },
+    "BST": {
+     "rank": 22,
+     "points": 290
+    }
+   }
+  },
+  {
+   "competitor_id": "222834",
+   "name": "KOLB Florian",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 29,
+     "points": 224
+    },
+    "MS": {
+     "rank": 25,
+     "points": 67
+    },
+    "IC": {
+     "rank": 34,
+     "points": 48
+    },
+    "BJT": {
+     "rank": 17,
+     "points": 497
+    },
+    "BST": {
+     "rank": 51,
+     "points": 59
+    }
+   }
+  },
+  {
+   "competitor_id": "180738",
+   "name": "MUHLETHALER Laurent",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 30,
+     "points": 223
+    },
+    "MS": {
+     "rank": 23,
+     "points": 71
+    },
+    "IC": {
+     "rank": 54,
+     "points": 8
+    },
+    "BJT": {
+     "rank": 24,
+     "points": 311
+    },
+    "BST": {
+     "rank": 36,
+     "points": 136
+    }
+   }
+  },
+  {
+   "competitor_id": "89882",
+   "name": "WATABE Akito",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 31,
+     "points": 191
+    },
+    "MS": {
+     "rank": 28,
+     "points": 66
+    },
+    "IC": {
+     "rank": 25,
+     "points": 71
+    },
+    "BJT": {
+     "rank": 30,
+     "points": 225
+    },
+    "BST": {
+     "rank": 28,
+     "points": 206
+    }
+   }
+  },
+  {
+   "competitor_id": "166512",
+   "name": "VYTRVAL Jan",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 32,
+     "points": 181
+    },
+    "MS": {
+     "rank": 31,
+     "points": 43
+    },
+    "IC": {
+     "rank": 27,
+     "points": 64
+    },
+    "BJT": {
+     "rank": 29,
+     "points": 227
+    },
+    "BST": {
+     "rank": 30,
+     "points": 198
+    }
+   }
+  },
+  {
+   "competitor_id": "182077",
+   "name": "KOSTNER Aaron",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 33,
+     "points": 177
+    },
+    "MS": {
+     "rank": 41,
+     "points": 23
+    },
+    "IC": {
+     "rank": 28,
+     "points": 60
+    },
+    "BJT": {
+     "rank": 46,
+     "points": 61
+    },
+    "BST": {
+     "rank": 15,
+     "points": 440
+    }
+   }
+  },
+  {
+   "competitor_id": "189864",
+   "name": "NIITTYKOSKI Otto",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 34,
+     "points": 136
+    },
+    "MS": {
+     "rank": 56,
+     "points": 1
+    },
+    "IC": {
+     "rank": 42,
+     "points": 19
+    },
+    "BJT": {
+     "rank": 26,
+     "points": 279
+    },
+    "BST": {
+     "rank": 50,
+     "points": 66
+    }
+   }
+  },
+  {
+   "competitor_id": "145036",
+   "name": "WEBER Terence",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 35,
+     "points": 130
+    },
+    "MS": {
+     "rank": 40,
+     "points": 24
+    },
+    "IC": {
+     "rank": 37,
+     "points": 43
+    },
+    "BJT": {
+     "rank": 38,
+     "points": 105
+    },
+    "BST": {
+     "rank": 27,
+     "points": 206
+    }
+   }
+  },
+  {
+   "competitor_id": "213443",
+   "name": "KONVALINKA Jiri",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 36,
+     "points": 128
+    },
+    "MS": {
+     "rank": 34,
+     "points": 35
+    },
+    "IC": {
+     "rank": 38,
+     "points": 42
+    },
+    "BJT": {
+     "rank": 20,
+     "points": 407
+    },
+    "BST": {
+     "rank": 55,
+     "points": 34
+    }
+   }
+  },
+  {
+   "competitor_id": "178645",
+   "name": "LOOMIS Benjamin",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 37,
+     "points": 122
+    },
+    "MS": {
+     "rank": 35,
+     "points": 33
+    },
+    "IC": {
+     "rank": 32,
+     "points": 50
+    },
+    "BJT": {
+     "rank": 36,
+     "points": 169
+    },
+    "BST": {
+     "rank": 45,
+     "points": 109
+    }
+   }
+  },
+  {
+   "competitor_id": "176003",
+   "name": "VRHOVNIK Vid",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 38,
+     "points": 111
+    },
+    "MS": {
+     "rank": 33,
+     "points": 37
+    },
+    "IC": {
+     "rank": 41,
+     "points": 24
+    },
+    "BJT": {
+     "rank": 41,
+     "points": 97
+    },
+    "BST": {
+     "rank": 26,
+     "points": 214
+    }
+   }
+  },
+  {
+   "competitor_id": "194080",
+   "name": "TYRODE Mael",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 39,
+     "points": 105
+    },
+    "MS": {
+     "rank": 42,
+     "points": 19
+    },
+    "IC": {
+     "rank": 51,
+     "points": 14
+    },
+    "BJT": {
+     "rank": 42,
+     "points": 85
+    },
+    "BST": {
+     "rank": 34,
+     "points": 153
+    }
+   }
+  },
+  {
+   "competitor_id": "194174",
+   "name": "VALLET Edgar",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 40,
+     "points": 96
+    },
+    "MS": {
+     "rank": 36,
+     "points": 30
+    },
+    "IC": {
+     "rank": 39,
+     "points": 29
+    },
+    "BJT": {
+     "rank": 44,
+     "points": 73
+    },
+    "BST": {
+     "rank": 35,
+     "points": 151
+    }
+   }
+  },
+  {
+   "competitor_id": "81371",
+   "name": "PITTIN Alessandro",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 41,
+     "points": 95
+    },
+    "MS": {
+     "rank": 43,
+     "points": 19
+    },
+    "IC": {
+     "rank": 31,
+     "points": 53
+    },
+    "BST": {
+     "rank": 16,
+     "points": 413
+    }
+   }
+  },
+  {
+   "competitor_id": "211028",
+   "name": "YACHI Sora",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 42,
+     "points": 87
+    },
+    "IC": {
+     "rank": 44,
+     "points": 18
+    },
+    "BJT": {
+     "rank": 35,
+     "points": 169
+    },
+    "BST": {
+     "rank": 49,
+     "points": 69
+    }
+   }
+  },
+  {
+   "competitor_id": "128597",
+   "name": "FAISST Manuel",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 43,
+     "points": 86
+    },
+    "MS": {
+     "rank": 44,
+     "points": 16
+    },
+    "IC": {
+     "rank": 36,
+     "points": 46
+    },
+    "BJT": {
+     "rank": 69,
+     "points": 10
+    },
+    "BST": {
+     "rank": 31,
+     "points": 189
+    }
+   }
+  },
+  {
+   "competitor_id": "254419",
+   "name": "GFRERER Andreas",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 44,
+     "points": 72
+    },
+    "MS": {
+     "rank": 38,
+     "points": 28
+    },
+    "IC": {
+     "rank": 50,
+     "points": 14
+    },
+    "BJT": {
+     "rank": 40,
+     "points": 99
+    },
+    "BST": {
+     "rank": 53,
+     "points": 49
+    }
+   }
+  },
+  {
+   "competitor_id": "221938",
+   "name": "SOMMERFELDT Tristan",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 45,
+     "points": 65
+    },
+    "MS": {
+     "rank": 47,
+     "points": 8
+    },
+    "IC": {
+     "rank": 33,
+     "points": 49
+    },
+    "BJT": {
+     "rank": 56,
+     "points": 30
+    },
+    "BST": {
+     "rank": 40,
+     "points": 127
+    }
+   }
+  },
+  {
+   "competitor_id": "201501",
+   "name": "FLATLA Kasper Moen",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 46,
+     "points": 62
+    },
+    "IC": {
+     "rank": 43,
+     "points": 19
+    },
+    "BJT": {
+     "rank": 50,
+     "points": 40
+    },
+    "BST": {
+     "rank": 47,
+     "points": 77
+    }
+   }
+  },
+  {
+   "competitor_id": "197006",
+   "name": "BAUD Matteo",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 47,
+     "points": 57
+    },
+    "MS": {
+     "rank": 46,
+     "points": 9
+    },
+    "IC": {
+     "rank": 40,
+     "points": 24
+    },
+    "BJT": {
+     "rank": 58,
+     "points": 26
+    },
+    "BST": {
+     "rank": 33,
+     "points": 168
+    }
+   }
+  },
+  {
+   "competitor_id": "136792",
+   "name": "WATABE Yoshito",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 48,
+     "points": 52
+    },
+    "MS": {
+     "rank": 39,
+     "points": 27
+    },
+    "IC": {
+     "rank": 59,
+     "points": 1
+    },
+    "BJT": {
+     "rank": 33,
+     "points": 197
+    },
+    "BST": {
+     "rank": 65,
+     "points": 11
+    }
+   }
+  },
+  {
+   "competitor_id": "230341",
+   "name": "KVAMME Jens Dahlseide",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 49,
+     "points": 50
+    },
+    "MS": {
+     "rank": 32,
+     "points": 37
+    },
+    "BJT": {
+     "rank": 52,
+     "points": 37
+    },
+    "BST": {
+     "rank": 52,
+     "points": 54
+    }
+   }
+  },
+  {
+   "competitor_id": "212895",
+   "name": "HAPPONEN Herman",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 50,
+     "points": 46
+    },
+    "MS": {
+     "rank": 55,
+     "points": 1
+    },
+    "IC": {
+     "rank": 55,
+     "points": 8
+    },
+    "BJT": {
+     "rank": 60,
+     "points": 25
+    },
+    "BST": {
+     "rank": 44,
+     "points": 109
+    }
+   }
+  },
+  {
+   "competitor_id": "202567",
+   "name": "KIMURA Kodai",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 51,
+     "points": 44
+    },
+    "MS": {
+     "rank": 49,
+     "points": 5
+    },
+    "IC": {
+     "rank": 49,
+     "points": 15
+    },
+    "BJT": {
+     "rank": 62,
+     "points": 17
+    },
+    "BST": {
+     "rank": 43,
+     "points": 112
+    }
+   }
+  },
+  {
+   "competitor_id": "182985",
+   "name": "KARHUMAA Wille",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 52,
+     "points": 43
+    },
+    "MS": {
+     "rank": 53,
+     "points": 3
+    },
+    "IC": {
+     "rank": 48,
+     "points": 16
+    },
+    "BJT": {
+     "rank": 51,
+     "points": 38
+    },
+    "BST": {
+     "rank": 48,
+     "points": 76
+    }
+   }
+  },
+  {
+   "competitor_id": "261370",
+   "name": "NARITA Atsushi",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 53,
+     "points": 35
+    },
+    "MS": {
+     "rank": 51,
+     "points": 3
+    },
+    "BJT": {
+     "rank": 31,
+     "points": 212
+    }
+   }
+  },
+  {
+   "competitor_id": "204525",
+   "name": "BORTOLAS Iacopo",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 54,
+     "points": 34
+    },
+    "BJT": {
+     "rank": 55,
+     "points": 32
+    },
+    "BST": {
+     "rank": 56,
+     "points": 28
+    }
+   }
+  },
+  {
+   "competitor_id": "134845",
+   "name": "SEIDL Mario",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 55,
+     "points": 32
+    },
+    "IC": {
+     "rank": 57,
+     "points": 4
+    },
+    "BJT": {
+     "rank": 39,
+     "points": 103
+    },
+    "BST": {
+     "rank": 59,
+     "points": 25
+    }
+   }
+  },
+  {
+   "competitor_id": "230246",
+   "name": "DOLEZAL Lukas",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 56,
+     "points": 29
+    },
+    "MS": {
+     "rank": 52,
+     "points": 3
+    },
+    "BJT": {
+     "rank": 54,
+     "points": 33
+    },
+    "BST": {
+     "rank": 57,
+     "points": 25
+    }
+   }
+  },
+  {
+   "competitor_id": "201722",
+   "name": "BLONDEAU Gael",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 57,
+     "points": 28
+    },
+    "MS": {
+     "rank": 48,
+     "points": 7
+    },
+    "IC": {
+     "rank": 47,
+     "points": 17
+    },
+    "BJT": {
+     "rank": 71,
+     "points": 4
+    },
+    "BST": {
+     "rank": 39,
+     "points": 128
+    }
+   }
+  },
+  {
+   "competitor_id": "220083",
+   "name": "AZEGAMI Shogo",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 58,
+     "points": 28
+    },
+    "IC": {
+     "rank": 53,
+     "points": 11
+    },
+    "BJT": {
+     "rank": 37,
+     "points": 148
+    },
+    "BST": {
+     "rank": 62,
+     "points": 14
+    }
+   }
+  },
+  {
+   "competitor_id": "160975",
+   "name": "LYNCH Erik",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 59,
+     "points": 22
+    },
+    "IC": {
+     "rank": 52,
+     "points": 13
+    },
+    "BJT": {
+     "rank": 74,
+     "points": 2
+    },
+    "BST": {
+     "rank": 42,
+     "points": 113
+    }
+   }
+  },
+  {
+   "competitor_id": "140335",
+   "name": "BUZZI Raffaele",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 60,
+     "points": 18
+    },
+    "IC": {
+     "rank": 46,
+     "points": 17
+    },
+    "BST": {
+     "rank": 46,
+     "points": 104
+    }
+   }
+  },
+  {
+   "competitor_id": "228201",
+   "name": "JOHNSTONE Henry",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 61,
+     "points": 18
+    },
+    "IC": {
+     "rank": 45,
+     "points": 18
+    },
+    "BST": {
+     "rank": 41,
+     "points": 121
+    }
+   }
+  },
+  {
+   "competitor_id": "193925",
+   "name": "MUELLER Pascal",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 62,
+     "points": 16
+    },
+    "MS": {
+     "rank": 54,
+     "points": 2
+    },
+    "BJT": {
+     "rank": 43,
+     "points": 77
+    }
+   }
+  },
+  {
+   "competitor_id": "171253",
+   "name": "TILLER Simen",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 63,
+     "points": 15
+    },
+    "IC": {
+     "rank": 56,
+     "points": 4
+    },
+    "BJT": {
+     "rank": 61,
+     "points": 18
+    },
+    "BST": {
+     "rank": 61,
+     "points": 20
+    }
+   }
+  },
+  {
+   "competitor_id": "196330",
+   "name": "MARIOTTI Domenico",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 64,
+     "points": 14
+    },
+    "BJT": {
+     "rank": 67,
+     "points": 13
+    },
+    "BST": {
+     "rank": 58,
+     "points": 25
+    }
+   }
+  },
+  {
+   "competitor_id": "227816",
+   "name": "STORSVEEN Joergen Berget",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 65,
+     "points": 12
+    },
+    "MS": {
+     "rank": 45,
+     "points": 12
+    },
+    "BJT": {
+     "rank": 68,
+     "points": 12
+    },
+    "BST": {
+     "rank": 67,
+     "points": 9
+    }
+   }
+  },
+  {
+   "competitor_id": "176006",
+   "name": "BRECL Gasper",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 66,
+     "points": 10
+    },
+    "MS": {
+     "rank": 50,
+     "points": 4
+    },
+    "BJT": {
+     "rank": 53,
+     "points": 36
+    },
+    "BST": {
+     "rank": 60,
+     "points": 25
+    }
+   }
+  },
+  {
+   "competitor_id": "227812",
+   "name": "LUND Even Leinan",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 67,
+     "points": 8
+    },
+    "BST": {
+     "rank": 63,
+     "points": 12
+    }
+   }
+  },
+  {
+   "competitor_id": "271469",
+   "name": "KURTTILA Eemeli",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 68,
+     "points": 8
+    },
+    "BJT": {
+     "rank": 48,
+     "points": 52
+    }
+   }
+  },
+  {
+   "competitor_id": "226543",
+   "name": "GARBAJS Matic",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 69,
+     "points": 6
+    },
+    "BJT": {
+     "rank": 47,
+     "points": 56
+    }
+   }
+  },
+  {
+   "competitor_id": "231685",
+   "name": "ZHAO Jiawen",
+   "nation": "CHN",
+   "standings": {
+    "ALL": {
+     "rank": 70,
+     "points": 5
+    },
+    "BJT": {
+     "rank": 34,
+     "points": 181
+    }
+   }
+  },
+  {
+   "competitor_id": "272742",
+   "name": "BRIEDEN Felix",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 71,
+     "points": 2
+    },
+    "IC": {
+     "rank": 58,
+     "points": 2
+    },
+    "BJT": {
+     "rank": 63,
+     "points": 16
+    },
+    "BST": {
+     "rank": 69,
+     "points": 4
+    }
+   }
+  },
+  {
+   "competitor_id": "238891",
+   "name": "BRUBAKER Carter",
+   "nation": "USA",
+   "standings": {
+    "BJT": {
+     "rank": 73,
+     "points": 2
+    },
+    "BST": {
+     "rank": 64,
+     "points": 12
+    }
+   }
+  },
+  {
+   "competitor_id": "183327",
+   "name": "DEUSCHL Christian",
+   "nation": "AUT",
+   "standings": {
+    "BJT": {
+     "rank": 65,
+     "points": 15
+    }
+   }
+  },
+  {
+   "competitor_id": "235994",
+   "name": "KEMPF Finn",
+   "nation": "SUI",
+   "standings": {
+    "BJT": {
+     "rank": 59,
+     "points": 25
+    }
+   }
+  },
+  {
+   "competitor_id": "271455",
+   "name": "LE Alvin",
+   "nation": "NOR",
+   "standings": {
+    "BJT": {
+     "rank": 66,
+     "points": 13
+    }
+   }
+  },
+  {
+   "competitor_id": "275135",
+   "name": "LUNDEBY Sverre Kumar",
+   "nation": "NOR",
+   "standings": {
+    "BJT": {
+     "rank": 64,
+     "points": 15
+    }
+   }
+  },
+  {
+   "competitor_id": "193561",
+   "name": "MAZURCHUK Dmytro",
+   "nation": "UKR",
+   "standings": {
+    "BST": {
+     "rank": 68,
+     "points": 6
+    }
+   }
+  },
+  {
+   "competitor_id": "261357",
+   "name": "MORI Kaisei",
+   "nation": "JPN",
+   "standings": {
+    "BJT": {
+     "rank": 70,
+     "points": 6
+    }
+   }
+  },
+  {
+   "competitor_id": "220159",
+   "name": "SHUMBARETS Oleksandr",
+   "nation": "UKR",
+   "standings": {
+    "BJT": {
+     "rank": 72,
+     "points": 3
+    }
+   }
+  },
+  {
+   "competitor_id": "217290",
+   "name": "STANONIK Erazem",
+   "nation": "SLO",
+   "standings": {
+    "BST": {
+     "rank": 66,
+     "points": 10
+    }
+   }
+  }
+ ]
+}

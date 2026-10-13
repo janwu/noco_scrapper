@@ -1,0 +1,221 @@
+{
+ "cup": "COC",
+ "season": 2018,
+ "gender": "W",
+ "source_url": "https://www.fis-ski.com/DB/nordic-combined/cup-standings.html?sectorcode=NK&seasoncode=2018&cupcode=COC&disciplinecode=ALL&gendercode=W&nationcode=",
+ "fetched": "2026-10-13",
+ "disciplines": {
+  "ALL": "Overall"
+ },
+ "rows": [
+  {
+   "competitor_id": "224202",
+   "name": "NADYMOVA Stefaniya",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 1,
+     "points": 380
+    }
+   }
+  },
+  {
+   "competitor_id": "205316",
+   "name": "MIYAZAKI Ayane",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 2,
+     "points": 320
+    }
+   }
+  },
+  {
+   "competitor_id": "196537",
+   "name": "NOWAK Jenny",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 3,
+     "points": 250
+    }
+   }
+  },
+  {
+   "competitor_id": "220118",
+   "name": "GIANMOENA Veronica",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 4,
+     "points": 190
+    }
+   }
+  },
+  {
+   "competitor_id": "196463",
+   "name": "MAURUS Sophia",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 5,
+     "points": 156
+    }
+   }
+  },
+  {
+   "competitor_id": "205205",
+   "name": "MURAKAMI Yura",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 6,
+     "points": 126
+    }
+   }
+  },
+  {
+   "competitor_id": "204148",
+   "name": "GONCHAROVA Anastasia",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 7,
+     "points": 105
+    }
+   }
+  },
+  {
+   "competitor_id": "224201",
+   "name": "GLADIKOVA Svetlana",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 8,
+     "points": 88
+    }
+   }
+  },
+  {
+   "competitor_id": "201876",
+   "name": "WESTVOLD HANSEN Gyda",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 9,
+     "points": 81
+    }
+   }
+  },
+  {
+   "competitor_id": "197100",
+   "name": "WEINLICHOVA Simona",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 10,
+     "points": 64
+    }
+   }
+  },
+  {
+   "competitor_id": "201696",
+   "name": "ALEKSANDROVA Anna",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 11,
+     "points": 58
+    }
+   }
+  },
+  {
+   "competitor_id": "196875",
+   "name": "MIDTSUNDSTAD Hanna",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 12,
+     "points": 55
+    }
+   }
+  },
+  {
+   "competitor_id": "201787",
+   "name": "OEIHAUGEN Thea",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 12,
+     "points": 55
+    }
+   }
+  },
+  {
+   "competitor_id": "204297",
+   "name": "ARISTOVA Olga",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 14,
+     "points": 52
+    }
+   }
+  },
+  {
+   "competitor_id": "227256",
+   "name": "TIKHONOVA Ekaterina",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 15,
+     "points": 48
+    }
+   }
+  },
+  {
+   "competitor_id": "209465",
+   "name": "ARMSTRONG Gabriella",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 16,
+     "points": 46
+    }
+   }
+  },
+  {
+   "competitor_id": "204653",
+   "name": "MAKAROVA Ksenia",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 17,
+     "points": 44
+    }
+   }
+  },
+  {
+   "competitor_id": "227740",
+   "name": "AKHMETVALIYEVA Dayana",
+   "nation": "KAZ",
+   "standings": {
+    "ALL": {
+     "rank": 18,
+     "points": 40
+    }
+   }
+  },
+  {
+   "competitor_id": "209673",
+   "name": "LEINAN LUND Marte",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 19,
+     "points": 36
+    }
+   }
+  }
+ ]
+}

@@ -168,6 +168,47 @@ class EndToEnd(unittest.TestCase):
         self.assertTrue(any("failed validation" in reason for reason, _ in b.skipped_docs))
 
 
+    def test_cup_standings(self):
+        event = "fis_nk_pdfs/2024/20231123_20231126_RUKA_FIN/M/"
+        self.write(event + "4129_20231125_Gundersen_Large_Hill_HS142_10.0_Km_WC_M_M_2024NK4129ROF.json", dict(
+            doc_type="ROF", source_file="x", discipline="Gundersen", location="Ruka", country="FIN",
+            competition_date="2023-11-25", parse_errors=[],
+            combined_results=[result(1, "RIIBER Jarl Magnus", "NOR"), result(2, "MOAN Magnus-H.", "NOR")]))
+        standings = os.path.join(self.tmp.name, "standings")
+        os.makedirs(standings)
+        with open(os.path.join(standings, "WC_2024_M.json"), "w", encoding="utf-8") as fh:
+            json.dump(dict(cup="WC", season=2024, gender="M",
+                           disciplines={"ALL": "Overall", "BJT": "Best Jumper Trophy"},
+                           rows=[
+                               dict(competitor_id="157270", name="RIIBER Jarl Magnus", nation="NOR",
+                                    standings={"ALL": {"rank": 1, "points": 1870}, "BJT": {"rank": 1, "points": 1830}}),
+                               # spelled as in the alias list, not as in the result list
+                               dict(competitor_id="33333", name="MOAN Magnus H.", nation="NOR",
+                                    standings={"ALL": {"rank": 2, "points": 900}}),
+                               # scored points in a race whose result list is not in the database
+                               dict(competitor_id="44444", name="NOBODY Else", nation="FIN",
+                                    standings={"ALL": {"rank": 3, "points": 5}}),
+                               dict(competitor_id="55555", name="UNRANKED One", nation="FIN", standings={}),
+                           ]), fh)
+
+        db = os.path.join(self.tmp.name, "test.db")
+        b = load_json.Build(load_json.load_aliases(os.path.join(self.aliases, "athletes.csv")), {})
+        load_json.build_database(self.out, b, standings)
+        load_json.write_sqlite(b, db)
+        self.conn = sqlite3.connect(db)
+        rows = self.conn.execute(
+            "select t.discipline_code, t.rank, t.points, t.raw_name, a.full_name, a.fis_id, s.label, t.circuit, t.gender "
+            "from cup_standings t join seasons s on s.id = t.season_id left join athletes a on a.id = t.athlete_id "
+            "order by t.discipline_code, t.rank").fetchall()
+        self.assertEqual(rows, [
+            ("ALL", 1, 1870, "RIIBER Jarl Magnus", "RIIBER Jarl Magnus", "157270", "2023/2024", "WC", "M"),
+            ("ALL", 2, 900, "MOAN Magnus H.", "MOAN Magnus H.", "33333", "2023/2024", "WC", "M"),
+            ("ALL", 3, 5, "NOBODY Else", None, None, "2023/2024", "WC", "M"),
+            ("BJT", 1, 1830, "RIIBER Jarl Magnus", "RIIBER Jarl Magnus", "157270", "2023/2024", "WC", "M"),
+        ])
+        self.assertEqual(self.conn.execute("select count(*) from athletes").fetchone()[0], 2)   # none invented
+        self.assertEqual(b.standings_unmatched, {"NOBODY Else [FIN]", "UNRANKED One [FIN]"})
+
     def test_team_competition(self):
         event = "fis_nk_pdfs/2020/20200124_20200126_OBERSTDORF_GER/M/"
         # An individual result list makes NOR / GER known nations and introduces one athlete

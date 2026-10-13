@@ -1,0 +1,518 @@
+{
+ "cup": "COC",
+ "season": 2019,
+ "gender": "W",
+ "source_url": "https://www.fis-ski.com/DB/nordic-combined/cup-standings.html?sectorcode=NK&seasoncode=2019&cupcode=COC&disciplinecode=ALL&gendercode=W&nationcode=",
+ "fetched": "2026-10-13",
+ "disciplines": {
+  "ALL": "Overall"
+ },
+ "rows": [
+  {
+   "competitor_id": "226257",
+   "name": "GERAGHTY-MOATS Tara",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 1,
+     "points": 1000
+    }
+   }
+  },
+  {
+   "competitor_id": "201876",
+   "name": "WESTVOLD HANSEN Gyda",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 2,
+     "points": 760
+    }
+   }
+  },
+  {
+   "competitor_id": "196537",
+   "name": "NOWAK Jenny",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 3,
+     "points": 560
+    }
+   }
+  },
+  {
+   "competitor_id": "220118",
+   "name": "GIANMOENA Veronica",
+   "nation": "ITA",
+   "standings": {
+    "ALL": {
+     "rank": 4,
+     "points": 453
+    }
+   }
+  },
+  {
+   "competitor_id": "196092",
+   "name": "GERBOTH Maria",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 5,
+     "points": 345
+    }
+   }
+  },
+  {
+   "competitor_id": "196463",
+   "name": "MAURUS Sophia",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 6,
+     "points": 248
+    }
+   }
+  },
+  {
+   "competitor_id": "196877",
+   "name": "HAGEN Ida Marie",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 7,
+     "points": 224
+    }
+   }
+  },
+  {
+   "competitor_id": "224202",
+   "name": "NADYMOVA Stefaniya",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 8,
+     "points": 220
+    }
+   }
+  },
+  {
+   "competitor_id": "217157",
+   "name": "HIRNER Lisa",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 9,
+     "points": 211
+    }
+   }
+  },
+  {
+   "competitor_id": "209673",
+   "name": "LEINAN LUND Marte",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 10,
+     "points": 187
+    }
+   }
+  },
+  {
+   "competitor_id": "204148",
+   "name": "GONCHAROVA Anastasia",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 11,
+     "points": 167
+    }
+   }
+  },
+  {
+   "competitor_id": "205316",
+   "name": "MIYAZAKI Ayane",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 12,
+     "points": 140
+    }
+   }
+  },
+  {
+   "competitor_id": "196875",
+   "name": "MIDTSUNDSTAD Hanna",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 13,
+     "points": 139
+    }
+   }
+  },
+  {
+   "competitor_id": "196138",
+   "name": "OINAS Annamaija",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 14,
+     "points": 125
+    }
+   }
+  },
+  {
+   "competitor_id": "226908",
+   "name": "ARNONE Tess",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 15,
+     "points": 123
+    }
+   }
+  },
+  {
+   "competitor_id": "204297",
+   "name": "ARISTOVA Olga",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 16,
+     "points": 122
+    }
+   }
+  },
+  {
+   "competitor_id": "224201",
+   "name": "GLADIKOVA Svetlana",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 17,
+     "points": 121
+    }
+   }
+  },
+  {
+   "competitor_id": "157479",
+   "name": "HEINRICH Taylor",
+   "nation": "CAN",
+   "standings": {
+    "ALL": {
+     "rank": 18,
+     "points": 120
+    }
+   }
+  },
+  {
+   "competitor_id": "201991",
+   "name": "BENDI Annemarii",
+   "nation": "EST",
+   "standings": {
+    "ALL": {
+     "rank": 19,
+     "points": 99
+    }
+   }
+  },
+  {
+   "competitor_id": "212341",
+   "name": "BROCARD Lena",
+   "nation": "FRA",
+   "standings": {
+    "ALL": {
+     "rank": 19,
+     "points": 99
+    }
+   }
+  },
+  {
+   "competitor_id": "231717",
+   "name": "DONG Bing",
+   "nation": "CHN",
+   "standings": {
+    "ALL": {
+     "rank": 21,
+     "points": 92
+    }
+   }
+  },
+  {
+   "competitor_id": "230380",
+   "name": "MALACINSKI Annika",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 22,
+     "points": 89
+    }
+   }
+  },
+  {
+   "competitor_id": "201696",
+   "name": "ALEKSANDROVA Anna",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 23,
+     "points": 84
+    }
+   }
+  },
+  {
+   "competitor_id": "196938",
+   "name": "GLAZUNOVA Alexandra",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 23,
+     "points": 84
+    }
+   }
+  },
+  {
+   "competitor_id": "201787",
+   "name": "OEIHAUGEN Thea",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 25,
+     "points": 67
+    }
+   }
+  },
+  {
+   "competitor_id": "217159",
+   "name": "VOLAVSEK Ema",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 26,
+     "points": 64
+    }
+   }
+  },
+  {
+   "competitor_id": "222853",
+   "name": "MIYAJIMA Ringo",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 27,
+     "points": 62
+    }
+   }
+  },
+  {
+   "competitor_id": "211350",
+   "name": "NAKAMURA Anju",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 27,
+     "points": 62
+    }
+   }
+  },
+  {
+   "competitor_id": "209722",
+   "name": "SLAMIK Annalena",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 29,
+     "points": 53
+    }
+   }
+  },
+  {
+   "competitor_id": "196137",
+   "name": "KOIVISTO Pinja",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 30,
+     "points": 50
+    }
+   }
+  },
+  {
+   "competitor_id": "196924",
+   "name": "NOSKOVA Glafira",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 30,
+     "points": 50
+    }
+   }
+  },
+  {
+   "competitor_id": "209674",
+   "name": "BJORSETH Thea Minyan",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 32,
+     "points": 46
+    }
+   }
+  },
+  {
+   "competitor_id": "230279",
+   "name": "HUBINGER Eva",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 33,
+     "points": 45
+    }
+   }
+  },
+  {
+   "competitor_id": "227740",
+   "name": "AKHMETVALIYEVA Dayana",
+   "nation": "KAZ",
+   "standings": {
+    "ALL": {
+     "rank": 34,
+     "points": 44
+    }
+   }
+  },
+  {
+   "competitor_id": "234786",
+   "name": "REID Meaghan",
+   "nation": "CAN",
+   "standings": {
+    "ALL": {
+     "rank": 35,
+     "points": 40
+    }
+   }
+  },
+  {
+   "competitor_id": "212753",
+   "name": "STANKEVICA Elizabete",
+   "nation": "LAT",
+   "standings": {
+    "ALL": {
+     "rank": 36,
+     "points": 39
+    }
+   }
+  },
+  {
+   "competitor_id": "236240",
+   "name": "VALIEVA Chulpan",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 37,
+     "points": 36
+    }
+   }
+  },
+  {
+   "competitor_id": "217918",
+   "name": "TIKHONOVICH Alexandra",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 38,
+     "points": 31
+    }
+   }
+  },
+  {
+   "competitor_id": "205205",
+   "name": "MURAKAMI Yura",
+   "nation": "JPN",
+   "standings": {
+    "ALL": {
+     "rank": 39,
+     "points": 30
+    }
+   }
+  },
+  {
+   "competitor_id": "212961",
+   "name": "VERBIC Silva",
+   "nation": "SLO",
+   "standings": {
+    "ALL": {
+     "rank": 40,
+     "points": 29
+    }
+   }
+  },
+  {
+   "competitor_id": "235847",
+   "name": "KIL Joanna",
+   "nation": "POL",
+   "standings": {
+    "ALL": {
+     "rank": 41,
+     "points": 27
+    }
+   }
+  },
+  {
+   "competitor_id": "201262",
+   "name": "HAUSENBERG Triinu",
+   "nation": "EST",
+   "standings": {
+    "ALL": {
+     "rank": 42,
+     "points": 22
+    }
+   }
+  },
+  {
+   "competitor_id": "201987",
+   "name": "KUZNETCOVA Sofia",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 43,
+     "points": 16
+    }
+   }
+  },
+  {
+   "competitor_id": "236241",
+   "name": "FAZLINUROVA Diana",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 44,
+     "points": 15
+    }
+   }
+  },
+  {
+   "competitor_id": "227256",
+   "name": "TIKHONOVA Ekaterina",
+   "nation": "RUS",
+   "standings": {
+    "ALL": {
+     "rank": 45,
+     "points": 14
+    }
+   }
+  },
+  {
+   "competitor_id": "197100",
+   "name": "WEINLICHOVA Simona",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 46,
+     "points": 9
+    }
+   }
+  }
+ ]
+}

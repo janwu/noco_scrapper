@@ -4,6 +4,7 @@ import com.fis.noco.entity.Competition;
 import com.fis.noco.entity.Season;
 import com.fis.noco.service.CompetitionService;
 import com.fis.noco.service.StandingsEntry;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
@@ -21,14 +22,23 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 
 import java.util.List;
 
+/**
+ * Official cup standings of a season as published by FIS — overall and the
+ * trophies of that season — next to each athlete's rank in every competition.
+ */
 @Route(value = "standings", layout = MainLayout.class)
-@PageTitle("WC Standings | FIS Nordic Combined")
+@PageTitle("Cup Standings | FIS Nordic Combined")
 public class StandingsView extends VerticalLayout {
 
+    private static final String OVERALL = "ALL";
+
     private final CompetitionService competitionService;
+    private final RadioButtonGroup<String> circuitGroup = new RadioButtonGroup<>();
     private final ComboBox<Season> seasonBox = new ComboBox<>("Season");
     private final RadioButtonGroup<String> genderGroup = new RadioButtonGroup<>();
+    private final ComboBox<String[]> rankingBox = new ComboBox<>("Ranking");
     private final VerticalLayout content = new VerticalLayout();
+    private boolean updatingRankings;
 
     public StandingsView(CompetitionService competitionService) {
         this.competitionService = competitionService;
@@ -37,8 +47,11 @@ public class StandingsView extends VerticalLayout {
         setPadding(true);
         setSpacing(false);
 
-        H2 title = new H2("World Cup Standings");
+        H2 title = new H2("Cup Standings");
         title.addClassNames(LumoUtility.Margin.Bottom.MEDIUM, LumoUtility.Margin.Top.SMALL);
+
+        circuitGroup.setItems("World Cup", "Continental Cup");
+        circuitGroup.setValue("World Cup");
 
         List<Season> seasons = competitionService.getAllSeasons();
         seasonBox.setItems(seasons);
@@ -48,39 +61,79 @@ public class StandingsView extends VerticalLayout {
 
         genderGroup.setItems("Men", "Women");
         genderGroup.setValue("Men");
-        genderGroup.getStyle().set("flex-direction", "row");
 
-        seasonBox.addValueChangeListener(e -> refresh());
-        genderGroup.addValueChangeListener(e -> refresh());
+        rankingBox.setItemLabelGenerator(r -> r[1]);
+        rankingBox.setWidth("220px");
 
-        HorizontalLayout controls = new HorizontalLayout(seasonBox, genderGroup);
+        circuitGroup.addValueChangeListener(e -> selectionChanged());
+        seasonBox.addValueChangeListener(e -> selectionChanged());
+        genderGroup.addValueChangeListener(e -> selectionChanged());
+        rankingBox.addValueChangeListener(e -> {
+            if (!updatingRankings) showStandings();
+        });
+
+        HorizontalLayout controls = new HorizontalLayout(circuitGroup, seasonBox, genderGroup, rankingBox);
         controls.setAlignItems(Alignment.BASELINE);
         controls.setSpacing(true);
-        controls.addClassNames(LumoUtility.Padding.Bottom.MEDIUM);
+        controls.getStyle().set("flex-wrap", "wrap");
+        controls.addClassNames(LumoUtility.Padding.Bottom.SMALL);
+
+        Span note = new Span("Official FIS standings. The columns on the right show the athlete's rank "
+                + "in each individual competition of the season.");
+        note.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+                LumoUtility.Padding.Bottom.SMALL);
 
         content.setPadding(false);
         content.setSpacing(false);
         content.setSizeFull();
 
-        add(title, controls, content);
+        add(title, controls, note, content);
         expand(content);
 
-        refresh();
+        selectionChanged();
     }
 
-    private void refresh() {
+    private String circuit() {
+        return "World Cup".equals(circuitGroup.getValue()) ? "WC" : "COC";
+    }
+
+    private String gender() {
+        return "Men".equals(genderGroup.getValue()) ? "M" : "W";
+    }
+
+    /** Circuit, season or gender changed: the rankings on offer change with them. */
+    private void selectionChanged() {
         Season season = seasonBox.getValue();
         if (season == null) return;
-        String gender = "Men".equals(genderGroup.getValue()) ? "M" : "W";
 
-        List<Competition> competitions = competitionService.getWCIndividualCompetitions(season.getId(), gender);
-        List<StandingsEntry> standings = competitionService.getWCStandings(season.getId(), gender);
+        List<String[]> rankings = competitionService.getRankingsOfSeason(season.getId(), circuit(), gender());
+        String previous = rankingBox.getValue() != null ? rankingBox.getValue()[0] : OVERALL;
+        updatingRankings = true;
+        rankingBox.setItems(rankings);
+        rankingBox.setValue(rankings.stream().filter(r -> r[0].equals(previous)).findFirst()
+                .orElse(rankings.isEmpty() ? null : rankings.get(0)));
+        rankingBox.setVisible(rankings.size() > 1);
+        updatingRankings = false;
 
+        showStandings();
+    }
+
+    private void showStandings() {
         content.removeAll();
-        if (standings.isEmpty()) {
-            content.add(new Span("No standings data available for this season."));
+        Season season = seasonBox.getValue();
+        String[] ranking = rankingBox.getValue();
+        if (season == null || ranking == null) {
+            content.add(new Span("FIS has no standings for this selection."));
             return;
         }
+        List<StandingsEntry> standings =
+                competitionService.getStandings(season.getId(), circuit(), gender(), ranking[0]);
+        if (standings.isEmpty()) {
+            content.add(new Span("FIS has no standings for this selection."));
+            return;
+        }
+        List<Competition> competitions =
+                competitionService.getIndividualCompetitions(season.getId(), circuit(), gender());
         content.add(buildStandingsGrid(standings, competitions));
     }
 
@@ -94,15 +147,19 @@ public class StandingsView extends VerticalLayout {
                 .setHeader("#")
                 .setWidth("50px")
                 .setFlexGrow(0)
+                .setFrozen(true)
                 .setSortable(true);
 
         grid.addComponentColumn(entry -> {
+            if (entry.getAthleteId() == null) {
+                return new Span(entry.getAthleteName());     // no result of this athlete in the database
+            }
             Anchor link = new Anchor("athlete/" + entry.getAthleteId(), entry.getAthleteName());
             link.getStyle()
                     .set("text-decoration", "none")
                     .set("color", "var(--lumo-primary-color)");
             return link;
-        }).setHeader("Athlete").setWidth("200px").setFlexGrow(1).setSortable(true)
+        }).setHeader("Athlete").setWidth("220px").setFlexGrow(1).setFrozen(true).setSortable(true)
                 .setComparator(StandingsEntry::getAthleteName);
 
         grid.addComponentColumn(e -> new NationFlag(e.getNation()))
@@ -112,33 +169,36 @@ public class StandingsView extends VerticalLayout {
                 .setSortable(true)
                 .setComparator(StandingsEntry::getNation);
 
-        grid.addColumn(StandingsEntry::getTotalPoints)
-                .setHeader("Total")
+        grid.addColumn(e -> e.getTotalPoints() != null ? e.getTotalPoints() : "")
+                .setHeader("Points")
                 .setWidth("80px")
                 .setFlexGrow(0)
-                .setSortable(true);
+                .setSortable(true)
+                .setComparator((a, b) -> Integer.compare(
+                        a.getTotalPoints() != null ? a.getTotalPoints() : -1,
+                        b.getTotalPoints() != null ? b.getTotalPoints() : -1));
 
         for (Competition comp : competitions) {
-            String header = buildCompHeader(comp);
             Long compId = comp.getId();
             grid.addComponentColumn(entry -> {
-                Integer pts = entry.getPointsForCompetition(compId);
-                if (pts == null) return new Span("");
-                Span s = new Span(String.valueOf(pts));
-                s.getStyle().set("cursor", "pointer").set("color", "var(--lumo-primary-color)");
+                Integer rank = entry.getRankInCompetition(compId);
+                if (rank == null) return new Span("");
+                Span s = new Span(String.valueOf(rank));
+                s.getStyle().set("cursor", "pointer");
+                if (rank <= 3) s.getStyle().set("font-weight", "bold");
                 s.addClickListener(e -> UI.getCurrent().navigate(ResultDetailView.class, compId));
                 return s;
-            }).setHeader(buildCompHeaderComponent(header, compId))
+            }).setHeader(buildCompHeader(comp))
               .setWidth("62px")
               .setFlexGrow(0)
               .setSortable(true)
               .setComparator((a, b) -> {
-                  Integer pa = a.getPointsForCompetition(compId);
-                  Integer pb = b.getPointsForCompetition(compId);
-                  if (pa == null && pb == null) return 0;
-                  if (pa == null) return 1;
-                  if (pb == null) return -1;
-                  return Integer.compare(pa, pb);
+                  Integer ra = a.getRankInCompetition(compId);
+                  Integer rb = b.getRankInCompetition(compId);
+                  if (ra == null && rb == null) return 0;
+                  if (ra == null) return 1;
+                  if (rb == null) return -1;
+                  return Integer.compare(ra, rb);
               });
         }
 
@@ -146,27 +206,25 @@ public class StandingsView extends VerticalLayout {
         return grid;
     }
 
-    private String buildCompHeader(Competition comp) {
-        String venue = comp.getDisplayLocation();
-        if (venue != null && venue.length() > 8) {
-            venue = venue.substring(0, 8);
-        }
+    /** Column header of a competition: venue (shortened) over the date, linked to its result. */
+    private Component buildCompHeader(Competition comp) {
+        String venue = comp.getDisplayLocation() != null ? comp.getDisplayLocation() : "";
+        if (venue.length() > 8) venue = venue.substring(0, 8);
         String date = comp.getCompetitionDate() != null ? comp.getCompetitionDate() : "";
-        if (date.length() >= 10) date = date.substring(5); // MM-DD
-        return (venue != null ? venue : "") + "\n" + date;
-    }
+        if (date.length() >= 10) date = date.substring(5);      // MM-DD
 
-    private com.vaadin.flow.component.Component buildCompHeaderComponent(String text, Long compId) {
-        String[] parts = text.split("\n", 2);
         Div header = new Div();
         header.getStyle().set("display", "flex").set("flex-direction", "column")
               .set("align-items", "center").set("cursor", "pointer");
-        Span venueLine = new Span(parts[0]);
+        header.getElement().setAttribute("title",
+                comp.getDisplayLocation() + " " + comp.getCompetitionDate()
+                        + (comp.getFormat() != null ? " · " + comp.getFormat() : ""));
+        Span venueLine = new Span(venue);
         venueLine.addClassNames(LumoUtility.FontSize.XSMALL);
-        Span dateLine = new Span(parts.length > 1 ? parts[1] : "");
+        Span dateLine = new Span(date);
         dateLine.addClassNames(LumoUtility.FontSize.XSMALL, LumoUtility.TextColor.SECONDARY);
         header.add(venueLine, dateLine);
-        header.addClickListener(e -> UI.getCurrent().navigate(ResultDetailView.class, compId));
+        header.addClickListener(e -> UI.getCurrent().navigate(ResultDetailView.class, comp.getId()));
         return header;
     }
 }

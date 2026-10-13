@@ -1,11 +1,14 @@
 package com.fis.noco.service;
 
+import com.fis.noco.entity.Athlete;
 import com.fis.noco.entity.CombinedResult;
+import com.fis.noco.entity.CupStanding;
 import com.fis.noco.entity.Competition;
 import com.fis.noco.entity.Season;
 import com.fis.noco.entity.TeamResult;
 import com.fis.noco.repository.CombinedResultRepository;
 import com.fis.noco.repository.CompetitionRepository;
+import com.fis.noco.repository.CupStandingRepository;
 import com.fis.noco.repository.SeasonRepository;
 import com.fis.noco.repository.TeamResultRepository;
 import org.springframework.stereotype.Service;
@@ -28,11 +31,14 @@ public class CompetitionService {
     private final SeasonRepository seasonRepository;
     private final CombinedResultRepository combinedResultRepository;
     private final TeamResultRepository teamResultRepository;
+    private final CupStandingRepository cupStandingRepository;
 
     public CompetitionService(CompetitionRepository competitionRepository,
                               SeasonRepository seasonRepository,
                               CombinedResultRepository combinedResultRepository,
-                              TeamResultRepository teamResultRepository) {
+                              TeamResultRepository teamResultRepository,
+                              CupStandingRepository cupStandingRepository) {
+        this.cupStandingRepository = cupStandingRepository;
         this.competitionRepository = competitionRepository;
         this.seasonRepository = seasonRepository;
         this.combinedResultRepository = combinedResultRepository;
@@ -89,62 +95,52 @@ public class CompetitionService {
         return athletes > 0 ? athletes : teamResultRepository.countByCompetitionId(competitionId);
     }
 
-    // Classic FIS table (seasons up to 2022/23): top 30 score
-    private static final int[] FIS_POINTS_CLASSIC = {
-        100, 80, 60, 50, 45, 40, 36, 32, 29, 26,
-         24, 22, 20, 18, 16, 15, 14, 13, 12, 11,
-         10,  9,  8,  7,  6,  5,  4,  3,  2,  1
-    };
-
-    // New FIS table (seasons 2023/24+): top 40 score
-    private static final int[] FIS_POINTS_NEW = {
-        100, 90, 80, 70, 60, 55, 52, 49, 46, 43,
-         40, 38, 36, 34, 32, 30, 28, 26, 24, 22,
-         20, 19, 18, 17, 16, 15, 14, 13, 12, 11,
-         10,  9,  8,  7,  6,  5,  4,  3,  2,  1
-    };
-
-    private int fisPoints(int rank, int[] table) {
-        if (rank < 1 || rank > table.length) return 0;
-        return table[rank - 1];
-    }
-
-    private int[] pointTableForSeason(Long seasonId) {
-        Season season = seasonRepository.findById(seasonId).orElse(null);
-        if (season != null && season.getStartYear() != null && season.getStartYear() >= 2023) {
-            return FIS_POINTS_NEW;
+    /**
+     * The rankings FIS publishes for a season: [code, name], overall ("ALL") first,
+     * then the trophies of that season (Sprint, Compact, Best Jumper, ...).
+     */
+    public List<String[]> getRankingsOfSeason(Long seasonId, String circuit, String gender) {
+        List<String[]> rankings = new ArrayList<>();
+        for (Object[] row : cupStandingRepository.findRankingsOfSeason(seasonId, circuit, gender)) {
+            rankings.add(new String[]{(String) row[0], row[1] != null ? (String) row[1] : (String) row[0]});
         }
-        return FIS_POINTS_CLASSIC;
+        rankings.sort(Comparator.comparing((String[] r) -> !"ALL".equals(r[0])).thenComparing(r -> r[1]));
+        return rankings;
     }
 
-    public List<StandingsEntry> getWCStandings(Long seasonId, String gender) {
-        List<CombinedResult> results =
-                combinedResultRepository.findRankedWCResultsBySeasonAndGender(seasonId, gender);
-
-        int[] pointTable = pointTableForSeason(seasonId);
-
+    /**
+     * An official FIS standing.  Ranks and points are FIS's own — the points rules
+     * changed over the years and tours score differently, so they are not recomputed
+     * here.  Each entry also carries the athlete's rank in every individual
+     * competition of the season.
+     */
+    public List<StandingsEntry> getStandings(Long seasonId, String circuit, String gender, String discipline) {
         Map<Long, StandingsEntry> byAthlete = new LinkedHashMap<>();
-        for (CombinedResult r : results) {
-            if (r.getAthlete() == null || r.getRank() == null) continue;
-            int pts = fisPoints(r.getRank(), pointTable);
-            if (pts == 0) continue;
-            Long athleteId = r.getAthlete().getId();
-            byAthlete.computeIfAbsent(athleteId, id ->
-                    new StandingsEntry(id, r.getAthlete().getFullName(), r.getDisplayNation()))
-                    .addPoints(r.getCompetition().getId(), pts);
+        List<StandingsEntry> entries = new ArrayList<>();
+        for (CupStanding s : cupStandingRepository.findRanking(seasonId, circuit, gender, discipline)) {
+            Athlete athlete = s.getAthlete();
+            StandingsEntry entry = new StandingsEntry(
+                    s.getRank(),
+                    athlete != null ? athlete.getId() : null,
+                    athlete != null ? athlete.getFullName() : s.getRawName(),
+                    s.getRawNation(),
+                    s.getPoints());
+            entries.add(entry);
+            if (athlete != null) {
+                byAthlete.put(athlete.getId(), entry);
+            }
         }
-
-        List<StandingsEntry> sorted = new ArrayList<>(byAthlete.values());
-        sorted.sort(Comparator.comparingInt(StandingsEntry::getTotalPoints).reversed()
-                .thenComparing(StandingsEntry::getAthleteName));
-
-        for (int i = 0; i < sorted.size(); i++) {
-            sorted.get(i).setPosition(i + 1);
+        for (CombinedResult r : combinedResultRepository.findRankedResultsBySeason(seasonId, circuit, gender)) {
+            if (r.getAthlete() == null) continue;
+            StandingsEntry entry = byAthlete.get(r.getAthlete().getId());
+            if (entry != null) {
+                entry.setRank(r.getCompetition().getId(), r.getRank());
+            }
         }
-        return sorted;
+        return entries;
     }
 
-    public List<Competition> getWCIndividualCompetitions(Long seasonId, String gender) {
-        return competitionRepository.findWCIndividualBySeasonAndGender(seasonId, gender);
+    public List<Competition> getIndividualCompetitions(Long seasonId, String circuit, String gender) {
+        return competitionRepository.findIndividualBySeason(seasonId, circuit, gender);
     }
 }
