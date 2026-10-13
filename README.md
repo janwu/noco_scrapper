@@ -48,6 +48,12 @@ name and nation to use instead. Lines starting with `#` are comments.
 
 ## Known gaps
 
+- **The PDF scrapers no longer find anything** (checked October 2026). FIS moved the
+  attachments from `/DB/pdf/...` to `/DB/v2/download/competition-attachment/<id>.pdf`;
+  `fis_nk_scraper.py` and `fis_nk_coc_scraper.py` still look for the old path and take the
+  document type from the old file name. They must be adapted before the 2026/27 season
+  can be downloaded.
+
 - Only the official result lists (ROF) are validated. Jump, training, trial and
   cross-country lists are loaded with a row-level check (valid name, known nation).
 - 6 result lists fail validation and are not loaded; none is a regular World Cup /
