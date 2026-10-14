@@ -27,19 +27,18 @@ import java.util.function.Function;
 
 /**
  * The overview tab of the athlete page: career statistics, favourite hills and
- * cross-country courses and the results by venue, for both circuits or one.
+ * cross-country courses and the results by venue, for one circuit at a time.
  * The highlight cards above the tabs come from {@link #highlights}.
  */
 final class AthleteOverview extends VerticalLayout {
 
-    private static final Map<String, String> SCOPES = Map.of(
-            "All", "", "World Cup", "WC", "Continental Cup", "COC");
+    private static final Map<String, String> SCOPES = Map.of("World Cup", "WC", "Continental Cup", "COC");
 
     private final AthleteProfile profile;
     private final Function<String, Component> careerBlocks;
     private final Div content = new Div();
 
-    /** careerBlocks: the statistics blocks for a circuit ("WC", "COC", null = both). */
+    /** careerBlocks: the statistics blocks for a circuit ("WC", "COC"). */
     AthleteOverview(AthleteProfile profile, Function<String, Component> careerBlocks) {
         this.profile = profile;
         this.careerBlocks = careerBlocks;
@@ -48,21 +47,24 @@ final class AthleteOverview extends VerticalLayout {
         setWidthFull();
 
         RadioButtonGroup<String> scope = new RadioButtonGroup<>();
-        scope.setItems("All", "World Cup", "Continental Cup");
-        scope.setValue("All");
+        // one circuit at a time: World Cup, or Continental Cup for an athlete never in the World Cup
+        boolean worldCup = profile.forCircuit("WC").bestResult().isPresent()
+                || !profile.forCircuit("WC").venues().isEmpty();
+        scope.setItems("World Cup", "Continental Cup");
+        scope.setValue(worldCup ? "World Cup" : "Continental Cup");
         scope.addValueChangeListener(e -> show(SCOPES.get(e.getValue())));
         HorizontalLayout scopeRow = new HorizontalLayout(new Span("Show: "), scope);
         scopeRow.setAlignItems(Alignment.CENTER);
 
         content.setWidthFull();
         add(scopeRow, content);
-        show("");
+        show(worldCup ? "WC" : "COC");
     }
 
     private void show(String circuit) {
-        AthleteProfile p = profile.forCircuit(circuit.isEmpty() ? null : circuit);
+        AthleteProfile p = profile.forCircuit(circuit);
         content.removeAll();
-        content.add(careerBlocks.apply(circuit.isEmpty() ? null : circuit));
+        content.add(careerBlocks.apply(circuit));
 
         FlexLayout favourites = new FlexLayout();
         favourites.setFlexWrap(FlexLayout.FlexWrap.WRAP);
@@ -160,8 +162,13 @@ final class AthleteOverview extends VerticalLayout {
 
     // ── highlight cards ────────────────────────────────────────────────────
 
-    /** The cards above the tabs; always over both circuits. */
-    static Component highlights(AthleteProfile p) {
+    /**
+     * The cards above the tabs: World Cup only, so that a Continental Cup win
+     * does not stand next to World Cup results.  Nothing for an athlete without
+     * World Cup starts.
+     */
+    static Component highlights(AthleteProfile all) {
+        AthleteProfile p = all.forCircuit("WC");
         FlexLayout row = new FlexLayout();
         row.setFlexWrap(FlexLayout.FlexWrap.WRAP);
         row.getStyle().set("gap", "var(--lumo-space-m)");
@@ -171,35 +178,28 @@ final class AthleteOverview extends VerticalLayout {
         List<CombinedResult> best = p.bestResults();
         if (!best.isEmpty()) {
             CombinedResult first = best.get(0);
-            if (best.size() == 1) {
-                row.add(highlight("Best result", rankLabel(first),
-                        circuitName(first.getCompetition()) + " · " + where(first.getCompetition())));
-            } else {
-                // several times: how often, and where it was achieved the first time
-                long wc = best.stream().filter(r -> "WC".equals(r.getCompetition().getCircuit())).count();
-                String split = wc == best.size() ? "World Cup" : wc == 0 ? "Cont. Cup"
-                        : wc + " World Cup, " + (best.size() - wc) + " Cont. Cup";
-                row.add(highlight("Best result", rankLabel(first) + " · " + best.size() + "×",
-                        split + " · first: " + where(first.getCompetition())
-                                + (wc > 0 && wc < best.size() ? " (" + circuitName(first.getCompetition()) + ")" : "")));
-            }
+            row.add(best.size() == 1
+                    ? highlight("Best World Cup result", rankLabel(first), where(first.getCompetition()))
+                    // achieved several times: how often, and where the first time
+                    : highlight("Best World Cup result", rankLabel(first) + " · " + best.size() + "×",
+                            "first: " + where(first.getCompetition())));
         }
         p.longestWorldCupJump().ifPresent(j -> row.add(highlight("Longest World Cup jump",
                 JumpResult.format(j.getDistanceM()) + " m",
                 j.getCompetition().getDisplayLocation() + " " + AthleteProfile.hillLabel(j.getCompetition())
                         + " · " + j.getCompetition().getCompetitionDate()
                         + (JumpResult.listLabel("RL").equals(j.getListLabel()) ? "" : " · " + j.getListLabel()))));
-        p.mostSuccessfulVenue().ifPresent(v -> row.add(highlight("Most successful venue", v.label(),
+        p.mostSuccessfulVenue().ifPresent(v -> row.add(highlight("Most successful World Cup venue", v.label(),
                 v.podiums() > 0 ? count(v.wins(), "win") + " · " + count(v.podiums(), "podium")
                         : count(v.top10(), "top-10 result"))));
-        p.mostVisitedVenue().ifPresent(v -> row.add(highlight("Most starts", v.label(),
+        p.mostVisitedVenue().ifPresent(v -> row.add(highlight("Most World Cup starts", v.label(),
                 count(v.starts(), "start") + (v.starts() > v.individualStarts()
                         ? " (" + (v.starts() - v.individualStarts()) + " in teams)" : ""))));
         p.favouriteHills().stream().findFirst().filter(r -> r.delta() > 0).ifPresent(r -> row.add(
-                highlight("Favourite hill", r.label(), String.format(Locale.ROOT,
+                highlight("Favourite World Cup hill", r.label(), String.format(Locale.ROOT,
                         "beats %.0f %% of the field · %+.0f pp", 100 * r.share(), 100 * r.delta()))));
         p.favouriteCourses().stream().findFirst().filter(r -> r.delta() > 0).ifPresent(r -> row.add(
-                highlight("Favourite XC course", r.label(), String.format(Locale.ROOT,
+                highlight("Favourite World Cup XC course", r.label(), String.format(Locale.ROOT,
                         "beats %.0f %% of the field · %+.0f pp", 100 * r.share(), 100 * r.delta()))));
         return row;
     }
@@ -230,9 +230,6 @@ final class AthleteOverview extends VerticalLayout {
         return c.getDisplayLocation() + " " + c.getCompetitionDate();
     }
 
-    private static String circuitName(Competition c) {
-        return "WC".equals(c.getCircuit()) ? "World Cup" : "Cont. Cup";
-    }
 
     private static String count(int n, String what) {
         return n + " " + what + (n == 1 ? "" : "s");
