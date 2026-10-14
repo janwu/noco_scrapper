@@ -178,45 +178,58 @@ final class AthleteOverview extends VerticalLayout {
         List<CombinedResult> best = p.bestResults();
         if (!best.isEmpty()) {
             CombinedResult first = best.get(0);
+            String country = first.getCompetition().getDisplayCountry();
             row.add(best.size() == 1
-                    ? highlight("Best World Cup result", rankLabel(first), where(first.getCompetition()))
+                    ? highlight("Best World Cup result", rankLabel(first), null, where(first.getCompetition()), country)
                     // achieved several times: how often, and where the first time
-                    : highlight("Best World Cup result", rankLabel(first) + " · " + best.size() + "×",
-                            "first: " + where(first.getCompetition())));
+                    : highlight("Best World Cup result", rankLabel(first) + " · " + best.size() + "×", null,
+                            "first: " + where(first.getCompetition()), country));
         }
         p.longestWorldCupJump().ifPresent(j -> row.add(highlight("Longest World Cup jump",
-                JumpResult.format(j.getDistanceM()) + " m",
+                JumpResult.format(j.getDistanceM()) + " m", null,
                 j.getCompetition().getDisplayLocation() + " " + AthleteProfile.hillLabel(j.getCompetition())
                         + " · " + j.getCompetition().getCompetitionDate()
-                        + (JumpResult.listLabel("RL").equals(j.getListLabel()) ? "" : " · " + j.getListLabel()))));
-        p.mostSuccessfulVenue().ifPresent(v -> row.add(highlight("Most successful World Cup venue", v.label(),
+                        + (JumpResult.listLabel("RL").equals(j.getListLabel()) ? "" : " · " + j.getListLabel()),
+                j.getCompetition().getDisplayCountry())));
+        p.mostSuccessfulVenue().ifPresent(v -> row.add(highlight("Most successful World Cup venue", v.label(), v.venue().getCountry(),
                 v.podiums() > 0 ? count(v.wins(), "win") + " · " + count(v.podiums(), "podium")
-                        : count(v.top10(), "top-10 result"))));
-        p.mostVisitedVenue().ifPresent(v -> row.add(highlight("Most World Cup starts", v.label(),
+                        : count(v.top10(), "top-10 result"), null)));
+        p.mostVisitedVenue().ifPresent(v -> row.add(highlight("Most World Cup starts", v.label(), v.venue().getCountry(),
                 count(v.starts(), "start") + (v.starts() > v.individualStarts()
-                        ? " (" + (v.starts() - v.individualStarts()) + " in teams)" : ""))));
+                        ? " (" + (v.starts() - v.individualStarts()) + " in teams)" : ""), null)));
         p.favouriteHills().stream().findFirst().filter(r -> r.delta() > 0).ifPresent(r -> row.add(
-                highlight("Favourite World Cup hill", r.label(), String.format(Locale.ROOT,
-                        "beats %.0f %% of the field · %+.0f pp", 100 * r.share(), 100 * r.delta()))));
+                highlight("Favourite World Cup hill", r.label(), r.country(), String.format(Locale.ROOT,
+                        "beats %.0f %% of the field · %+.0f pp", 100 * r.share(), 100 * r.delta()), null)));
         p.favouriteCourses().stream().findFirst().filter(r -> r.delta() > 0).ifPresent(r -> row.add(
-                highlight("Favourite World Cup XC course", r.label(), String.format(Locale.ROOT,
-                        "beats %.0f %% of the field · %+.0f pp", 100 * r.share(), 100 * r.delta()))));
+                highlight("Favourite World Cup XC course", r.label(), r.country(), String.format(Locale.ROOT,
+                        "beats %.0f %% of the field · %+.0f pp", 100 * r.share(), 100 * r.delta()), null)));
         return row;
     }
 
-    private static Component highlight(String title, String value, String detail) {
+    /** A card; valueCountry / detailCountry: the flag in front of the value or of the detail line, or null. */
+    private static Component highlight(String title, String value, String valueCountry,
+                                       String detail, String detailCountry) {
         VerticalLayout card = card();
         card.setWidth(null);
         card.getStyle().set("flex", "1 1 13em").set("max-width", "22em");
         Span t = new Span(title);
         t.addClassNames(LumoUtility.FontSize.XSMALL, LumoUtility.TextColor.SECONDARY);
         t.getStyle().set("text-transform", "uppercase").set("letter-spacing", "0.04em");
-        Span v = new Span(value);
+        Span v = withFlag(value, valueCountry);
         v.addClassNames(LumoUtility.FontSize.XLARGE, LumoUtility.FontWeight.BOLD);
-        Span d = new Span(detail);
+        Span d = withFlag(detail, detailCountry);
         d.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
         card.add(t, v, d);
         return card;
+    }
+
+    private static Span withFlag(String text, String country) {
+        if (country == null || country.isBlank()) {
+            return new Span(text);
+        }
+        Span s = new Span(new NationFlag(country, false), new Span(text));
+        s.getStyle().set("display", "inline-flex").set("align-items", "center").set("gap", "0.4em");
+        return s;
     }
 
     private static String rankLabel(CombinedResult r) {
