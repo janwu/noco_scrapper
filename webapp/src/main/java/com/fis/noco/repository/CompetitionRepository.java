@@ -42,6 +42,12 @@ public interface CompetitionRepository extends JpaRepository<Competition, Long> 
     List<Competition> findByVenueIdAndCircuit(@Param("venueId") Long venueId,
                                               @Param("circuit") String circuit);
 
+    /** All competitions at a venue between two dates, provisional rounds included. */
+    @Query("SELECT c FROM Competition c WHERE c.venue.id = :venueId AND c.circuit = :circuit " +
+           "AND c.competitionDate BETWEEN :fromDate AND :toDate ORDER BY c.competitionDate DESC")
+    List<Competition> findAtVenueBetween(@Param("venueId") Long venueId, @Param("circuit") String circuit,
+                                         @Param("fromDate") String fromDate, @Param("toDate") String toDate);
+
     @Query("SELECT COUNT(c) FROM Competition c WHERE c.venue.id = :venueId " + LISTED)
     long countByVenueId(@Param("venueId") Long venueId);
 

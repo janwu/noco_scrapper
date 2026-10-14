@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.data.domain.PageRequest;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -64,7 +65,54 @@ public class CompetitionService {
             lists.get(j.getListLabel()).add(j);
         }
         lists.values().removeIf(List::isEmpty);
+        competitionRepository.findByIdWithDetails(competitionId).ifPresent(c -> addEventLists(c, lists));
         return lists;
+    }
+
+    /** Kinds of lists a competition shares with the others on the same hill at the same event. */
+    private static final List<String> SHARED_LISTS = List.of("Provisional Round", "Training");
+
+    /**
+     * FIS files the official training under the codex of the provisional
+     * competition round, the day before the competition, and in early seasons
+     * under the first competition of the weekend.  A competition without its own
+     * training or provisional round gets those of the nearest competition on the
+     * same hill at the same event: same venue and circuit, hill size equal or
+     * unknown, matching gender, the same day or up to three days before.  The
+     * label carries the date: 'Training · 2025-11-28'.
+     */
+    private void addEventLists(Competition c, Map<String, List<JumpResult>> lists) {
+        if (c.getVenue() == null || c.getCompetitionDate() == null) return;
+        LocalDate day = LocalDate.parse(c.getCompetitionDate());
+        List<Competition> candidates = competitionRepository.findAtVenueBetween(
+                c.getVenue().getId(), c.getCircuit(), day.minusDays(3).toString(), day.toString());
+        for (String kind : SHARED_LISTS) {
+            if (lists.containsKey(kind)) continue;
+            for (Competition other : candidates) {               // nearest first
+                if (other.getId().equals(c.getId()) || !sameHill(c, other)) continue;
+                List<JumpResult> rows = jumpResultRepository.findByCompetitionId(other.getId()).stream()
+                        .filter(j -> kind.equals(j.getListLabel())).toList();
+                if (!rows.isEmpty()) {
+                    lists.put(kind + " · " + other.getCompetitionDate(), rows);
+                    break;
+                }
+            }
+        }
+        // keep the order of LIST_ORDER for the borrowed lists too
+        Map<String, List<JumpResult>> ordered = new LinkedHashMap<>();
+        for (String kind : JumpResult.LIST_ORDER) {
+            lists.forEach((label, rows) -> { if (label.equals(kind) || label.startsWith(kind + " · ")) ordered.put(label, rows); });
+        }
+        lists.clear();
+        lists.putAll(ordered);
+    }
+
+    private static boolean sameHill(Competition a, Competition b) {
+        boolean hill = a.getHillSizeM() == null || b.getHillSizeM() == null
+                || Math.abs(a.getHillSizeM() - b.getHillSizeM()) < 0.5;
+        boolean gender = a.getGender() == null || b.getGender() == null || a.getGender().equals(b.getGender())
+                || "X".equals(a.getGender()) || "X".equals(b.getGender());
+        return hill && gender;
     }
 
     /** Team, Team Sprint and Mixed Team competitions are stored as teams, not as single athletes. */

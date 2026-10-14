@@ -77,6 +77,24 @@ class JumpQueriesTest {
     }
 
     @Test
+    void trainingOfTheProvisionalRoundDayIsShownWithTheCompetition() {
+        assumeDatabase();
+        // Ruka 2025/26: the training is filed under the provisional round (4116) the day before
+        Long competitionId = jdbc.queryForObject(
+                "select c.id from competitions c join seasons s on s.id = c.season_id " +
+                "where c.circuit = 'WC' and s.start_year = 2025 and c.fis_codex = '4117'", Long.class);
+        Map<String, List<JumpResult>> lists = competitionService.getJumpLists(competitionId);
+        assertTrue(lists.containsKey("Competition Round"));
+        assertTrue(lists.containsKey("Provisional Round · 2025-11-28"), lists.keySet().toString());
+        assertTrue(lists.containsKey("Training · 2025-11-28"), lists.keySet().toString());
+        List<String> order = List.copyOf(lists.keySet());
+        assertTrue(order.indexOf("Competition Round") < order.indexOf("Training · 2025-11-28"));
+        for (JumpResult j : lists.get("Training · 2025-11-28")) {
+            assertEquals("4116", j.getCompetition().getFisCodex());
+        }
+    }
+
+    @Test
     void jumpsOfAnAthlete() {
         assumeDatabase();
         Long athleteId = jdbc.queryForObject(

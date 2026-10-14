@@ -119,7 +119,8 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
             tabs.add(resultTab, result);
         }
         jumpLists.forEach((label, jumps) -> {
-            long athletes = jumps.stream().filter(j -> j.getRoundNumber() == null || j.getRoundNumber() == 1).count();
+            // athletes, not jumps: in training some leave out the first round
+            long athletes = jumps.stream().map(j -> j.getDisplayName() + "|" + j.getBib()).distinct().count();
             String name = JumpResult.listLabel("RL").equals(label) ? "Ski Jumping" : label;
             tabs.add(name + " (" + athletes + ")", JumpGrid.create(jumps));
         });
