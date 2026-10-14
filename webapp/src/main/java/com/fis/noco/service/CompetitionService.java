@@ -4,11 +4,13 @@ import com.fis.noco.entity.Athlete;
 import com.fis.noco.entity.CombinedResult;
 import com.fis.noco.entity.CupStanding;
 import com.fis.noco.entity.Competition;
+import com.fis.noco.entity.JumpResult;
 import com.fis.noco.entity.Season;
 import com.fis.noco.entity.TeamResult;
 import com.fis.noco.repository.CombinedResultRepository;
 import com.fis.noco.repository.CompetitionRepository;
 import com.fis.noco.repository.CupStandingRepository;
+import com.fis.noco.repository.JumpResultRepository;
 import com.fis.noco.repository.SeasonRepository;
 import com.fis.noco.repository.TeamResultRepository;
 import org.springframework.stereotype.Service;
@@ -32,17 +34,36 @@ public class CompetitionService {
     private final CombinedResultRepository combinedResultRepository;
     private final TeamResultRepository teamResultRepository;
     private final CupStandingRepository cupStandingRepository;
+    private final JumpResultRepository jumpResultRepository;
 
     public CompetitionService(CompetitionRepository competitionRepository,
                               SeasonRepository seasonRepository,
                               CombinedResultRepository combinedResultRepository,
                               TeamResultRepository teamResultRepository,
-                              CupStandingRepository cupStandingRepository) {
+                              CupStandingRepository cupStandingRepository,
+                              JumpResultRepository jumpResultRepository) {
+        this.jumpResultRepository = jumpResultRepository;
         this.cupStandingRepository = cupStandingRepository;
         this.competitionRepository = competitionRepository;
         this.seasonRepository = seasonRepository;
         this.combinedResultRepository = combinedResultRepository;
         this.teamResultRepository = teamResultRepository;
+    }
+
+    /**
+     * The jump lists of a competition by kind: competition round, qualification,
+     * provisional round (in that order, only those that exist).
+     */
+    public Map<String, List<JumpResult>> getJumpLists(Long competitionId) {
+        Map<String, List<JumpResult>> lists = new LinkedHashMap<>();
+        for (String label : List.of(JumpResult.listLabel("RL"), JumpResult.listLabel("RLQ"), JumpResult.listLabel("PCR"))) {
+            lists.put(label, new ArrayList<>());
+        }
+        for (JumpResult j : jumpResultRepository.findByCompetitionId(competitionId)) {
+            lists.get(j.getListLabel()).add(j);
+        }
+        lists.values().removeIf(List::isEmpty);
+        return lists;
     }
 
     /** Team, Team Sprint and Mixed Team competitions are stored as teams, not as single athletes. */

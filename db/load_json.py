@@ -56,6 +56,7 @@ CIRCUIT_BY_DIR = {"fis_nk_pdfs": "WC", "fis_nk_coc_pdfs": "COC"}
 JUMP_TABLE_BY_DOC_TYPE = {
     "RL": "jump_round_results",
     "RL1": "jump_round_results",
+    "RLQ": "jump_round_results",
     "PCR": "jump_round_results",
     "RLT": "training_jump_results",
     "RLTR": "trial_round_results",
@@ -370,6 +371,11 @@ def read_documents(output_dir: str, build: Build) -> Dict[Tuple[str, int], List[
         with open(path, encoding="utf-8") as fh:
             doc = json.load(fh)
         meta["doc_type"] = (doc.get("doc_type") or "").upper() or None
+        # The parser reads them as RL; kept apart: RL1 is the first round of a
+        # two-round RL, RLQ a qualification round before the competition round
+        suffix = re.search(r"(RL1|RLQ)\.json$", meta["basename"], re.IGNORECASE)
+        if meta["doc_type"] == "RL" and suffix:
+            meta["doc_type"] = suffix.group(1).upper()
         if not meta["doc_type"]:
             build.skipped_docs.append(("no doc_type", path))
             continue
@@ -661,6 +667,9 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
         for meta, doc in sorted(docs, key=lambda md: md[0]["basename"]):
             if meta["doc_type"] == "ROF" and meta is not official:
                 build.skipped_docs.append(("second ROF for the same competition", meta["basename"]))
+                continue
+            if meta["doc_type"] == "RL1" and any(m["doc_type"] == "RL" for m, _ in docs):
+                build.skipped_docs.append(("first round only, the RL holds both", meta["basename"]))
                 continue
             notes =[f"ERROR: {e}" for e in doc.get("parse_errors") or []] + list(doc.get("warnings") or [])
             source = (doc.get("source_file") or meta["basename"]).replace("\\", "/")

@@ -3,12 +3,15 @@ package com.fis.noco.views;
 import com.fis.noco.entity.Athlete;
 import com.fis.noco.entity.CombinedResult;
 import com.fis.noco.entity.Competition;
+import com.fis.noco.entity.JumpResult;
 import com.fis.noco.entity.TeamMember;
 import com.fis.noco.entity.TeamResult;
 import com.fis.noco.service.AthleteService;
+import com.fis.noco.service.CompetitionService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H2;
@@ -29,6 +32,8 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -92,10 +97,15 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         List<CombinedResult> cocResults = athleteService.getContinentalCupResults(athlete.getId());
 
         List<TeamMember> teamStarts = athleteService.getTeamStarts(athlete.getId());
+        List<JumpResult> jumps = athleteService.getJumps(athlete.getId());
 
         HorizontalLayout statsRow = buildStatsRow(athlete, wcResults, cocResults);
+        statsRow.getStyle().set("flex-wrap", "wrap");
         if (!teamStarts.isEmpty()) {
             statsRow.add(buildTeamStatsBlock(teamStarts));
+        }
+        if (!competitionJumps(jumps).isEmpty()) {
+            statsRow.add(buildJumpStatsBlock(jumps));
         }
         add(backButton, nameHeader, infoRow, statsRow);
 
@@ -105,6 +115,9 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         tabSheet.add("Continental Cup (" + cocResults.size() + ")", createFilteredResultsPanel(cocResults));
         if (!teamStarts.isEmpty()) {
             tabSheet.add("Team (" + teamStarts.size() + ")", createTeamStartsPanel(teamStarts, athlete));
+        }
+        if (!jumps.isEmpty()) {
+            tabSheet.add("Ski Jumping (" + competitionJumps(jumps).size() + ")", createJumpsPanel(jumps));
         }
 
         add(tabSheet);
@@ -217,6 +230,129 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         stats.add(statBadge("Cont. Cup", starts.size() - wc));
         block.add(stats);
         return block;
+    }
+
+    /** Jumps of the competition rounds, the ones that count; not qualification or provisional rounds. */
+    private static List<JumpResult> competitionJumps(List<JumpResult> jumps) {
+        String competitionRound = JumpResult.listLabel("RL");
+        return jumps.stream().filter(j -> competitionRound.equals(j.getListLabel()) && j.getDistanceM() != null).toList();
+    }
+
+    /** Best jump of the day: rank 1 of the competition round of an individual competition. */
+    private static boolean isJumpWin(JumpResult j) {
+        return j.getRank() != null && j.getRank() == 1
+                && (j.getRoundNumber() == null || j.getRoundNumber() == 1)
+                && !CompetitionService.isTeamFormat(j.getCompetition().getFormat());
+    }
+
+    private VerticalLayout buildJumpStatsBlock(List<JumpResult> jumps) {
+        List<JumpResult> counted = competitionJumps(jumps);
+        long wins = counted.stream().filter(AthleteDetailView::isJumpWin).count();
+        Optional<JumpResult> longest = counted.stream().max(Comparator.comparing(JumpResult::getDistanceM));
+        double style = counted.stream().map(JumpResult::getStylePoints).filter(Objects::nonNull)
+                .mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
+
+        VerticalLayout block = new VerticalLayout();
+        block.setPadding(true);
+        block.setSpacing(false);
+        block.setWidth(null);
+        block.getStyle()
+                .set("border", "1px solid var(--lumo-contrast-20pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("background", "var(--lumo-contrast-5pct)");
+        H4 header = new H4("Ski Jumping");
+        header.addClassNames(LumoUtility.Margin.Bottom.XSMALL, LumoUtility.Margin.Top.NONE);
+        block.add(header);
+
+        HorizontalLayout stats = new HorizontalLayout();
+        stats.setSpacing(true);
+        stats.add(statBadge("Jumps", counted.size()));
+        stats.add(statBadge("Best jump", wins));
+        if (!Double.isNaN(style)) {
+            stats.add(textBadge(String.format(Locale.ROOT, "%.1f", style), "Avg. style pts"));
+        }
+        longest.ifPresent(j -> {
+            Competition c = j.getCompetition();
+            String hill = c.getHillSizeM() != null ? String.format(Locale.ROOT, " HS%.0f", c.getHillSizeM()) : "";
+            stats.add(textBadge(JumpResult.format(j.getDistanceM()) + " m",
+                    "Longest · " + c.getDisplayLocation() + hill + " · " + c.getCompetitionDate()));
+        });
+        block.add(stats);
+        return block;
+    }
+
+    private VerticalLayout createJumpsPanel(List<JumpResult> jumps) {
+        Grid<JumpResult> grid = new Grid<>(JumpResult.class, false);
+        grid.setSizeFull();
+        grid.setMinHeight("400px");
+
+        grid.addColumn(j -> j.getCompetition().getCompetitionDate())
+                .setHeader("Date").setAutoWidth(true).setSortable(true);
+        grid.addColumn(j -> "WC".equals(j.getCompetition().getCircuit()) ? "World Cup" : "Cont. Cup")
+                .setHeader("Circuit").setAutoWidth(true).setSortable(true);
+        grid.addColumn(j -> j.getCompetition().getDisplayLocation())
+                .setHeader("Location").setAutoWidth(true).setSortable(true);
+        grid.addColumn(j -> j.getCompetition().getHillSizeM() != null ? String.format(Locale.ROOT, "HS%.0f", j.getCompetition().getHillSizeM()) : "")
+                .setHeader("Hill").setAutoWidth(true);
+        grid.addColumn(j -> j.getCompetition().getFormat())
+                .setHeader("Format").setAutoWidth(true).setSortable(true);
+        grid.addColumn(j -> j.getListLabel() + (j.getRoundNumber() != null && j.getRoundNumber() > 1
+                        ? " · 2nd jump" : ""))
+                .setHeader("List").setAutoWidth(true);
+        grid.addColumn(j -> j.getRank() == null ? "" : String.valueOf(j.getRank()))
+                .setHeader("Rank").setAutoWidth(true)
+                .setComparator(j -> j.getRank() == null ? Integer.MAX_VALUE : j.getRank());
+        grid.addColumn(j -> JumpResult.format(j.getDistanceM()))
+                .setHeader("Distance").setAutoWidth(true).setTextAlign(ColumnTextAlign.END)
+                .setComparator(j -> j.getDistanceM() == null ? -1 : j.getDistanceM());
+        grid.addColumn(j -> JumpResult.format(j.getStylePoints()))
+                .setHeader("Style").setAutoWidth(true).setTextAlign(ColumnTextAlign.END)
+                .setComparator(j -> j.getStylePoints() == null ? -1 : j.getStylePoints());
+        grid.addColumn(j -> j.getWindMs() == null ? "" : String.format(Locale.ROOT, "%.2f", j.getWindMs()))
+                .setHeader("Wind m/s").setAutoWidth(true).setTextAlign(ColumnTextAlign.END);
+        grid.addColumn(j -> JumpResult.format(j.getTotalPoints()))
+                .setHeader("Points").setAutoWidth(true).setTextAlign(ColumnTextAlign.END)
+                .setComparator(j -> j.getTotalPoints() == null ? -1 : j.getTotalPoints());
+        grid.addColumn(JumpResult::getStatus).setHeader("Status").setAutoWidth(true);
+
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(j ->
+                UI.getCurrent().navigate(ResultDetailView.class, j.getCompetition().getId())));
+
+        List<JumpResult> counted = competitionJumps(jumps);
+        RadioButtonGroup<String> filter = new RadioButtonGroup<>();
+        filter.setItems("Competition rounds", "Best jump", "All lists");
+        filter.setValue("Competition rounds");
+        filter.addValueChangeListener(e -> grid.setItems(switch (e.getValue()) {
+            case "Best jump" -> counted.stream().filter(AthleteDetailView::isJumpWin).toList();
+            case "All lists" -> jumps;
+            default          -> counted;
+        }));
+        HorizontalLayout filterRow = new HorizontalLayout(new Span("Show: "), filter);
+        filterRow.setAlignItems(Alignment.CENTER);
+        filterRow.setSpacing(true);
+        filterRow.addClassNames(LumoUtility.Padding.Bottom.XSMALL);
+
+        grid.setItems(counted);
+        VerticalLayout panel = new VerticalLayout(filterRow, grid);
+        panel.setSizeFull();
+        panel.setPadding(false);
+        panel.setSpacing(false);
+        panel.expand(grid);
+        return panel;
+    }
+
+    private VerticalLayout textBadge(String value, String label) {
+        VerticalLayout v = new VerticalLayout();
+        v.setPadding(false);
+        v.setSpacing(false);
+        v.setAlignItems(Alignment.CENTER);
+        v.setWidth(null);
+        Span valueSpan = new Span(value);
+        valueSpan.addClassNames(LumoUtility.FontSize.XLARGE, LumoUtility.FontWeight.BOLD);
+        Span labelSpan = new Span(label);
+        labelSpan.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
+        v.add(valueSpan, labelSpan);
+        return v;
     }
 
     private static Integer rankOf(TeamMember m) {

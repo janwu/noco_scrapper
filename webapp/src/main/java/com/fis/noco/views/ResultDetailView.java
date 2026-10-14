@@ -2,9 +2,11 @@ package com.fis.noco.views;
 
 import com.fis.noco.entity.CombinedResult;
 import com.fis.noco.entity.Competition;
+import com.fis.noco.entity.JumpResult;
 import com.fis.noco.entity.TeamMember;
 import com.fis.noco.entity.TeamResult;
 import com.fis.noco.service.CompetitionService;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -17,6 +19,7 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.PageTitle;
@@ -24,6 +27,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
 import java.util.List;
+import java.util.Map;
 
 @Route(value = "result", layout = MainLayout.class)
 @PageTitle("Competition Result | FIS Nordic Combined")
@@ -79,26 +83,48 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
         if (competition.getHillSizeM() != null)
             addMeta(metaRow, "Hill Size", competition.getHillSizeM() + " m");
 
+        add(backButton, header, metaRow);
+
+        Component result;
+        String resultTab;
         if (CompetitionService.isTeamFormat(competition.getFormat())) {
             List<TeamResult> teams = competitionService.getTeamResultsForCompetition(competition.getId());
-            H3 teamsTitle = new H3("Results (" + teams.size() + " teams)");
-            teamsTitle.addClassNames(LumoUtility.Margin.Top.MEDIUM, LumoUtility.Margin.Bottom.XSMALL);
-            Grid<TeamResult> teamGrid = createTeamGrid(teams);
-            add(backButton, header, metaRow, teamsTitle, teamGrid);
-            expand(teamGrid);
+            resultTab = "Result (" + teams.size() + " teams)";
+            result = teams.isEmpty() ? null : createTeamGrid(teams);
+        } else {
+            List<CombinedResult> results = competitionService.getResultsForCompetition(competition.getId());
+            resultTab = "Result (" + results.size() + " athletes)";
+            boolean isMassStart = CompetitionService.isJumpLast(competition.getFormat());
+            result = results.isEmpty() ? null : createResultsGrid(results, isMassStart);
+        }
+
+        // The jump lists: competition round, qualification, provisional round
+        Map<String, List<JumpResult>> jumpLists = competitionService.getJumpLists(competition.getId());
+        if (jumpLists.isEmpty()) {
+            if (result == null) {
+                add(new Paragraph("No results."));
+                return;
+            }
+            H3 title = new H3(resultTab);
+            title.addClassNames(LumoUtility.Margin.Top.MEDIUM, LumoUtility.Margin.Bottom.XSMALL);
+            add(title, result);
+            expand(result);
             return;
         }
 
-        List<CombinedResult> results = competitionService.getResultsForCompetition(competition.getId());
-
-        H3 resultsTitle = new H3("Results (" + results.size() + " athletes)");
-        resultsTitle.addClassNames(LumoUtility.Margin.Top.MEDIUM, LumoUtility.Margin.Bottom.XSMALL);
-
-        boolean isMassStart = CompetitionService.isJumpLast(competition.getFormat());
-        Grid<CombinedResult> grid = createResultsGrid(results, isMassStart);
-
-        add(backButton, header, metaRow, resultsTitle, grid);
-        expand(grid);
+        TabSheet tabs = new TabSheet();
+        tabs.setSizeFull();
+        tabs.addClassNames(LumoUtility.Margin.Top.SMALL);
+        if (result != null) {
+            tabs.add(resultTab, result);
+        }
+        jumpLists.forEach((label, jumps) -> {
+            long athletes = jumps.stream().filter(j -> j.getRoundNumber() == null || j.getRoundNumber() == 1).count();
+            String name = JumpResult.listLabel("RL").equals(label) ? "Ski Jumping" : label;
+            tabs.add(name + " (" + athletes + ")", JumpGrid.create(jumps));
+        });
+        add(tabs);
+        expand(tabs);
     }
 
     private void addMeta(HorizontalLayout layout, String label, String value) {

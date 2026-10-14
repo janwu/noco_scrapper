@@ -2,9 +2,11 @@ package com.fis.noco.service;
 
 import com.fis.noco.entity.Athlete;
 import com.fis.noco.entity.CombinedResult;
+import com.fis.noco.entity.JumpResult;
 import com.fis.noco.entity.TeamMember;
 import com.fis.noco.repository.AthleteRepository;
 import com.fis.noco.repository.CombinedResultRepository;
+import com.fis.noco.repository.JumpResultRepository;
 import com.fis.noco.repository.TeamResultRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,13 +24,21 @@ public class AthleteService {
     private final AthleteRepository athleteRepository;
     private final CombinedResultRepository combinedResultRepository;
     private final TeamResultRepository teamResultRepository;
+    private final JumpResultRepository jumpResultRepository;
 
     public AthleteService(AthleteRepository athleteRepository,
                           CombinedResultRepository combinedResultRepository,
-                          TeamResultRepository teamResultRepository) {
+                          TeamResultRepository teamResultRepository,
+                          JumpResultRepository jumpResultRepository) {
+        this.jumpResultRepository = jumpResultRepository;
         this.athleteRepository = athleteRepository;
         this.combinedResultRepository = combinedResultRepository;
         this.teamResultRepository = teamResultRepository;
+    }
+
+    /** All jumps of the athlete (competition rounds, qualifications, provisional rounds), newest first. */
+    public List<JumpResult> getJumps(Long athleteId) {
+        return jumpResultRepository.findByAthleteId(athleteId);
     }
 
     /** Team, Team Sprint and Mixed Team starts in both circuits, newest first. */
