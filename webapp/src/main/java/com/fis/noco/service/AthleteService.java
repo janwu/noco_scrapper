@@ -14,7 +14,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -34,6 +37,30 @@ public class AthleteService {
         this.athleteRepository = athleteRepository;
         this.combinedResultRepository = combinedResultRepository;
         this.teamResultRepository = teamResultRepository;
+    }
+
+    /**
+     * Results by venue, favourite hills and courses (see {@link AthleteProfile}),
+     * over both circuits; {@link AthleteProfile#forCircuit} narrows it down.
+     */
+    public AthleteProfile getProfile(Long athleteId) {
+        Map<Long, Integer[]> fields = new HashMap<>();
+        for (Object[] row : combinedResultRepository.findFieldSizesForAthlete(athleteId)) {
+            fields.put(((Number) row[0]).longValue(),
+                    new Integer[]{toInt(row[1]), toInt(row[2]), toInt(row[3])});
+        }
+        List<AthleteProfile.RatedResult> rated = new ArrayList<>();
+        for (String circuit : List.of("WC", "COC")) {
+            for (CombinedResult r : combinedResultRepository.findByAthleteIdAndCircuit(athleteId, circuit)) {
+                Integer[] f = fields.getOrDefault(r.getCompetition().getId(), new Integer[3]);
+                rated.add(new AthleteProfile.RatedResult(r, f[0], f[1], f[2]));
+            }
+        }
+        return new AthleteProfile(rated, getTeamStarts(athleteId), getJumps(athleteId));
+    }
+
+    private static Integer toInt(Object value) {
+        return value == null ? null : ((Number) value).intValue();
     }
 
     /** All jumps of the athlete (competition rounds, qualifications, provisional rounds), newest first. */

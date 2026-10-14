@@ -6,6 +6,7 @@ import com.fis.noco.entity.Competition;
 import com.fis.noco.entity.JumpResult;
 import com.fis.noco.entity.TeamMember;
 import com.fis.noco.entity.TeamResult;
+import com.fis.noco.service.AthleteProfile;
 import com.fis.noco.service.AthleteService;
 import com.fis.noco.service.CompetitionService;
 import com.vaadin.flow.component.UI;
@@ -98,19 +99,14 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
 
         List<TeamMember> teamStarts = athleteService.getTeamStarts(athlete.getId());
         List<JumpResult> jumps = athleteService.getJumps(athlete.getId());
+        AthleteProfile profile = athleteService.getProfile(athlete.getId());
 
-        HorizontalLayout statsRow = buildStatsRow(athlete, wcResults, cocResults);
-        statsRow.getStyle().set("flex-wrap", "wrap");
-        if (!teamStarts.isEmpty()) {
-            statsRow.add(buildTeamStatsBlock(teamStarts));
-        }
-        if (!competitionJumps(jumps).isEmpty()) {
-            statsRow.add(buildJumpStatsBlock(jumps));
-        }
-        add(backButton, nameHeader, infoRow, statsRow);
+        add(backButton, nameHeader, infoRow, AthleteOverview.highlights(profile));
 
         TabSheet tabSheet = new TabSheet();
         tabSheet.setSizeFull();
+        tabSheet.add("Overview", new AthleteOverview(profile,
+                circuit -> careerBlocks(athlete, circuit, wcResults, cocResults, teamStarts, jumps)));
         tabSheet.add("World Cup (" + wcResults.size() + ")", createFilteredResultsPanel(wcResults));
         tabSheet.add("Continental Cup (" + cocResults.size() + ")", createFilteredResultsPanel(cocResults));
         if (!teamStarts.isEmpty()) {
@@ -124,15 +120,32 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         expand(tabSheet);
     }
 
-    private HorizontalLayout buildStatsRow(Athlete athlete, List<CombinedResult> wcResults, List<CombinedResult> cocResults) {
+    /** The career statistics of a circuit ("WC", "COC"; null = both) for the overview tab. */
+    private HorizontalLayout careerBlocks(Athlete athlete, String circuit, List<CombinedResult> wcResults,
+                                          List<CombinedResult> cocResults, List<TeamMember> teamStarts,
+                                          List<JumpResult> jumps) {
         HorizontalLayout row = new HorizontalLayout();
         row.setSpacing(true);
         row.setWidthFull();
+        row.getStyle().set("flex-wrap", "wrap");
         row.addClassNames(LumoUtility.Padding.Vertical.SMALL);
 
-        row.add(buildStatsBlock("World Cup", wcResults, true, athlete.getBirthDate()));
-        row.add(buildStatsBlock("Continental Cup", cocResults, false, athlete.getBirthDate()));
-
+        if (circuit == null || circuit.equals("WC")) {
+            row.add(buildStatsBlock("World Cup", wcResults, true, athlete.getBirthDate()));
+        }
+        if (circuit == null || circuit.equals("COC")) {
+            row.add(buildStatsBlock("Continental Cup", cocResults, false, athlete.getBirthDate()));
+        }
+        List<TeamMember> teams = teamStarts.stream().filter(m -> circuit == null
+                || circuit.equals(m.getTeamResult().getCompetition().getCircuit())).toList();
+        if (!teams.isEmpty()) {
+            row.add(buildTeamStatsBlock(teams));
+        }
+        List<JumpResult> ownJumps = jumps.stream().filter(j -> circuit == null
+                || circuit.equals(j.getCompetition().getCircuit())).toList();
+        if (!competitionJumps(ownJumps).isEmpty()) {
+            row.add(buildJumpStatsBlock(ownJumps));
+        }
         return row;
     }
 

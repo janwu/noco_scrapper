@@ -24,6 +24,16 @@ public interface CombinedResultRepository extends JpaRepository<CombinedResult, 
     List<CombinedResult> findByAthleteIdAndCircuit(@Param("athleteId") Long athleteId,
                                                     @Param("circuit") String circuit);
 
+    /**
+     * The field of every competition the athlete took part in:
+     * competition id, highest rank, highest jump rank, highest cross-country rank.
+     */
+    @Query(value = "SELECT r.competition_id, MAX(r.rank), MAX(r.jump_rank), MAX(r.xc_rank) " +
+                   "FROM combined_results r WHERE r.competition_id IN " +
+                   "(SELECT competition_id FROM combined_results WHERE athlete_id = :athleteId) " +
+                   "GROUP BY r.competition_id", nativeQuery = true)
+    List<Object[]> findFieldSizesForAthlete(@Param("athleteId") Long athleteId);
+
     @Query("SELECT COUNT(r) FROM CombinedResult r WHERE r.competition.id = :competitionId")
     long countByCompetitionId(@Param("competitionId") Long competitionId);
 
