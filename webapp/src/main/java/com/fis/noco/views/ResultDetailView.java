@@ -87,6 +87,8 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
 
         Component result;
         String resultTab;
+        Component crossCountry = null;
+        String crossCountryTab = null;
         if (CompetitionService.isTeamFormat(competition.getFormat())) {
             List<TeamResult> teams = competitionService.getTeamResultsForCompetition(competition.getId());
             resultTab = "Result (" + teams.size() + " teams)";
@@ -96,11 +98,17 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
             resultTab = "Result (" + results.size() + " athletes)";
             boolean isMassStart = CompetitionService.isJumpLast(competition.getFormat());
             result = results.isEmpty() ? null : createResultsGrid(results, isMassStart);
+            // Mass start and super sprint: the race comes first and has a result of its own
+            List<CombinedResult> raced = results.stream().filter(r -> r.getXcRank() != null).toList();
+            if (isMassStart && !raced.isEmpty()) {
+                crossCountryTab = "Cross-Country (" + raced.size() + ")";
+                crossCountry = createCrossCountryGrid(results);
+            }
         }
 
         // The jump lists: competition round, qualification, provisional round
         Map<String, List<JumpResult>> jumpLists = competitionService.getJumpLists(competition.getId());
-        if (jumpLists.isEmpty()) {
+        if (jumpLists.isEmpty() && crossCountry == null) {
             if (result == null) {
                 add(new Paragraph("No results."));
                 return;
@@ -117,6 +125,9 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
         tabs.addClassNames(LumoUtility.Margin.Top.SMALL);
         if (result != null) {
             tabs.add(resultTab, result);
+        }
+        if (crossCountry != null) {
+            tabs.add(crossCountryTab, crossCountry);
         }
         jumpLists.forEach((label, jumps) -> {
             // athletes, not jumps: in training some leave out the first round
@@ -204,6 +215,61 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
 
         grid.setItems(results);
         return grid;
+    }
+
+    /**
+     * The cross-country race of a mass start or super sprint, by the rank of the race time:
+     * time, gap to the fastest, the points that gap costs in the jump, and the final rank.
+     * Read from the result list; athletes without a race rank (DNF in the race) come last.
+     */
+    private Grid<CombinedResult> createCrossCountryGrid(List<CombinedResult> results) {
+        List<CombinedResult> rows = new java.util.ArrayList<>(results);
+        // the rank decides (a photo finish may rank a slower time first), then the time
+        rows.sort(java.util.Comparator.comparing(CombinedResult::getXcRank,
+                        java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                .thenComparing(r -> seconds(r.getXcTime()), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())));
+        Double best = rows.stream().map(r -> seconds(r.getXcTime())).filter(java.util.Objects::nonNull)
+                .min(Double::compare).orElse(null);
+
+        Grid<CombinedResult> grid = new Grid<>(CombinedResult.class, false);
+        grid.setSizeFull();
+        grid.addColumn(CombinedResult::getXcRank).setHeader("XC Rank").setAutoWidth(true).setFlexGrow(0);
+        grid.addColumn(CombinedResult::getBib).setHeader("Bib").setAutoWidth(true).setFlexGrow(0);
+        grid.addColumn(CombinedResult::getDisplayName).setHeader("Name").setAutoWidth(true);
+        grid.addComponentColumn(r -> new NationFlag(r.getDisplayNation())).setHeader("Nation").setAutoWidth(true);
+        grid.addColumn(CombinedResult::getXcTime).setHeader("XC Time").setAutoWidth(true);
+        grid.addColumn(r -> gap(seconds(r.getXcTime()), best)).setHeader("Behind fastest").setAutoWidth(true);
+        grid.addColumn(CombinedResult::getTimeDifference).setHeader("Points Diff").setAutoWidth(true);
+        grid.addColumn(CombinedResult::getRank).setHeader("Final Rank").setAutoWidth(true)
+                .setComparator(r -> r.getRank() == null ? Integer.MAX_VALUE : r.getRank());
+        grid.addComponentColumn(r -> statusBadge(r.getStatus())).setHeader("Status").setAutoWidth(true);
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(r -> {
+            if (r.getAthlete() != null) {
+                UI.getCurrent().navigate(AthleteDetailView.class, r.getAthlete().getId());
+            }
+        }));
+        grid.setItems(rows);
+        return grid;
+    }
+
+    /** '23:55.5' → 1435.5 seconds; null if not a time. */
+    static Double seconds(String clock) {
+        if (clock == null || !clock.matches("(?:\\d+:)?\\d{1,2}:\\d{2}\\.\\d")) return null;
+        double total = 0;
+        for (String part : clock.split(":")) total = total * 60 + Double.parseDouble(part);
+        return total;
+    }
+
+    /** '+6.5', '+1:02.3'; '0.0' for the fastest; empty without a time. */
+    static String gap(Double time, Double best) {
+        if (time == null || best == null) return "";
+        double gap = time - best;
+        if (gap < 0.05) return "0.0";
+        long tenths = Math.round(gap * 10);
+        long minutes = tenths / 600;
+        double rest = (tenths % 600) / 10.0;
+        return minutes > 0 ? String.format(java.util.Locale.ROOT, "+%d:%04.1f", minutes, rest)
+                           : String.format(java.util.Locale.ROOT, "+%.1f", rest);
     }
 
     private Grid<TeamResult> createTeamGrid(List<TeamResult> teams) {

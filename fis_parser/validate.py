@@ -384,6 +384,53 @@ def validate_training(doc: dict) -> Tuple[List[str], List[str]]:
     return errors, warnings
 
 
+def validate_xc(doc: dict) -> Tuple[List[str], List[str]]:
+    """
+    Return (errors, warnings) for the cross-country list of a mass start (RLLL):
+    ranks 1..N, athletes, race times in clock format that grow with the rank,
+    and gaps that are the time minus the winner's time.
+    """
+    errors: List[str] = []
+    warnings: List[str] = []
+    rows = doc.get('xc_results') or []
+    ranked = [r for r in rows if r.get('rank') is not None]
+    if not ranked:
+        return ["no ranked cross-country rows"], warnings
+    if not any(r['rank'] == 1 for r in ranked):
+        errors.append("no winner (rank 1 missing)")
+    seq = _check_rank_sequence([r['rank'] for r in ranked])
+    if seq:
+        errors.append(seq)
+    plain_case = _is_plain_case_list(rows)
+    given_first = doc.get('name_order') == 'given-first'
+    bad = [p for p in (jump_row_identity_problem(dict(r, nation=r.get('nation') or 'XXX'), given_first, plain_case)
+                       for r in rows) if p]
+    if _too_many(len(bad), len(rows)):
+        errors.append(f"{len(bad)} of {len(rows)} rows are no athlete, e.g. {bad[0]}")
+    elif bad:
+        warnings.append(f"rows that are no athlete: {'; '.join(bad)}")
+
+    timed = [r for r in sorted(ranked, key=lambda r: r['rank']) if CLOCK_RE.match(r.get('total_time') or '')]
+    if _too_many(len(ranked) - len(timed), len(ranked)):
+        errors.append(f"race time missing or not a time in {len(ranked) - len(timed)} of {len(ranked)} ranked rows")
+    seconds = [_seconds(r['total_time']) for r in timed]
+    slower = sum(1 for a, b in zip(seconds, seconds[1:]) if b < a - 0.05)
+    if slower:
+        errors.append(f"race times do not grow with the rank in {slower} places")
+    if timed and timed[0]['rank'] == 1:
+        best = seconds[0]
+        wrong_gap = []
+        for r, s in zip(timed[1:], seconds[1:]):
+            gap = _seconds((r.get('time_behind') or '').lstrip('+'))
+            if gap is not None and abs(best + gap - s) > 0.15:
+                wrong_gap.append(str(r.get('name')))
+        if _too_many(len(wrong_gap), len(timed)):
+            errors.append(f"gap is not time minus the winner's time in {len(wrong_gap)} rows")
+        elif wrong_gap:
+            warnings.append(f"gap is not time minus the winner's time: {', '.join(wrong_gap)}")
+    return errors, warnings
+
+
 CLOCK_RE = re.compile(r'^(?:\d+:)?\d{1,2}:\d{2}\.\d$')             # 23:44.4, 1:02:13.5
 START_GAP_RE = re.compile(r'^\+?\d{1,2}:\d{2}$')                    # 0:24, +1:07, 00:38
 FINISH_GAP_RE = re.compile(r'^\+(?:(?:\d+:)?\d{1,2}:)?\d{1,2}\.\d$')    # +41.6, +1:24.5, +00:03.9
@@ -478,7 +525,9 @@ def _check_order(rows: List[dict], rank_field: str, value_field: str, ascending:
 
 
 def validate(doc: dict) -> Tuple[List[str], List[str]]:
-    """Validate a parsed document (as dict). Cross-country lists (RLLL) are not checked."""
+    """Validate a parsed document (as dict)."""
+    if doc.get('doc_type') == 'RLLL':
+        return validate_xc(doc)
     if doc.get('doc_type') == 'ROF':
         return validate_rof(doc)
     if doc.get('doc_type') in ('RL', 'RL1', 'PCR'):

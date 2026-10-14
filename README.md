@@ -84,7 +84,11 @@ and the web app shows that one.
   per line in trial rounds; 1,042 of 1,044 pass validation. Their rows link only to athletes of
   the result and competition jump lists, so someone who only trained is not added as an athlete.
   The web app reads all jumps through the view `v_all_jumps`.
-- Cross-country lists of mass starts (RLLL) are not validated.
+- Cross-country lists of mass starts (RLLL) are validated (ranks, athletes, times that grow with
+  the rank, gaps); only 14 of 64 pass, their parser reads most layouts wrongly. The web app
+  shows the race of a mass start from the official result list instead, which has race time
+  and race rank of every athlete. FIS may rank a slower time first after a photo finish
+  (COC 2018–2021); the result lists print it so.
 - 6 result lists fail validation and are not loaded; none is a regular World Cup /
   Continental Cup list:
   WC 2014/15 codex 4186–4189 (children's event, ranks per age class) and
