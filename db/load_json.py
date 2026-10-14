@@ -23,7 +23,7 @@ What is loaded
     RLT            → training_jump_results
     RLTR           → trial_round_results
     RLLL           → xc_results
-A ROF the parser flagged as broken (parse_errors) is recorded as a document,
+A list the parser flagged as broken (parse_errors) is recorded as a document,
 but its rows are not loaded.
 """
 
@@ -514,10 +514,10 @@ def add_results(build: Build, comp: dict, comp_id: int, doc_id: int, meta: dict,
                 continue
             yield r, build.athlete(r, comp, source)
 
+    if doc.get("parse_errors"):
+        build.skipped_docs.append((f"{doc_type} failed validation: {doc['parse_errors'][0]}", source))
+        return
     if doc_type == "ROF":
-        if doc.get("parse_errors"):
-            build.skipped_docs.append((f"ROF failed validation: {doc['parse_errors'][0]}", source))
-            return
         if comp["team"]:
             add_team_results(build, comp, comp_id, doc_id, doc, source)
             return

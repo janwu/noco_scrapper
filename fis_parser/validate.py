@@ -60,7 +60,7 @@ def row_identity_problem(row: dict, given_first: bool = False) -> Optional[str]:
         # Names are printed 'SURNAME Firstname'; anything else is a club,
         # header or jury line that slipped into the result list.
         return f"name does not start with an upper-case surname: {name!r}"
-    if not given_first and _TWO_NAMES_RE.search(name):
+    if not given_first and _TWO_NAMES_RE.search(re.sub(r'^(?:van|von|de|di|da|del|der|le|la)\s', '', name)):
         # 'MUENCHMEYER StephanGER KIRCHEISEN Bjoern': two table cells in one
         return f"name holds more than one person: {name!r}"
     if not nation or not re.match(r'^[A-Z]{3}$', nation) or nation in _MONTHS:
@@ -71,7 +71,7 @@ def row_identity_problem(row: dict, given_first: bool = False) -> Optional[str]:
 # 'MOAN Magnus', 'LI Ji', "O'BRIEN Tom", 'O CONNELL Kathleen', 'McKINNON Joe' —
 # but not 'E Loeng Geir' (judge letter + name) or 'Lisa EDER'
 _SURNAME_FIRST_RE = re.compile(
-    r"^(?:Mc)?[^\W\d_a-z](?:[^\Wa-z_]+[\s\-']|'[^\W\d_a-z]|\s[^\W\d_a-z]{2})")
+    r"^(?:(?:van|von|de|di|da|del|der|le|la)\s)?(?:Mc)?[^\W\d_a-z](?:[^\Wa-z_]+[\s\-']|'[^\W\d_a-z]|\s[^\W\d_a-z]{2})")
 # first name (has lower case) followed by another all-caps word of 3+ letters
 _TWO_NAMES_RE = re.compile(r"[^\W\d_]*[a-zà-ÿ][^\W\d_]*\s+[^\W\d_a-zà-ÿ]{3,}(?:\s|$)")
 
@@ -213,6 +213,162 @@ def validate_rof(doc: dict) -> Tuple[List[str], List[str]]:
     return errors, warnings
 
 
+# ── jump lists ───────────────────────────────────────────────────────────────
+
+# Rows of a list whose printed values may contradict each other before the
+# parse (rather than the PDF) is blamed: 5 %, at least 2
+def _too_many(count: int, rows: int) -> bool:
+    return count > max(2, 0.05 * rows)
+
+
+def _is_plain_case_list(rows: List[dict]) -> bool:
+    """World Cup lists of 2002/03–2004/05 print 'Ackermann Ronny', not 'ACKERMANN Ronny'."""
+    named = [r['name'] for r in rows if r.get('name')]
+    plain = [n for n in named if re.match(r"^[^\W\d_a-z][^\W\d_A-Z]", n) and not _SURNAME_FIRST_RE.match(n)]
+    return bool(named) and len(plain) >= 0.8 * len(named)
+
+
+def jump_row_identity_problem(row: dict, given_first: bool = False, plain_case: bool = False) -> Optional[str]:
+    """row_identity_problem for jump lists; plain_case: see _is_plain_case_list."""
+    if not plain_case:
+        return row_identity_problem(row, given_first)
+    name = row.get('name') or ''
+    nation = row.get('nation')
+    if not is_valid_athlete_name(name) or len(name.split()) < 2 or re.search(r'\d', name):
+        return f"invalid athlete name {name!r}"
+    if not nation or not re.match(r'^[A-Z]{3}$', nation) or nation in _MONTHS:
+        return f"invalid nation {nation!r} for {name!r}"
+    return None
+
+
+def _marks(row: dict) -> List[float]:
+    return [row[k] for k in ('judge_a', 'judge_b', 'judge_c', 'judge_d', 'judge_e') if row.get(k) is not None]
+
+
+def validate_jump(doc: dict) -> Tuple[List[str], List[str]]:
+    """Return (errors, warnings) for a competition jump list (RL, RL1, RLQ, PCR)."""
+    errors: List[str] = []
+    warnings: List[str] = []
+    rows = doc.get('jump_rounds') or []
+    if not rows:
+        return ["no jump rows"], warnings
+
+    ranked = [r for r in rows if r.get('rank') is not None]
+    first_round = [r for r in ranked if r.get('round_number') == 1]
+    is_team_list = False
+    if not ranked:
+        errors.append(f"no ranked rows ({len(rows)} rows, all without rank)")
+    else:
+        if not any(r['rank'] == 1 for r in ranked):
+            errors.append("no winner (rank 1 missing)")
+        # team lists: every member carries the rank and the bib of his team
+        teams = {(r['rank'], r.get('bib')) for r in first_round}
+        is_team_list = len(teams) < len(first_round)
+        seq = _check_rank_sequence([rank for rank, _ in teams] if is_team_list
+                                   else [r['rank'] for r in first_round])
+        if seq:
+            errors.append(seq)
+    for r in rows:
+        if r.get('rank') is None and not (r.get('dns') or r.get('dsq')) and r.get('distance_m') is None:
+            errors.append(f"row without rank, status and jump: {r.get('name')!r}")
+
+    # ── identity ────────────────────────────────────────────────────────────
+    given_first = doc.get('name_order') == 'given-first'
+    plain_case = _is_plain_case_list(rows)
+    # lists by ewoxx name the athletes who did not start without their nation
+    # (and mixed teams, 'FIS', their members); the loader completes it from their other results
+    named_only = lambda r: (r.get('rank') is None or is_team_list) and not r.get('nation')
+    for r in rows:
+        problem = jump_row_identity_problem(dict(r, nation='XXX') if named_only(r) else r, given_first, plain_case)
+        if problem:
+            errors.append(problem)
+    seen = set()
+    for r in first_round:
+        key = (r.get('name'), r.get('nation'), r.get('bib'))
+        if key in seen:
+            errors.append(f"athlete ranked twice: {r.get('name')!r}")
+        seen.add(key)
+
+    # ── the values of a jump ────────────────────────────────────────────────
+    no_jump = [r for r in ranked if (r.get('distance_m') is None or r.get('total_points') is None)
+               and not (r.get('dns') or r.get('dsq'))]
+    if _too_many(len(no_jump), len(ranked)):
+        errors.append(f"jump values missing in {len(no_jump)} of {len(ranked)} ranked rows")
+    elif no_jump:
+        warnings.append(f"jump values missing: {', '.join(str(r.get('name')) for r in no_jump)}")
+
+    hill = doc.get('hill_data') or {}
+    k_point, meter_value = hill.get('k_point_m'), hill.get('meter_value')
+    checks = {'style points are not the sum of the marks': [],
+              'distance points do not follow from the distance': [],
+              'total is not the sum of its parts': [],
+              'distance out of range': [],
+              'speed out of range': []}
+    for r in ranked:
+        name = str(r.get('name'))
+        marks = _marks(r)
+        style, points, total = r.get('style_points'), r.get('dist_points'), r.get('total_points')
+        distance = r.get('distance_m')
+        if style is not None and len(marks) in (3, 5):
+            counted = sum(marks) - min(marks) - max(marks) if len(marks) == 5 else sum(marks)
+            if abs(counted - style) > 0.05:
+                checks['style points are not the sum of the marks'].append(name)
+        if k_point and meter_value and distance is not None and points is not None and k_point < 170:
+            if abs(60 + (distance - k_point) * meter_value - points) > 0.11:
+                checks['distance points do not follow from the distance'].append(name)
+        if None not in (style, points, total):
+            parts = points + style + (r.get('gate_comp_pts') or 0) + (r.get('wind_comp_pts') or 0)
+            if abs(parts - total) > 0.11 and not (parts < 0 and total == 0):
+                checks['total is not the sum of its parts'].append(name)
+        if distance is not None and not 30 <= distance <= 260:
+            checks['distance out of range'].append(name)
+        if r.get('speed_kmh') is not None and not 60 <= r['speed_kmh'] <= 115:
+            checks['speed out of range'].append(name)
+    for what, names in checks.items():
+        if _too_many(len(names), len(ranked)):
+            errors.append(f"{what} in {len(names)} of {len(ranked)} ranked rows")
+        elif names:
+            warnings.append(f"{what}: {', '.join(names)}")
+
+    return errors, warnings
+
+
+def validate_training(doc: dict) -> Tuple[List[str], List[str]]:
+    """
+    Return (errors, warnings) for a training or trial round list (RLT, RLTR).
+    They print no marks to check the values against, so only identity and
+    plausible ranges are checked.
+    """
+    errors: List[str] = []
+    warnings: List[str] = []
+    rows = doc.get('jump_rounds') or []
+    if not rows:
+        return ["no jump rows"], warnings
+    given_first = doc.get('name_order') == 'given-first'
+    plain_case = _is_plain_case_list(rows)
+    bad = [p for p in (jump_row_identity_problem(r, given_first, plain_case) for r in rows) if p]
+    if bad:
+        errors.append(f"{len(bad)} of {len(rows)} rows are no athlete, e.g. {bad[0]}")
+    seen = set()
+    for r in rows:
+        key = (r.get('name'), r.get('nation'), r.get('round_number'))
+        if key in seen:
+            errors.append(f"athlete twice in round {r.get('round_number')}: {r.get('name')!r}")
+        seen.add(key)
+    jumped = [r for r in rows if r.get('distance_m') is not None]
+    if _too_many(len(rows) - len(jumped), len(rows)):
+        errors.append(f"distance missing in {len(rows) - len(jumped)} of {len(rows)} rows")
+    for what, test in (('distance', lambda r: not 30 <= r['distance_m'] <= 260),
+                       ('speed', lambda r: r.get('speed_kmh') is not None and not 60 <= r['speed_kmh'] <= 115),
+                       ('gate', lambda r: r.get('gate') is not None and not 0 < r['gate'] <= 60)):
+        names = [str(r.get('name')) for r in jumped if test(r)]
+        if _too_many(len(names), len(jumped)):
+            errors.append(f"{what} out of range in {len(names)} of {len(jumped)} rows")
+        elif names:
+            warnings.append(f"{what} out of range: {', '.join(names)}")
+    return errors, warnings
+
+
 CLOCK_RE = re.compile(r'^(?:\d+:)?\d{1,2}:\d{2}\.\d$')             # 23:44.4, 1:02:13.5
 START_GAP_RE = re.compile(r'^\+?\d{1,2}:\d{2}$')                    # 0:24, +1:07, 00:38
 FINISH_GAP_RE = re.compile(r'^\+(?:(?:\d+:)?\d{1,2}:)?\d{1,2}\.\d$')    # +41.6, +1:24.5, +00:03.9
@@ -307,7 +463,11 @@ def _check_order(rows: List[dict], rank_field: str, value_field: str, ascending:
 
 
 def validate(doc: dict) -> Tuple[List[str], List[str]]:
-    """Validate a parsed document (as dict). Only ROF is checked so far."""
+    """Validate a parsed document (as dict). Cross-country lists (RLLL) are not checked."""
     if doc.get('doc_type') == 'ROF':
         return validate_rof(doc)
+    if doc.get('doc_type') in ('RL', 'RL1', 'PCR'):
+        return validate_jump(doc)
+    if doc.get('doc_type') in ('RLT', 'RLTR'):
+        return validate_training(doc)
     return [], []

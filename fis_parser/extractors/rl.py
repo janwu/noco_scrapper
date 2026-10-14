@@ -23,6 +23,7 @@ from fis_parser.utils import (
     find_line_index, group_words_into_rows, row_text, is_valid_athlete_name,
 )
 from fis_parser.extractors.base import BaseExtractor
+from fis_parser.extractors.jump_lines import has_judges_layout, parse_jump_lines
 
 
 class RLExtractor(BaseExtractor):
@@ -77,7 +78,12 @@ class RLExtractor(BaseExtractor):
                 doc.competitor_stats = cs
 
                 # Jump results
-                if doc.format_era == 'OLD':
+                rows = self._parse_with_marks(pdf, doc)
+                if rows is not None:
+                    doc.jump_rounds = rows
+                    if re.search(r'Rank\s+Bib\s+Name\s+Nation\s*Speed', full_text):
+                        doc.name_order = 'given-first'          # K-Jump
+                elif doc.format_era == 'OLD':
                     doc.jump_rounds = self._parse_old_format(pdf)
                 else:
                     doc.jump_rounds = self._parse_modern_format(pdf)
@@ -86,6 +92,36 @@ class RLExtractor(BaseExtractor):
             doc.parse_errors.append(f"RL parse error: {exc}")
 
         return doc
+
+    # ── Lists with judges' marks (all layouts) ────────────────────────────────
+
+    def _parse_with_marks(self, pdf: pdfplumber.PDF, doc: ParsedDocument) -> Optional[List[JumpRound]]:
+        """
+        Individual lists that print the five marks are read line by line
+        (fis_parser.extractors.jump_lines).  None if this is not such a list.
+
+        Some lists set the name, the jump and the club so close together that
+        pdfplumber's default merges them into one line; those are read again
+        with a tighter line tolerance and the better result is kept.
+        """
+        hill = None
+        if doc.hill_data and doc.hill_data.k_point_m and doc.hill_data.meter_value:
+            hill = (doc.hill_data.k_point_m, doc.hill_data.meter_value)
+        best: Optional[List[JumpRound]] = None
+        best_flaws = 0
+        for tolerance in (3, 2):
+            pages = [(page.extract_text(y_tolerance=tolerance) or '').splitlines() for page in pdf.pages]
+            if not has_judges_layout(pages):
+                return None
+            rows = parse_jump_lines(pages, hill)
+            flaws = sum(1 for r in rows if r.rank is not None and (
+                not r.name or len(r.name.split()) < 2 or not r.nation
+                or r.distance_m is None or r.total_points is None))
+            if best is None or flaws < best_flaws:
+                best, best_flaws = rows, flaws
+            if not flaws:
+                break
+        return best
 
     # ── OLD (ewoxx) format ────────────────────────────────────────────────────
 

@@ -54,8 +54,15 @@ name and nation to use instead. Lines starting with `#` are comments.
   document type from the old file name. They must be adapted before the 2026/27 season
   can be downloaded.
 
-- Only the official result lists (ROF) are validated. Jump, training, trial and
-  cross-country lists are loaded with a row-level check (valid name, known nation).
+- Jump lists (RL, RL1, RLQ, PCR) are read by `fis_parser/extractors/jump_lines.py`, which
+  anchors every jump on the judges' marks, and checked like the result lists (style points =
+  middle marks, total = its parts, ranks); 1,291 of 1,295 pass. The four that do not are no
+  jump lists (two early mass start overviews, two 2012 penalty race lists with doubled glyphs).
+- **Training and trial round lists (RLT, RLTR) are mostly not loaded.** Their parsers predate the
+  rewrite; up to three rounds side by side and two athletes per line (trial rounds) need a
+  parser that works on word positions. Only the lists that pass validation are loaded
+  (133 of 445 RLT, 36 of 599 RLTR).
+- Cross-country lists of mass starts (RLLL) are not validated.
 - 6 result lists fail validation and are not loaded; none is a regular World Cup /
   Continental Cup list:
   WC 2014/15 codex 4186–4189 (children's event, ranks per age class) and
