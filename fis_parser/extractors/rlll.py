@@ -67,7 +67,11 @@ class RLLLExtractor(BaseExtractor):
                 doc.weather = wd
                 doc.competitor_stats = cs
 
-                doc.xc_results = self._extract_xc_results(pdf)
+                # the page footer ('30 NOV 2025 / Ruka (FIN) / 4119', '2023 / 2024') and the
+                # weather block read like a row: rank 30 or 2023, no bib, no time
+                doc.xc_results = [r for r in self._extract_xc_results(pdf)
+                                  if '/' not in (r.name or '')
+                                  and not (r.bib is None and r.total_time is None and r.status is None)]
 
         except Exception as exc:
             doc.parse_errors.append(f"RLLL parse error: {exc}")

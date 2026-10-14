@@ -5,6 +5,7 @@ import com.fis.noco.entity.Competition;
 import com.fis.noco.entity.JumpResult;
 import com.fis.noco.entity.TeamMember;
 import com.fis.noco.entity.TeamResult;
+import com.fis.noco.entity.XcResult;
 import com.fis.noco.service.CompetitionService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -103,6 +104,20 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
             if (isMassStart && !raced.isEmpty()) {
                 crossCountryTab = "Cross-Country (" + raced.size() + ")";
                 crossCountry = createCrossCountryGrid(results);
+            } else if (isMassStart) {
+                // no race data in the result list, or no result list at all (jumping cancelled):
+                // the cross-country list of its own
+                List<XcResult> race = competitionService.getXcResults(competition.getId());
+                if (!race.isEmpty()) {
+                    crossCountryTab = "Cross-Country (" + race.stream().filter(x -> x.getRank() != null).count() + ")";
+                    crossCountry = createXcListGrid(race);
+                    if (results.isEmpty()) {
+                        Paragraph note = new Paragraph("No final result: the ski jumping did not take place. "
+                                + "The cross-country race was held.");
+                        note.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.Margin.Vertical.XSMALL);
+                        add(note);
+                    }
+                }
             }
         }
 
@@ -249,6 +264,28 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
             }
         }));
         grid.setItems(rows);
+        return grid;
+    }
+
+    /** The cross-country list of a mass start as FIS prints it: rank, time, gap, jump points it costs. */
+    private Grid<XcResult> createXcListGrid(List<XcResult> race) {
+        Grid<XcResult> grid = new Grid<>(XcResult.class, false);
+        grid.setSizeFull();
+        grid.addColumn(XcResult::getRank).setHeader("XC Rank").setAutoWidth(true).setFlexGrow(0);
+        grid.addColumn(XcResult::getBib).setHeader("Bib").setAutoWidth(true).setFlexGrow(0);
+        grid.addColumn(XcResult::getDisplayName).setHeader("Name").setAutoWidth(true);
+        grid.addComponentColumn(x -> new NationFlag(x.getDisplayNation())).setHeader("Nation").setAutoWidth(true);
+        grid.addColumn(XcResult::getTotalTime).setHeader("XC Time").setAutoWidth(true);
+        grid.addColumn(XcResult::getTimeBehind).setHeader("Behind").setAutoWidth(true);
+        grid.addColumn(x -> x.getPoints() == null ? "" : String.format(java.util.Locale.ROOT, "%.1f", x.getPoints()))
+                .setHeader("Points").setAutoWidth(true);
+        grid.addComponentColumn(x -> statusBadge(x.getStatus())).setHeader("Status").setAutoWidth(true);
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(x -> {
+            if (x.getAthlete() != null) {
+                UI.getCurrent().navigate(AthleteDetailView.class, x.getAthlete().getId());
+            }
+        }));
+        grid.setItems(race);
         return grid;
     }
 

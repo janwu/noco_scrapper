@@ -62,6 +62,17 @@ class CompetitionPageTest {
     }
 
     @Test
+    void massStartWithoutJumpShowsTheRace() {
+        Assumptions.assumeTrue(new File("../db/noco.db").exists(), "database not built");
+        // Ruka 30 Nov 2025: the jumping was cancelled for wind, the race was held
+        Long id = jdbc.queryForObject("select c.id from competitions c join seasons s on s.id = c.season_id " +
+                "where c.circuit = 'WC' and s.start_year = 2025 and c.fis_codex = '4119'", Long.class);
+        List<String> labels = tabs(id);
+        assertEquals("Cross-Country (56)", labels.get(0), labels.toString());
+        assertTrue(labels.stream().noneMatch(l -> l.startsWith("Result")), labels.toString());
+    }
+
+    @Test
     void gapToTheFastest() {
         Double best = ResultDetailView.seconds("23:49.0");
         assertEquals(1429.0, best);

@@ -5,12 +5,14 @@ import com.fis.noco.entity.CombinedResult;
 import com.fis.noco.entity.CupStanding;
 import com.fis.noco.entity.Competition;
 import com.fis.noco.entity.JumpResult;
+import com.fis.noco.entity.XcResult;
 import com.fis.noco.entity.Season;
 import com.fis.noco.entity.TeamResult;
 import com.fis.noco.repository.CombinedResultRepository;
 import com.fis.noco.repository.CompetitionRepository;
 import com.fis.noco.repository.CupStandingRepository;
 import com.fis.noco.repository.JumpResultRepository;
+import com.fis.noco.repository.XcResultRepository;
 import com.fis.noco.repository.SeasonRepository;
 import com.fis.noco.repository.TeamResultRepository;
 import org.springframework.stereotype.Service;
@@ -36,14 +38,17 @@ public class CompetitionService {
     private final TeamResultRepository teamResultRepository;
     private final CupStandingRepository cupStandingRepository;
     private final JumpResultRepository jumpResultRepository;
+    private final XcResultRepository xcResultRepository;
 
     public CompetitionService(CompetitionRepository competitionRepository,
                               SeasonRepository seasonRepository,
                               CombinedResultRepository combinedResultRepository,
                               TeamResultRepository teamResultRepository,
                               CupStandingRepository cupStandingRepository,
-                              JumpResultRepository jumpResultRepository) {
+                              JumpResultRepository jumpResultRepository,
+                              XcResultRepository xcResultRepository) {
         this.jumpResultRepository = jumpResultRepository;
+        this.xcResultRepository = xcResultRepository;
         this.cupStandingRepository = cupStandingRepository;
         this.competitionRepository = competitionRepository;
         this.seasonRepository = seasonRepository;
@@ -67,6 +72,11 @@ public class CompetitionService {
         lists.values().removeIf(List::isEmpty);
         competitionRepository.findByIdWithDetails(competitionId).ifPresent(c -> addEventLists(c, lists));
         return lists;
+    }
+
+    /** The cross-country list of a mass start (RLLL), if one passed validation. */
+    public List<XcResult> getXcResults(Long competitionId) {
+        return xcResultRepository.findByCompetitionId(competitionId);
     }
 
     /** Kinds of lists a competition shares with the others on the same hill at the same event. */
