@@ -349,19 +349,31 @@ def validate_training(doc: dict) -> Tuple[List[str], List[str]]:
         return ["no jump rows"], warnings
     given_first = doc.get('name_order') == 'given-first'
     plain_case = _is_plain_case_list(rows)
-    bad = [p for p in (jump_row_identity_problem(r, given_first, plain_case) for r in rows) if p]
-    if bad:
+    # a row without nation is completed by the loader from the athlete's other results;
+    # a few rows that are no athlete (a club name) are dropped by the loader one by one
+    bad = [p for p in (jump_row_identity_problem(dict(r, nation=r.get('nation') or 'XXX'), given_first, plain_case)
+                       for r in rows) if p]
+    if _too_many(len(bad), len(rows)):
         errors.append(f"{len(bad)} of {len(rows)} rows are no athlete, e.g. {bad[0]}")
+    elif bad:
+        warnings.append(f"rows that are no athlete: {'; '.join(bad)}")
     seen = set()
+    twice = []
     for r in rows:
         key = (r.get('name'), r.get('nation'), r.get('round_number'))
         if key in seen:
-            errors.append(f"athlete twice in round {r.get('round_number')}: {r.get('name')!r}")
+            twice.append(f"{r.get('name')!r} in round {r.get('round_number')}")
         seen.add(key)
+    if _too_many(len(twice), len(rows)):
+        errors.append(f"athletes twice in a round: {len(twice)}, e.g. {twice[0]}")
+    elif twice:
+        warnings.append(f"athletes twice in a round: {', '.join(twice)}")
     jumped = [r for r in rows if r.get('distance_m') is not None]
     if _too_many(len(rows) - len(jumped), len(rows)):
         errors.append(f"distance missing in {len(rows) - len(jumped)} of {len(rows)} rows")
-    for what, test in (('distance', lambda r: not 30 <= r['distance_m'] <= 260),
+    hill = (doc.get('hill_data') or {}).get('hill_size_m')
+    longest = hill * 1.12 if hill else 260          # a jump 12 % beyond the hill size is a misread
+    for what, test in (('distance', lambda r: not 30 <= r['distance_m'] <= longest),
                        ('speed', lambda r: r.get('speed_kmh') is not None and not 60 <= r['speed_kmh'] <= 115),
                        ('gate', lambda r: r.get('gate') is not None and not 0 < r['gate'] <= 60)):
         names = [str(r.get('name')) for r in jumped if test(r)]

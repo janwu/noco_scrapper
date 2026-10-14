@@ -9,12 +9,15 @@ import java.util.stream.Stream;
 
 /**
  * One jump from a jump list: the competition round (RL, RL1), a qualification
- * (RLQ) or the provisional round (PCR).  Lists with two jumps per athlete have
- * one row per jump; rank is the rank of the list.  In team lists each member
- * carries the rank of his team.
+ * (RLQ), the provisional round (PCR), an official training (RLT) or the trial
+ * round (RLTR) — read from the view v_all_jumps over the three jump tables.
+ * Lists with two jumps per athlete (and training lists with up to three) have
+ * one row per jump; rank is the rank of the list, none in training and trial
+ * rounds.  In team lists each member carries the rank of his team.
  */
 @Entity
-@Table(name = "jump_round_results")
+@org.hibernate.annotations.Immutable
+@Table(name = "v_all_jumps")
 public class JumpResult {
 
     @Id
@@ -156,8 +159,14 @@ public class JumpResult {
     public static String listLabel(String docType) {
         if ("RLQ".equals(docType)) return "Qualification";
         if ("PCR".equals(docType)) return "Provisional Round";
+        if ("RLT".equals(docType)) return "Training";
+        if ("RLTR".equals(docType)) return "Trial Round";
         return "Competition Round";
     }
+
+    /** The kinds of jump lists in the order a competition page shows them. */
+    public static final java.util.List<String> LIST_ORDER = java.util.List.of(
+            "Competition Round", "Trial Round", "Qualification", "Provisional Round", "Training");
 
     public String getDisplayName() {
         if (athlete != null && athlete.getFullName() != null) {

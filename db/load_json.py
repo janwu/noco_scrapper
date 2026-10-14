@@ -61,6 +61,7 @@ JUMP_TABLE_BY_DOC_TYPE = {
     "RLT": "training_jump_results",
     "RLTR": "trial_round_results",
 }
+TRAINING_DOC_TYPES = ("RLT", "RLTR")
 KNOWN_STATUS = ("DNS", "DNF", "DSQ", "DNQ", "LAP", "NPS", "DQB")
 
 
@@ -235,6 +236,9 @@ class Build:
 
         self.nations_by_name: Dict[str, set] = defaultdict(set)   # every name → nations seen with it
         self.result_nations: set = set()                          # nations in validated ROFs
+        # athletes of the validated result and competition jump lists: training and
+        # trial rounds link to these, they do not add athletes of their own
+        self.official_athletes: set = set()                       # (name, nation) after aliases
         self.recovered_nations: Counter = Counter()               # doc_type → rows
         self.recovered_names: Counter = Counter()                 # doc_type → rows
         self.names_by_words: Dict[Tuple[str, frozenset], set] = defaultdict(set)   # (nation, words) → names
@@ -513,6 +517,11 @@ def add_results(build: Build, comp: dict, comp_id: int, doc_id: int, meta: dict,
                     r = dict(r, nation=nation)
                     build.recovered_nations[doc_type] += 1
                     problem = None
+            if not problem and doc_type in TRAINING_DOC_TYPES:
+                key = (clean(r["name"]), r["nation"].upper())
+                if build.athlete_aliases.get(key, key) not in build.official_athletes:
+                    # someone who only trained, or a spelling the result lists do not use
+                    problem = "athlete in no result or competition jump list"
             if not problem and doc_type != "ROF" and r["nation"].upper() not in build.result_nations:
                 # Jump and training lists are not validated; a three-letter
                 # word there ('CUP', 'WED', 'ICR') is only a nation if some
@@ -661,6 +670,14 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
         for name, nations in names_with_nation(docs).items():
             build.nations_by_name[name] |= nations
         for meta, doc in docs:
+            if not doc.get("parse_errors") and meta["doc_type"] in ("ROF", "RL", "RL1", "RLQ", "PCR"):
+                rows = [dict(m, nation=m.get("nation") or t.get("nation"))
+                        for t in doc.get("team_results") or [] for m in t.get("members") or []] \
+                    + (doc.get("combined_results") or []) + (doc.get("jump_rounds") or [])
+                for r in rows:
+                    if r.get("name") and r.get("nation") and not row_identity_problem(r):
+                        key = (clean(r["name"]), r["nation"].upper())
+                        build.official_athletes.add(build.athlete_aliases.get(key, key))
             if meta["doc_type"] == "ROF" and not doc.get("parse_errors") \
                     and not meta["team"] and not is_team_discipline(doc.get("discipline")):
                 build.result_nations.update(

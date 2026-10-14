@@ -488,3 +488,14 @@ WHERE cr.rank IS NOT NULL
   AND (cr.status IS NULL OR cr.status = '')
   AND c.format NOT LIKE 'Team%'
 GROUP BY a.id, a.full_name, a.nationality, v.id, v.name, v.country, c.circuit;
+
+-- Every jump in one place: competition rounds, qualification and provisional
+-- rounds (jump_round_results), training (training_jump_results) and trial
+-- rounds (trial_round_results).  The kind of list is the doc_type of the
+-- document.  The id is unique across the three tables.
+CREATE VIEW IF NOT EXISTS v_all_jumps AS
+SELECT id * 3     AS id, competition_id, document_id, athlete_id, raw_name, raw_nation, rank, bib, club, date_of_birth, round_number, speed_kmh, distance_m, dist_points, judge_a, judge_b, judge_c, judge_d, judge_e, style_points, gate, gate_comp_pts, wind_ms, wind_comp_pts, total_points, pursuit_time_diff, dns, dsq, dsq_reason FROM jump_round_results
+UNION ALL
+SELECT id * 3 + 1 AS id, competition_id, document_id, athlete_id, raw_name, raw_nation, rank, bib, club, date_of_birth, round_number, speed_kmh, distance_m, dist_points, judge_a, judge_b, judge_c, judge_d, judge_e, style_points, gate, gate_comp_pts, wind_ms, wind_comp_pts, total_points, NULL, dns, dsq, dsq_reason FROM training_jump_results
+UNION ALL
+SELECT id * 3 + 2 AS id, competition_id, document_id, athlete_id, raw_name, raw_nation, rank, bib, club, date_of_birth, round_number, speed_kmh, distance_m, dist_points, judge_a, judge_b, judge_c, judge_d, judge_e, style_points, gate, gate_comp_pts, wind_ms, wind_comp_pts, total_points, NULL, dns, dsq, dsq_reason FROM trial_round_results;

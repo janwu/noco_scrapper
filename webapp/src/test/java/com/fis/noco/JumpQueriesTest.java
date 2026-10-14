@@ -58,12 +58,31 @@ class JumpQueriesTest {
     }
 
     @Test
+    void trainingAndTrialRoundsOfACompetition() {
+        assumeDatabase();
+        Long competitionId = jdbc.queryForObject(
+                "select c.id from competitions c where exists (select 1 from training_jump_results t where t.competition_id = c.id)" +
+                " and exists (select 1 from trial_round_results t where t.competition_id = c.id)" +
+                " and exists (select 1 from jump_round_results t where t.competition_id = c.id) limit 1", Long.class);
+        Map<String, List<JumpResult>> lists = competitionService.getJumpLists(competitionId);
+        assertEquals(List.of("Competition Round", "Trial Round", "Training"),
+                lists.keySet().stream().filter(k -> !k.equals("Provisional Round") && !k.equals("Qualification")).toList());
+        Integer training = jdbc.queryForObject(
+                "select count(*) from training_jump_results where competition_id = ?", Integer.class, competitionId);
+        assertEquals(training, lists.get("Training").size());
+        for (JumpResult j : lists.get("Training")) {
+            assertNotNull(j.getDistanceM());
+            assertNotNull(j.getRoundNumber());
+        }
+    }
+
+    @Test
     void jumpsOfAnAthlete() {
         assumeDatabase();
         Long athleteId = jdbc.queryForObject(
-                "select athlete_id from jump_round_results group by athlete_id order by count(*) desc limit 1", Long.class);
+                "select athlete_id from v_all_jumps group by athlete_id order by count(*) desc limit 1", Long.class);
         Integer expected = jdbc.queryForObject(
-                "select count(*) from jump_round_results where athlete_id = ?", Integer.class, athleteId);
+                "select count(*) from v_all_jumps where athlete_id = ?", Integer.class, athleteId);
 
         List<JumpResult> jumps = athleteService.getJumps(athleteId);
 

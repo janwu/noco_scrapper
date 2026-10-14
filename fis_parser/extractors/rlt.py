@@ -18,6 +18,7 @@ from fis_parser.utils import (
     find_line_index, group_words_into_rows, row_text, is_valid_athlete_name,
 )
 from fis_parser.extractors.base import BaseExtractor
+from fis_parser.extractors.training_words import parse_training_pdf
 
 
 class RLTExtractor(BaseExtractor):
@@ -78,7 +79,10 @@ class RLTExtractor(BaseExtractor):
                 doc.competitor_stats = cs
 
                 # Jump results
-                doc.jump_rounds = self._parse_rlt_rounds(pdf)
+                # word positions (fis_parser.extractors.training_words); the old reader if that finds nothing
+                doc.jump_rounds = parse_training_pdf(pdf) or self._parse_rlt_rounds(pdf)
+                if re.search(r'Rank\s+Bib\s+Name\s+(?:Team\s+)?Nation\s*Speed', full_text):
+                    doc.name_order = 'given-first'          # K-Jump
 
         except Exception as exc:
             doc.parse_errors.append(f"RLT parse error: {exc}")

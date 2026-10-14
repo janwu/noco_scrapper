@@ -51,12 +51,13 @@ public class CompetitionService {
     }
 
     /**
-     * The jump lists of a competition by kind: competition round, qualification,
-     * provisional round (in that order, only those that exist).
+     * The jump lists of a competition by kind, in the order of JumpResult.LIST_ORDER
+     * (competition round, trial round, qualification, provisional round, training);
+     * only those that exist.
      */
     public Map<String, List<JumpResult>> getJumpLists(Long competitionId) {
         Map<String, List<JumpResult>> lists = new LinkedHashMap<>();
-        for (String label : List.of(JumpResult.listLabel("RL"), JumpResult.listLabel("RLQ"), JumpResult.listLabel("PCR"))) {
+        for (String label : JumpResult.LIST_ORDER) {
             lists.put(label, new ArrayList<>());
         }
         for (JumpResult j : jumpResultRepository.findByCompetitionId(competitionId)) {

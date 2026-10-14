@@ -79,10 +79,11 @@ and the web app shows that one.
   anchors every jump on the judges' marks, and checked like the result lists (style points =
   middle marks, total = its parts, ranks); 1,291 of 1,295 pass. The four that do not are no
   jump lists (two early mass start overviews, two 2012 penalty race lists with doubled glyphs).
-- **Training and trial round lists (RLT, RLTR) are mostly not loaded.** Their parsers predate the
-  rewrite; up to three rounds side by side and two athletes per line (trial rounds) need a
-  parser that works on word positions. Only the lists that pass validation are loaded
-  (133 of 445 RLT, 36 of 599 RLTR).
+- Training and trial round lists (RLT, RLTR) are read by word position
+  (`fis_parser/extractors/training_words.py`): up to three rounds side by side, two athletes
+  per line in trial rounds; 1,042 of 1,044 pass validation. Their rows link only to athletes of
+  the result and competition jump lists, so someone who only trained is not added as an athlete.
+  The web app reads all jumps through the view `v_all_jumps`.
 - Cross-country lists of mass starts (RLLL) are not validated.
 - 6 result lists fail validation and are not loaded; none is a regular World Cup /
   Continental Cup list:
