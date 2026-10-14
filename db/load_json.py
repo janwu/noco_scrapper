@@ -834,10 +834,39 @@ def write_postgres(build: Build, dsn: str) -> None:
 # Report
 # ─────────────────────────────────────────────────────────────────────────────
 
+def possible_duplicates(build: Build) -> List[Tuple[str, str, str]]:
+    """
+    Athletes who may be one person: the same name words (in any order, 'oe' = 'o')
+    in the same nation, the words of one name inside the other's, or the same name
+    in two nations (a nation change).  Settle them in db/aliases/athletes.csv.
+    """
+    def words(name: str) -> frozenset:
+        s = " ".join(name_words(name))
+        for a, b in (("ae", "a"), ("oe", "o"), ("ue", "u"), ("aa", "a")):
+            s = s.replace(a, b)
+        return frozenset(w for w in s.split() if len(w) > 1)
+
+    athletes = [(a["name"], a["nation"], words(a["name"])) for a in build.athletes.values()]
+    found = []
+    for i, (name, nation, w) in enumerate(athletes):
+        for other, other_nation, ow in athletes[i + 1:]:
+            if nation == other_nation and (w == ow or (len(w) >= 2 and len(ow) >= 2 and (w < ow or ow < w))):
+                found.append((name, other, nation))
+            elif nation != other_nation and w == ow and len(w) >= 2:
+                found.append((name, other, f"{nation} / {other_nation}"))
+    return found
+
+
 def report(build: Build, verbose: bool) -> None:
     log.info("Rows written:")
     for table in TABLE_ORDER:
         log.info("  %-24s %7d", table, len(build.rows[table]))
+
+    duplicates = possible_duplicates(build)
+    if duplicates:
+        log.warning("Athletes that may be the same person (settle in db/aliases/athletes.csv):")
+        for name, other, nation in duplicates:
+            log.warning("  %-35s %-35s %s", name, other, nation)
 
     reasons = Counter(re.sub(r"\d+", "N", re.sub(r"'[^']*'", "…", reason))[:80] for reason, _ in build.skipped_docs)
     if reasons:

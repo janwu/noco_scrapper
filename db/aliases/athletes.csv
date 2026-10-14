@@ -123,3 +123,13 @@ RUNDSVEEN Jon-Richard,NOR,RUNDSVENN Jon-Richard,NOR
 VANLOAN Carl,USA,VAN LOAN Carl,USA
 VAN Loan Carl,USA,VAN LOAN Carl,USA
 van LOAN Carl,USA,VAN LOAN Carl,USA
+LUND Marte Leinan,NOR,LEINAN LUND Marte,NOR
+# spelling variants (found by comparing the name words of athletes of the same nation)
+UVSLOKK Einar,NOR,UVSLOEKK Einar,NOR
+JOHANSEN Truls S.,NOR,JOHANSEN Truls Soenstehagen,NOR
+SKJAERET STROMHAUG,NOR,SKJAERET STROMHAUG Per Einar,NOR
+VIACHESLAV Barkov,RUS,BARKOV Viacheslav,RUS
+# nation changes: one athlete under the last nation; each result keeps the nation it was printed with
+SCHMID Jan,SUI,SCHMID Jan,NOR
+ERICHSEN Christian,NOR,ERICHSEN Christian,SUI
+DRUML Tomaz,AUT,DRUML Tomaz,SLO

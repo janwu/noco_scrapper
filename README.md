@@ -63,6 +63,11 @@ The database is never edited by hand — the next rebuild would undo it.
 Alias files have four columns: the name and nation as printed, then the
 name and nation to use instead. Lines starting with `#` are comments.
 
+`load_json.py` warns about athletes that may be one person (same name words in
+the same nation, or the same name in two nations). An athlete who changed nation
+is aliased to the last one; every result keeps the nation it was printed with,
+and the web app shows that one.
+
 ## Known gaps
 
 - Since 2026 the FIS event pages describe a race more briefly ('Individual Compact Large

@@ -208,6 +208,8 @@ def clean_name(s: str) -> str:
     s = re.sub(r'^[a-z]\s+', '', s)
     # Split merged LASTNAME+Firstname tokens (e.g. 'ACKERMANNHugo' → 'ACKERMANN Hugo')
     s = re.sub(r'^([A-Z]{2,})([A-Z][a-z])', r'\1 \2', s)
+    # Mixed team lists mark the gender: 'ARMBRUSTER Nathalie (F)' → 'ARMBRUSTER Nathalie'
+    s = re.sub(r'\s*\([FMW]\)$', '', s)
     return s
 
 

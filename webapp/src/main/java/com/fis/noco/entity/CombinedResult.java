@@ -110,10 +110,15 @@ public class CombinedResult {
         return timeBehind != null ? timeBehind : "";
     }
 
+    /**
+     * The nation the athlete competed for here, as printed in the list: an athlete
+     * who changed nation (SCHMID Jan, SUI until 2006, then NOR) is one athlete
+     * under his last nation, but keeps the flag of the time in old results.
+     */
     public String getDisplayNation() {
-        if (athlete != null && athlete.getNationality() != null) {
-            return athlete.getNationality();
+        if (rawNation != null && rawNation.matches("[A-Za-z]{3}")) {
+            return rawNation.toUpperCase();
         }
-        return rawNation != null ? rawNation : "";
+        return athlete != null && athlete.getNationality() != null ? athlete.getNationality() : "";
     }
 }

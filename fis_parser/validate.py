@@ -53,6 +53,9 @@ def row_identity_problem(row: dict, given_first: bool = False) -> Optional[str]:
     nation = row.get('nation')
     if not is_valid_athlete_name(name):
         return f"invalid athlete name {name!r}"
+    if re.search(r'[()]', name):
+        # 'ARMBRUSTER Nathalie (F)': a second athlete next to 'ARMBRUSTER Nathalie'
+        return f"name holds a bracket: {name!r}"
     if given_first:
         if not re.fullmatch(r"[^\W\d_][^\W\d_.'-]*(?:[ -][^\W\d_][^\W\d_.'-]*)+", name):
             return f"not a 'Firstname Surname' name: {name!r}"
