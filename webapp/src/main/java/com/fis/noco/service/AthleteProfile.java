@@ -93,6 +93,16 @@ public final class AthleteProfile {
                         .thenComparing(r -> r.getCompetition().getCompetitionDate(), Comparator.nullsLast(Comparator.naturalOrder())));
     }
 
+    /** All individual results with the best rank, earliest first. */
+    public List<CombinedResult> bestResults() {
+        return bestResult().map(best -> results.stream().map(RatedResult::result)
+                        .filter(r -> best.getRank().equals(r.getRank()))
+                        .sorted(Comparator.comparing(r -> r.getCompetition().getCompetitionDate(),
+                                Comparator.nullsLast(Comparator.naturalOrder())))
+                        .toList())
+                .orElse(List.of());
+    }
+
     /** The longest jump in the World Cup, in any jump list (competition round, qualification, provisional round). */
     public Optional<JumpResult> longestWorldCupJump() {
         return jumps.stream()

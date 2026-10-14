@@ -32,6 +32,17 @@ class AthleteProfileTest {
         AthleteProfile profile = athleteService.getProfile(id);
 
         assertEquals(1, profile.bestResult().orElseThrow().getRank());
+        List<com.fis.noco.entity.CombinedResult> wins = profile.bestResults();
+        Integer winCount = jdbc.queryForObject(
+                "select count(*) from combined_results where athlete_id = ? and rank = 1", Integer.class, id);
+        assertEquals(winCount, wins.size());
+        assertEquals(profile.bestResult().get().getId(), wins.get(0).getId());     // the first win
+        for (int i = 1; i < wins.size(); i++) {
+            assertTrue(wins.get(i - 1).getCompetition().getCompetitionDate()
+                    .compareTo(wins.get(i).getCompetition().getCompetitionDate()) <= 0);
+        }
+        System.out.printf("RIIBER %d wins, first %s %s%n", wins.size(),
+                wins.get(0).getCompetition().getDisplayLocation(), wins.get(0).getCompetition().getCompetitionDate());
         assertTrue(profile.longestWorldCupJump().orElseThrow().getDistanceM() > 140);
 
         List<AthleteProfile.VenueStats> venues = profile.venues();

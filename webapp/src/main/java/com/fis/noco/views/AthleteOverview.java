@@ -168,8 +168,22 @@ final class AthleteOverview extends VerticalLayout {
         row.setWidthFull();
         row.addClassNames(LumoUtility.Padding.Vertical.SMALL);
 
-        p.bestResult().ifPresent(r -> row.add(highlight("Best result", rankLabel(r),
-                circuitName(r.getCompetition()) + " · " + where(r.getCompetition()))));
+        List<CombinedResult> best = p.bestResults();
+        if (!best.isEmpty()) {
+            CombinedResult first = best.get(0);
+            if (best.size() == 1) {
+                row.add(highlight("Best result", rankLabel(first),
+                        circuitName(first.getCompetition()) + " · " + where(first.getCompetition())));
+            } else {
+                // several times: how often, and where it was achieved the first time
+                long wc = best.stream().filter(r -> "WC".equals(r.getCompetition().getCircuit())).count();
+                String split = wc == best.size() ? "World Cup" : wc == 0 ? "Cont. Cup"
+                        : wc + " World Cup, " + (best.size() - wc) + " Cont. Cup";
+                row.add(highlight("Best result", rankLabel(first) + " · " + best.size() + "×",
+                        split + " · first: " + where(first.getCompetition())
+                                + (wc > 0 && wc < best.size() ? " (" + circuitName(first.getCompetition()) + ")" : "")));
+            }
+        }
         p.longestWorldCupJump().ifPresent(j -> row.add(highlight("Longest World Cup jump",
                 JumpResult.format(j.getDistanceM()) + " m",
                 j.getCompetition().getDisplayLocation() + " " + AthleteProfile.hillLabel(j.getCompetition())
