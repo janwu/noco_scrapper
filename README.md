@@ -5,6 +5,7 @@ from fis-ski.com, parses them and builds a database for the web app.
 
 ```
 fis_nk_scraper.py / fis_nk_coc_scraper.py     PDFs      → fis_nk_pdfs/, fis_nk_coc_pdfs/
+   (both run fis_nk_pdf_scraper.py)
 run_parser.py            (fis_parser/)        PDFs      → output/**/*.json
 db/load_json.py          (db/aliases/*.csv)   JSON      → db/noco.db
 webapp/                                       db/noco.db → Vaadin site
@@ -20,6 +21,22 @@ Cup standings are not computed from the results. The points rules changed over
 the years and tours such as the Seefeld Triple score differently, so the final
 standings FIS publishes are downloaded and loaded as they are
 (`python fis_nk_standings_scraper.py --seasons 2026` refreshes a season).
+
+## A new season
+
+```
+python fis_nk_scraper.py --seasons 2027 --dry-run      # what is new on the FIS pages
+python fis_nk_scraper.py --seasons 2027                 # World Cup
+python fis_nk_coc_scraper.py --seasons 2027             # Continental Cup
+python fis_nk_standings_scraper.py --seasons 2027       # cup standings, once the season is over
+python run_parser.py --workers 7 --errors-only          # parses only the new PDFs
+python db/load_json.py --sqlite db/noco.db
+```
+
+Without `--seasons` the scrapers go through all seasons up to the current one;
+files already on disk are recognised by their FIS name (e.g. `2026NK4117ROF.pdf`)
+and not downloaded again. How the FIS pages are read is described at the top of
+`fis_nk_pdf_scraper.py`.
 
 ## Rebuilding the data
 
@@ -48,11 +65,10 @@ name and nation to use instead. Lines starting with `#` are comments.
 
 ## Known gaps
 
-- **The PDF scrapers no longer find anything** (checked October 2026). FIS moved the
-  attachments from `/DB/pdf/...` to `/DB/v2/download/competition-attachment/<id>.pdf`;
-  `fis_nk_scraper.py` and `fis_nk_coc_scraper.py` still look for the old path and take the
-  document type from the old file name. They must be adapted before the 2026/27 season
-  can be downloaded.
+- Since 2026 the FIS event pages describe a race more briefly ('Individual Compact Large
+  Hill/7.5 km', no 'HS142'), so file names of new downloads carry no hill size. The hill
+  size is read from the jump lists; a competition without one takes it from the other
+  competitions on the same hill at the same event (`fill_hill_sizes` in the loader).
 
 - Jump lists (RL, RL1, RLQ, PCR) are read by `fis_parser/extractors/jump_lines.py`, which
   anchors every jump on the judges' marks, and checked like the result lists (style points =

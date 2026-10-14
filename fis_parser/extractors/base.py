@@ -192,11 +192,14 @@ class BaseExtractor:
 
     def extract_hill_data(self, text: str) -> HillData:
         hd = HillData()
-        # Hill size: '142m (134.5m)' or 'Hill Size 140.0 m'
-        m = re.search(r'HILL\s+SIZE[^\d]*([\d\.]+)', text, re.IGNORECASE)
-        if not m:
-            m = re.search(r'Hill\s+Size\s+([\d\.]+)', text, re.IGNORECASE)
-        if m:
+        # Hill size: 'Hill Size 140 m', 'Hill Size: 100 m', 'HILL SIZE / (95%) 142m (134.5m)'
+        # (not the 95 of '(95%)'), K-Jump: 'K-point / Hill size 90 m / 98 m'
+        kjump = re.search(r'K-?point\s*/\s*Hill\s+size\s+([\d.]+)\s*m\s*/\s*([\d.]+)', text, re.IGNORECASE)
+        # (ewoxx lists print the label and the values in separate blocks: no hill size then)
+        m = re.search(r'HILL[\s-]*SIZE\s*(?:/\s*\(\d+\s*%\)\s*)?:?\s*(\d{2,3}(?:\.\d+)?)\s*m', text, re.IGNORECASE)
+        if kjump:
+            hd.hill_size_m = parse_float(kjump.group(2))
+        elif m:
             hd.hill_size_m = parse_float(m.group(1))
 
         # K-Point
@@ -205,6 +208,8 @@ class BaseExtractor:
             m = re.search(r'K-Point\s+([\d\.]+)', text, re.IGNORECASE)
         if m:
             hd.k_point_m = parse_float(m.group(1))
+        elif kjump:
+            hd.k_point_m = parse_float(kjump.group(1))
 
         # Meter value
         m = re.search(r'METER\s+VALUE\s+([\d\.]+)', text, re.IGNORECASE)

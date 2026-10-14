@@ -38,7 +38,7 @@ import sqlite3
 import sys
 import unicodedata
 from collections import Counter, defaultdict
-from datetime import datetime
+from datetime import date, datetime
 from typing import Dict, List, Optional, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -163,6 +163,7 @@ def file_meta(path: str, output_dir: str) -> Optional[dict]:
         gender = "X"
 
     hs = re.search(r"_HS(\d{2,3})(?:_|\b)", name)
+    hill_class = re.search(r"(Normal|Large|Flying|Medium)_Hill|_(NH|LH|FH|MH)_", name, re.IGNORECASE)
     km = re.search(r"_(\d{1,2}(?:\.\d)?)_?K(?:m)?(?:_|\b)", name, re.IGNORECASE)
     relay = re.search(r"_\dx(\d{1,2}(?:\.\d)?)", name)
     fn = parse_filename_metadata(path)
@@ -175,6 +176,7 @@ def file_meta(path: str, output_dir: str) -> Optional[dict]:
         "gender": gender,
         "file_date": fn.get("date"),
         "hill_size_m": float(hs.group(1)) if hs else None,
+        "hill_class": ((hill_class.group(1) or hill_class.group(2))[0].upper() + "H") if hill_class else None,
         "xc_distance_km": float(relay.group(1)) if relay else float(km.group(1)) if km else None,
         "team": team_discipline_from_filename(name),
         "provisional": bool(re.search(r"_PR_[MWA]_[MWX]_|PCR\.json$", name)),
@@ -242,6 +244,7 @@ class Build:
         self.standings_unmatched: set = set()
 
         self.skipped_docs: List[Tuple[str, str]] = []        # (reason, file)
+        self.hill_class: Dict[int, Optional[str]] = {}          # competition id → NH, LH, ...
         self.rejected_rows: Counter = Counter()              # (doc_type, reason) → n
         self.rejected_examples: Dict[Tuple[str, str], List[str]] = defaultdict(list)
 
@@ -431,6 +434,7 @@ def describe_competition(docs: List[Tuple[dict, dict]]) -> dict:
         "format": fmt,
         "team": bool(team),
         "hill_size_m": to_float(hill) or first(lambda m, d: m["hill_size_m"]),
+        "hill_class": first(lambda m, d: m["hill_class"]),
         "xc_distance_km": first(lambda m, d: m["xc_distance_km"]),
         "event_name": clean((rof or {}).get("event_name")) or first(lambda m, d: clean(d.get("event_name"))),
     }
@@ -622,6 +626,33 @@ def add_standings(build: Build, standings_dir: Optional[str]) -> None:
                 build.standings_rows[athlete is not None] += 1
 
 
+def fill_hill_sizes(build: Build) -> None:
+    """
+    A competition with neither a jump list nor 'HS142' in its file name (the FIS
+    event pages stopped printing the hill size in 2026) gets the hill size of
+    the other competitions on the same hill at the same event: same venue,
+    at most four days apart, same hill class (NH, LH) where it is known.
+    """
+    # competitions: (id, season, venue, codex, circuit, gender, date, location, country,
+    #                format, hill_size_m, xc_distance_km, event_name)
+    rows = build.rows["competitions"]
+    known = [r for r in rows if r[10] and r[6]]
+    filled = 0
+    for i, r in enumerate(rows):
+        if r[10] or not r[6]:
+            continue
+        day = date.fromisoformat(r[6])
+        cls = build.hill_class.get(r[0])
+        sizes = {k[10] for k in known if k[2] == r[2]
+                 and abs((date.fromisoformat(k[6]) - day).days) <= 4
+                 and (cls is None or build.hill_class.get(k[0]) in (None, cls))}
+        if len(sizes) == 1:
+            rows[i] = r[:10] + (sizes.pop(),) + r[11:]
+            filled += 1
+    if filled:
+        log.info("Hill size taken from the same hill at the same event: %d competitions", filled)
+
+
 def build_database(output_dir: str, build: Build, standings_dir: Optional[str] = None) -> None:
     by_comp = read_documents(output_dir, build)
     log.info("Read %d documents for %d competitions", sum(map(len, by_comp.values())), len(by_comp))
@@ -658,6 +689,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
             "competitions", season_id, venue_id, codex, comp["circuit"], comp["gender"], comp["date"],
             comp["location"], comp["country"], (comp["format"] or "")[:30] or None,
             comp["hill_size_m"], comp["xc_distance_km"], (comp["event_name"] or "")[:300] or None)
+        build.hill_class[comp_id] = comp["hill_class"]
 
         # The same result list is sometimes stored twice under two dates
         # (the 2017 ROFs were re-downloaded separately).  One per competition.
@@ -680,6 +712,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
             add_details(build, comp_id, doc_id, doc)
             add_results(build, comp, comp_id, doc_id, meta, doc)
 
+    fill_hill_sizes(build)
     add_standings(build, standings_dir)
 
     # Dimension tables are complete only now
