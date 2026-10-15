@@ -107,6 +107,9 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         tabSheet.setSizeFull();
         tabSheet.add("Overview", new AthleteOverview(profile,
                 circuit -> careerBlocks(athlete, circuit, wcResults, cocResults, teamStarts, jumps)));
+        if (!wcResults.isEmpty()) {
+            tabSheet.add("Form", new AthleteFormPanel(athleteService, athlete, wcResults));
+        }
         tabSheet.add("World Cup (" + wcResults.size() + ")", createFilteredResultsPanel(wcResults));
         tabSheet.add("Continental Cup (" + cocResults.size() + ")", createFilteredResultsPanel(cocResults));
         if (!teamStarts.isEmpty()) {

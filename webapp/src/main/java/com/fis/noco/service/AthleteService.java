@@ -2,10 +2,15 @@ package com.fis.noco.service;
 
 import com.fis.noco.entity.Athlete;
 import com.fis.noco.entity.CombinedResult;
+import com.fis.noco.entity.Competition;
+import com.fis.noco.entity.CupStanding;
+import com.fis.noco.entity.Season;
 import com.fis.noco.entity.JumpResult;
 import com.fis.noco.entity.TeamMember;
 import com.fis.noco.repository.AthleteRepository;
 import com.fis.noco.repository.CombinedResultRepository;
+import com.fis.noco.repository.CompetitionRepository;
+import com.fis.noco.repository.CupStandingRepository;
 import com.fis.noco.repository.JumpResultRepository;
 import com.fis.noco.repository.TeamResultRepository;
 import org.springframework.data.domain.Page;
@@ -28,12 +33,18 @@ public class AthleteService {
     private final CombinedResultRepository combinedResultRepository;
     private final TeamResultRepository teamResultRepository;
     private final JumpResultRepository jumpResultRepository;
+    private final CompetitionRepository competitionRepository;
+    private final CupStandingRepository cupStandingRepository;
 
     public AthleteService(AthleteRepository athleteRepository,
                           CombinedResultRepository combinedResultRepository,
                           TeamResultRepository teamResultRepository,
-                          JumpResultRepository jumpResultRepository) {
+                          JumpResultRepository jumpResultRepository,
+                          CompetitionRepository competitionRepository,
+                          CupStandingRepository cupStandingRepository) {
         this.jumpResultRepository = jumpResultRepository;
+        this.competitionRepository = competitionRepository;
+        this.cupStandingRepository = cupStandingRepository;
         this.athleteRepository = athleteRepository;
         this.combinedResultRepository = combinedResultRepository;
         this.teamResultRepository = teamResultRepository;
@@ -61,6 +72,20 @@ public class AthleteService {
 
     private static Integer toInt(Object value) {
         return value == null ? null : ((Number) value).intValue();
+    }
+
+    /**
+     * The individual competitions of a World Cup season for one gender that were held, in
+     * date order — also those the athlete did not start (the x axis of the form chart);
+     * cancelled ones, without a result, are left out.
+     */
+    public List<Competition> getWorldCupCompetitions(Season season, String gender) {
+        return competitionRepository.findHeldIndividualBySeason(season.getId(), "WC", gender);
+    }
+
+    /** The athlete's rank in the overall World Cup of a season, as published by FIS. */
+    public Optional<CupStanding> getWorldCupStanding(Long athleteId, Season season) {
+        return cupStandingRepository.findOverall(athleteId, season.getId(), "WC").stream().findFirst();
     }
 
     /** All jumps of the athlete (competition rounds, qualifications, provisional rounds), newest first. */

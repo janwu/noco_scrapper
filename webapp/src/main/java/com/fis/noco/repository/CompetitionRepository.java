@@ -62,4 +62,14 @@ public interface CompetitionRepository extends JpaRepository<Competition, Long> 
     List<Competition> findIndividualBySeason(@Param("seasonId") Long seasonId,
                                              @Param("circuit") String circuit,
                                                         @Param("gender") String gender);
+
+    /** Like findIndividualBySeason, but only competitions with a result (not those cancelled). */
+    @Query("SELECT c FROM Competition c LEFT JOIN FETCH c.season LEFT JOIN FETCH c.venue " +
+           "WHERE c.circuit = :circuit AND c.gender = :gender AND c.season.id = :seasonId " +
+           "AND c.format NOT LIKE 'Team%' " + LISTED +
+           "AND EXISTS (SELECT r.id FROM CombinedResult r WHERE r.competition = c AND r.rank IS NOT NULL) " +
+           "ORDER BY c.competitionDate ASC")
+    List<Competition> findHeldIndividualBySeason(@Param("seasonId") Long seasonId,
+                                                 @Param("circuit") String circuit,
+                                                 @Param("gender") String gender);
 }
