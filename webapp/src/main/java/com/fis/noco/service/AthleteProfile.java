@@ -110,6 +110,17 @@ public final class AthleteProfile {
                 .max(Comparator.comparing(JumpResult::getDistanceM));
     }
 
+    /** All World Cup jumps of the longest distance (a tie gives several), earliest first. */
+    public List<JumpResult> longestWorldCupJumps() {
+        return longestWorldCupJump().map(longest -> jumps.stream()
+                        .filter(j -> "WC".equals(j.getCompetition().getCircuit())
+                                && longest.getDistanceM().equals(j.getDistanceM()))
+                        .sorted(Comparator.comparing((JumpResult j) -> j.getCompetition().getCompetitionDate(),
+                                Comparator.nullsLast(Comparator.naturalOrder())))
+                        .toList())
+                .orElse(List.of());
+    }
+
     /** The venue with the most podiums (then wins, top 10, mean rank). */
     public Optional<VenueStats> mostSuccessfulVenue() {
         return venues().stream()

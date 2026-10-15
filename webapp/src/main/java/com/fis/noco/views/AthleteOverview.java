@@ -8,6 +8,9 @@ import com.fis.noco.service.AthleteProfile.PlaceRating;
 import com.fis.noco.service.AthleteProfile.VenueStats;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
@@ -178,19 +181,28 @@ final class AthleteOverview extends VerticalLayout {
         List<CombinedResult> best = p.bestResults();
         if (!best.isEmpty()) {
             CombinedResult first = best.get(0);
-            String country = first.getCompetition().getDisplayCountry();
-            row.add(best.size() == 1
-                    ? highlight("Best World Cup result", rankLabel(first), null, where(first.getCompetition()), country)
-                    // achieved several times: how often, and where the first time
-                    : highlight("Best World Cup result", rankLabel(first) + " · " + best.size() + "×", null,
-                            "first: " + where(first.getCompetition()), country));
+            List<Competition> where = best.stream().map(CombinedResult::getCompetition).toList();
+            // achieved several times: how often, where the first time, and the list of all
+            row.add(linkedHighlight("Best World Cup result",
+                    rankLabel(first) + (best.size() > 1 ? " · " + best.size() + "×" : ""),
+                    best.size() > 1 ? "first: " : "", where,
+                    c -> c.getDisplayLocation() + " " + c.getCompetitionDate(),
+                    rankLabel(first) + " in the World Cup"));
         }
-        p.longestWorldCupJump().ifPresent(j -> row.add(highlight("Longest World Cup jump",
-                JumpResult.format(j.getDistanceM()) + " m", null,
-                j.getCompetition().getDisplayLocation() + " " + AthleteProfile.hillLabel(j.getCompetition())
-                        + " · " + j.getCompetition().getCompetitionDate()
-                        + (JumpResult.listLabel("RL").equals(j.getListLabel()) ? "" : " · " + j.getListLabel()),
-                j.getCompetition().getDisplayCountry())));
+        List<JumpResult> longest = p.longestWorldCupJumps();
+        if (!longest.isEmpty()) {
+            JumpResult first = longest.get(0);
+            Map<Long, String> lists = new java.util.HashMap<>();
+            longest.forEach(j -> lists.putIfAbsent(j.getCompetition().getId(),
+                    JumpResult.listLabel("RL").equals(j.getListLabel()) ? "" : " · " + j.getListLabel()));
+            List<Competition> where = longest.stream().map(JumpResult::getCompetition).distinct().toList();
+            row.add(linkedHighlight("Longest World Cup jump",
+                    JumpResult.format(first.getDistanceM()) + " m" + (longest.size() > 1 ? " · " + longest.size() + "×" : ""),
+                    longest.size() > 1 ? "first: " : "", where,
+                    c -> c.getDisplayLocation() + " " + AthleteProfile.hillLabel(c) + " · " + c.getCompetitionDate()
+                            + lists.getOrDefault(c.getId(), ""),
+                    JumpResult.format(first.getDistanceM()) + " m in the World Cup"));
+        }
         p.mostSuccessfulVenue().ifPresent(v -> row.add(highlight("Most successful World Cup venue", v.label(), v.venue().getCountry(),
                 v.podiums() > 0 ? count(v.wins(), "win") + " · " + count(v.podiums(), "podium")
                         : count(v.top10(), "top-10 result"), null)));
@@ -221,6 +233,61 @@ final class AthleteOverview extends VerticalLayout {
         d.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
         card.add(t, v, d);
         return card;
+    }
+
+    /**
+     * A card whose detail line links to the competition where it was achieved; if there are
+     * several, to the first one, and 'All n' opens the list of them.
+     */
+    private static Component linkedHighlight(String title, String value, String prefix, List<Competition> where,
+                                             Function<Competition, String> label, String listTitle) {
+        VerticalLayout card = (VerticalLayout) highlight(title, value, null, "", null);
+        card.getComponentAt(2).getElement().removeFromParent();          // the plain detail line
+        Competition first = where.get(0);
+        Span detail = new Span();
+        detail.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
+        detail.getStyle().set("display", "inline-flex").set("align-items", "center").set("gap", "0.4em")
+                .set("flex-wrap", "wrap");
+        if (!prefix.isEmpty()) detail.add(new Span(prefix));
+        detail.add(new NationFlag(first.getDisplayCountry(), false), link(first, label.apply(first)));
+        card.add(detail);
+        if (where.size() > 1) {
+            Anchor all = new Anchor();
+            all.setText("All " + where.size() + " ›");
+            all.addClassNames(LumoUtility.FontSize.SMALL);
+            all.getStyle().set("cursor", "pointer");
+            all.getElement().addEventListener("click", e -> competitionList(listTitle, where, label).open());
+            card.add(all);
+        }
+        return card;
+    }
+
+    private static Anchor link(Competition c, String text) {
+        Anchor a = new Anchor("result/" + c.getId(), text);
+        a.getStyle().set("text-decoration", "none");
+        return a;
+    }
+
+    /** The competitions of a highlight, newest last, each a link. */
+    private static Dialog competitionList(String title, List<Competition> where, Function<Competition, String> label) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle(title + " (" + where.size() + ")");
+        VerticalLayout list = new VerticalLayout();
+        list.setPadding(false);
+        list.setSpacing(false);
+        for (Competition c : where) {
+            Span line = new Span(new NationFlag(c.getDisplayCountry(), false), link(c, label.apply(c)),
+                    new Span(c.getFormat() == null ? "" : "· " + c.getFormat()));
+            line.getStyle().set("display", "inline-flex").set("align-items", "center").set("gap", "0.5em")
+                    .set("padding", "var(--lumo-space-xs) 0");
+            line.getChildren().skip(2).forEach(x -> ((Span) x).addClassNames(LumoUtility.TextColor.SECONDARY));
+            list.add(line);
+        }
+        dialog.add(list);
+        Button close = new Button("Close", e -> dialog.close());
+        dialog.getFooter().add(close);
+        dialog.setMaxHeight("80vh");
+        return dialog;
     }
 
     private static Span withFlag(String text, String country) {

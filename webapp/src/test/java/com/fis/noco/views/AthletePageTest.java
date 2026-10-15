@@ -33,6 +33,29 @@ class AthletePageTest {
     }
 
     @Test
+    void highlightCardsLinkToTheirCompetitions() {
+        Assumptions.assumeTrue(new File("../db/noco.db").exists(), "database not built");
+        Long id = jdbc.queryForObject("select id from athletes where full_name = 'RIIBER Jarl Magnus'", Long.class);
+        Long firstWin = jdbc.queryForObject("select c.id from combined_results r join competitions c on c.id = r.competition_id " +
+                "where r.athlete_id = ? and r.rank = 1 and c.circuit = 'WC' order by c.competition_date limit 1", Long.class, id);
+        UI.setCurrent(new UI());
+        AthleteDetailView view = new AthleteDetailView(athleteService);
+        view.setParameter(null, id);
+        List<com.vaadin.flow.component.html.Anchor> anchors = new java.util.ArrayList<>();
+        collect(view, anchors);
+        List<String> hrefs = anchors.stream().map(com.vaadin.flow.component.html.Anchor::getHref).toList();
+        assertTrue(hrefs.contains("result/" + firstWin), hrefs.toString());                  // the first World Cup win
+        assertTrue(anchors.stream().anyMatch(a -> a.getText().matches("All \\d+ ›")), "list of all wins");
+        long jumpLinks = hrefs.stream().filter(h -> h.startsWith("result/")).count();
+        assertTrue(jumpLinks >= 2, hrefs.toString());                                       // and the longest jump
+    }
+
+    private static void collect(com.vaadin.flow.component.Component c, List<com.vaadin.flow.component.html.Anchor> out) {
+        if (c instanceof com.vaadin.flow.component.html.Anchor a) out.add(a);
+        c.getChildren().forEach(child -> collect(child, out));
+    }
+
+    @Test
     void pagesOfDifferentCareers() {
         Assumptions.assumeTrue(new File("../db/noco.db").exists(), "database not built");
         List<Long> ids = jdbc.queryForList(
