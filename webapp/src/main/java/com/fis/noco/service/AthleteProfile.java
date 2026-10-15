@@ -149,7 +149,7 @@ public final class AthleteProfile {
             List<RatedResult> here = byVenue.getOrDefault(venue.getId(), List.of());
             List<Integer> ranks = here.stream().map(r -> r.result().getRank()).filter(Objects::nonNull).toList();
             int team = teamByVenue.getOrDefault(venue.getId(), 0L).intValue();
-            stats.add(new VenueStats(venue, venue.getName(), here.size() + team, here.size(),
+            stats.add(new VenueStats(venue, venue.getDisplayName(), here.size() + team, here.size(),
                     (int) ranks.stream().filter(r -> r == 1).count(),
                     (int) ranks.stream().filter(r -> r <= 3).count(),
                     (int) ranks.stream().filter(r -> r <= 10).count(),

@@ -99,13 +99,13 @@ public class AthleteService {
     }
 
     public Page<Athlete> searchAthletes(String query, int page, int pageSize) {
-        String q = (query == null || query.isBlank()) ? "" : query.trim();
+        String q = (query == null || query.isBlank()) ? "" : NameFolding.toFis(query.trim());
         PageRequest pageRequest = PageRequest.of(page, pageSize, Sort.by("fullName").ascending());
         return athleteRepository.searchAthletes(q, pageRequest);
     }
 
     public long countAthletes(String query) {
-        String q = (query == null || query.isBlank()) ? "" : query.trim();
+        String q = (query == null || query.isBlank()) ? "" : NameFolding.toFis(query.trim());
         return athleteRepository.countSearchAthletes(q);
     }
 

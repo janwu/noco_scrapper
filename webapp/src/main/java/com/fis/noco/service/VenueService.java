@@ -27,13 +27,13 @@ public class VenueService {
     }
 
     public Page<Venue> searchVenues(String query, int page, int pageSize) {
-        String q = (query == null || query.isBlank()) ? "" : query.trim();
+        String q = (query == null || query.isBlank()) ? "" : NameFolding.toFis(query.trim());
         PageRequest pageRequest = PageRequest.of(page, pageSize, Sort.by("name").ascending());
         return venueRepository.searchVenues(q, pageRequest);
     }
 
     public long countVenues(String query) {
-        String q = (query == null || query.isBlank()) ? "" : query.trim();
+        String q = (query == null || query.isBlank()) ? "" : NameFolding.toFis(query.trim());
         return venueRepository.countSearchVenues(q);
     }
 

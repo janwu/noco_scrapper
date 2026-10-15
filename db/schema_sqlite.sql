@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS athletes (
     birth_date  TEXT,
     active_club TEXT,
     fis_id      TEXT,
+    display_name TEXT,                      -- with native letters, for the web app (aliases/athlete_display_names.csv)
     created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT    NOT NULL DEFAULT (datetime('now')),
     UNIQUE (full_name, nationality)
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS venues (
     latitude    REAL,
     longitude   REAL,
     hill_name   TEXT,
+    display_name TEXT,                      -- with native letters, for the web app (aliases/venue_display_names.csv)
     created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT    NOT NULL DEFAULT (datetime('now')),
     UNIQUE (name, country)

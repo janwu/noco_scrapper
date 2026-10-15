@@ -18,6 +18,7 @@ CREATE TABLE athletes (
     birth_date      DATE,
     active_club     VARCHAR(200),            -- most recent club seen in PDFs
     fis_id          VARCHAR(20),             -- if manually populated later
+    display_name    VARCHAR(200),            -- with native letters, for the web app; full_name stays as FIS writes it
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
     UNIQUE (full_name, nationality)
@@ -52,6 +53,7 @@ CREATE TABLE venues (
     latitude        NUMERIC(9,6),            -- for map views
     longitude       NUMERIC(9,6),
     hill_name       VARCHAR(200),            -- name of the ski jump (e.g. "Hochfilzen Schanze")
+    display_name    VARCHAR(200),            -- with native letters, for the web app; name stays as FIS writes it
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
     UNIQUE (name, country)

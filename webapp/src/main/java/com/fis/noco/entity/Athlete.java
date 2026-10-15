@@ -37,7 +37,16 @@ public class Athlete {
     public Long getId() { return id; }
     public String getLastName() { return lastName; }
     public String getFirstName() { return firstName; }
+    /** The name as FIS writes it ('BJOERNSTAD Espen'); stored, searched and matched by. */
     public String getFullName() { return fullName; }
+
+    @Column(name = "display_name")
+    private String displayName;
+
+    /** The name to show: with native letters where known ('BJØRNSTAD Espen'), else the FIS name. */
+    public String getDisplayName() {
+        return displayName != null && !displayName.isBlank() ? displayName : fullName;
+    }
     public String getNationality() { return nationality; }
     public String getGender() { return gender; }
     public String getBirthDate() { return birthDate; }

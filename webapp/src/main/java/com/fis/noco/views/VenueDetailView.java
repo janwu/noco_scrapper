@@ -51,7 +51,7 @@ public class VenueDetailView extends VerticalLayout implements HasUrlParameter<L
                 UI.getCurrent().navigate(VenueSearchView.class));
         backButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-        H2 header = new H2(venue.getName());
+        H2 header = new H2(venue.getDisplayName());
         header.addClassNames(LumoUtility.Margin.Bottom.XSMALL);
 
         HorizontalLayout infoRow = new HorizontalLayout();

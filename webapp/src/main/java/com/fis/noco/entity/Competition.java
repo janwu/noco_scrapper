@@ -72,7 +72,7 @@ public class Competition {
 
     public String getDisplayLocation() {
         if (venue != null && venue.getName() != null && !venue.getName().isBlank()) {
-            return venue.getName();
+            return venue.getDisplayName();
         }
         return rawLocation != null ? rawLocation : "";
     }

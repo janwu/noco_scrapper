@@ -47,7 +47,7 @@ public class VenueSearchView extends VerticalLayout {
         grid = new Grid<>(Venue.class, false);
         grid.setSizeFull();
 
-        grid.addColumn(Venue::getName)
+        grid.addColumn(Venue::getDisplayName)
                 .setHeader("Venue Name").setAutoWidth(true).setSortable(true);
 
         grid.addComponentColumn(v -> new NationFlag(v.getCountry()))

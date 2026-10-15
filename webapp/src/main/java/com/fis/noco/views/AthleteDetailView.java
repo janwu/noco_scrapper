@@ -65,7 +65,7 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
                 UI.getCurrent().navigate(AthleteSearchView.class));
         backButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-        H2 nameHeader = new H2(athlete.getFullName());
+        H2 nameHeader = new H2(athlete.getDisplayName());
         nameHeader.addClassNames(LumoUtility.Margin.Bottom.XSMALL);
 
         HorizontalLayout infoRow = new HorizontalLayout();

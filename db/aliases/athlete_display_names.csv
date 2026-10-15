@@ -1,0 +1,75 @@
+# Display names with native letters, shown by the web app; the database keeps the FIS name (first
+# column).  Suggested by db/suggest_display_names.py, corrected by hand - edit freely, the script
+# only appends athletes that have no line yet.
+name,nation,display_name
+EGGER RIEDMUELLER Thomas,AUT,EGGER RIEDMÜLLER Thomas
+GUETL Kilian,AUT,GÜTL Kilian
+JOEBSTL Thomas,AUT,JÖBSTL Thomas
+MOERTL Siegfried,AUT,MÖRTL Siegfried
+MUEHLBACHER Lukas,AUT,MÜHLBACHER Lukas
+THUER David,AUT,THÜR David
+SALUMAE Jens,EST,SALUMÄE Jens
+HAERTULL Jim,FIN,HÄRTULL Jim
+JAEAESKELAEINEN Jesse,FIN,JÄÄSKELÄINEN Jesse
+KAEHKOENEN Ville,FIN,KÄHKÖNEN Ville
+MAEKIAHO Arttu,FIN,MÄKIAHO Arttu
+PAEAEKKOENEN Jesse,FIN,PÄÄKKÖNEN Jesse
+RYYNAENEN Janne,FIN,RYYNÄNEN Janne
+VAEHAESOEYRINKI Eetu,FIN,VÄHÄSÖYRINKI Eetu
+BAETZ Stephan,GER,BÄTZ Stephan
+BOESL Wolfgang,GER,BÖSL Wolfgang
+DUENKEL Michael,GER,DÜNKEL Michael
+FOERSTER Markus,GER,FÖRSTER Markus
+GOEPFERT Trine,GER,GÖPFERT Trine
+GOERLICH Emilia,GER,GÖRLICH Emilia
+GRAEBERT Benedikt,GER,GRÄBERT Benedikt
+GRAEBERT Jonathan,GER,GRÄBERT Jonathan
+GUENTER Andreas,GER,GÜNTER Andreas
+HAECKEL Anne,GER,HÄCKEL Anne
+HAECKEL Thea,GER,HÄCKEL Thea
+HOEHLIG Marcel,GER,HÖHLIG Marcel
+HOERSELMANN Erik,GER,HÖRSELMANN Erik
+HUETTEL Simon,GER,HÜTTEL Simon
+KIRCHEISEN Bjoern,GER,KIRCHEISEN Björn
+MUENCHMEYER Stefan,GER,MÜNCHMEYER Stefan
+MUENCHMEYER Stephan,GER,MÜNCHMEYER Stephan
+NAEHRING Marie,GER,NÄHRING Marie
+SCHLUETTER Anton,GER,SCHLÜTTER Anton
+SCHOENFELD Nick,GER,SCHÖNFELD Nick
+STRUEMPFEL Elisabeth,GER,STRÜMPFEL Elisabeth
+WOELFLE Julian,GER,WÖLFLE Julian
+WUERTH Svenja,GER,WÜRTH Svenja
+BERGET STORSVEEN Joergen,NOR,BERGET STORSVEEN Jørgen
+BJOERN Jan Christian,NOR,BJØRN Jan Christian
+BJOERNSTAD Espen,NOR,BJØRNSTAD Espen
+BRYNEMO Preben Fjaere,NOR,BRYNEMO Preben Fjære
+EIKSUND SAETHRE Jakob,NOR,EIKSUND SÆTHRE Jakob
+GRAABAK Joergen,NOR,GRAABAK Jørgen
+GRAESLI Ingrid,NOR,GRÆSLI Ingrid
+GRAESLI Kjersti,NOR,GRÆSLI Kjersti
+GRAESLI Ola Morten,NOR,GRÆSLI Ola Morten
+GRAESLI Ole Morten,NOR,GRÆSLI Ole Morten
+HILMARSEN Henrik Elias Wikstroem,NOR,HILMARSEN Henrik Elias Wikstrøm
+HILMARSEN Ingmar Wikstroem,NOR,HILMARSEN Ingmar Wikstrøm
+JOHANSEN Truls Soenstehagen,NOR,JOHANSEN Truls Sønstehagen
+KLEMETSEN Haavard,NOR,KLEMETSEN Håvard
+KROGLUND Haavard,NOR,KROGLUND Håvard
+LIEN Oeystein Granbu,NOR,LIEN Øystein Granbu
+LOEKEN Josefine,NOR,LØKEN Josefine
+MIDTSKOGEN Ingvild Synnoeve,NOR,MIDTSKOGEN Ingvild Synnøve
+NAESVOLD Leif Torbjoern,NOR,NÆSVOLD Leif Torbjørn
+OEIHAUGEN Thea,NOR,ØIHAUGEN Thea
+OESTVIK Lars Andreas,NOR,ØSTVIK Lars Andreas
+OESTVIK Mathias,NOR,ØSTVIK Mathias
+OESTVOLD Sebastian,NOR,ØSTVOLD Sebastian
+OFTEBRO Einar Luraas,NOR,OFTEBRO Einar Lurås
+OFTEBRO Jens Luraas,NOR,OFTEBRO Jens Lurås
+SANDOEY Sturla Markhus,NOR,SANDØY Sturla Markhus
+SKJAERET STROMHAUG Per Einar,NOR,SKJÆRET STRØMHAUG Per Einar
+SKODJEREITE Petter Loeset,NOR,SKODJEREITE Petter Løset
+SOETVIK Sindre Ure,NOR,SØTVIK Sindre Ure
+STROEM Eidar Johan,NOR,STRØM Eidar Johan
+STROEM Joergen Oliver,NOR,STRØM Jørgen Oliver
+UVSLOEKK Einar,NOR,UVSLØKK Einar
+KLAESI Felix,SUI,KLÄSI Felix
+MUELLER Pascal,SUI,MÜLLER Pascal

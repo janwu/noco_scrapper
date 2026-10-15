@@ -29,7 +29,16 @@ public class Venue {
     private String hillName;
 
     public Long getId() { return id; }
+    /** The name as FIS writes it ('Otepaeae'). */
     public String getName() { return name; }
+
+    @Column(name = "display_name")
+    private String displayName;
+
+    /** The name to show: with native letters where known ('Otepää'), else the FIS name. */
+    public String getDisplayName() {
+        return displayName != null && !displayName.isBlank() ? displayName : name;
+    }
     public String getCountry() { return country; }
     public String getRegion() { return region; }
     public Double getLatitude() { return latitude; }

@@ -31,6 +31,8 @@ python fis_nk_coc_scraper.py --seasons 2027             # Continental Cup
 python fis_nk_standings_scraper.py --seasons 2027       # cup standings, once the season is over
 python run_parser.py --workers 7 --errors-only          # parses only the new PDFs
 python db/load_json.py --sqlite db/noco.db
+python db/suggest_display_names.py                     # display names for new athletes; check them
+python db/load_json.py --sqlite db/noco.db
 ```
 
 Without `--seasons` the scrapers go through all seasons up to the current one;
@@ -59,9 +61,18 @@ The database is never edited by hand — the next rebuild would undo it.
 | A PDF is read wrongly | `fis_parser/` (add the PDF to `tests/test_rof_parser.py`) |
 | Two spellings of one athlete | `db/aliases/athletes.csv` |
 | Two names for one venue | `db/aliases/venues.csv` |
+| Name to show with native letters (Bjørnstad, Otepää) | `db/aliases/athlete_display_names.csv`, `venue_display_names.csv` |
 
 Alias files have four columns: the name and nation as printed, then the
 name and nation to use instead. Lines starting with `#` are comments.
+
+The database keeps every name as FIS writes it ('BJOERNSTAD Espen', 'Otepaeae'); the
+display-name files (three columns: name and nation as stored, name to show) only change
+what the web app shows, and its search finds both spellings. `python
+db/suggest_display_names.py` appends suggestions for athletes without a line, by the rules of
+their nation (NOR ø/æ/å, GER/AUT/SUI ä/ö/ü, FIN/EST/SWE ä/ö); it never changes a line that is
+there, so corrections by hand stay. Names with other accents (Czech, Slovenian, Polish) have
+no rule and are added by hand.
 
 `load_json.py` warns about athletes that may be one person (same name words in
 the same nation, or the same name in two nations). An athlete who changed nation

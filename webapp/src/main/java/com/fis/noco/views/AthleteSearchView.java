@@ -47,7 +47,7 @@ public class AthleteSearchView extends VerticalLayout {
         grid = new Grid<>(Athlete.class, false);
         grid.setSizeFull();
 
-        grid.addColumn(Athlete::getFullName)
+        grid.addColumn(Athlete::getDisplayName)
                 .setHeader("Name")
                 .setAutoWidth(true)
                 .setSortable(true);

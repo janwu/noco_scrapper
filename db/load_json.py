@@ -190,6 +190,19 @@ def file_meta(path: str, output_dir: str) -> Optional[dict]:
 # Alias lists
 # ─────────────────────────────────────────────────────────────────────────────
 
+def load_display_names(path: str) -> Dict[Tuple[str, str], str]:
+    """CSV with 3 columns: name and nation/country as stored, the name to show in the web app."""
+    names: Dict[Tuple[str, str], str] = {}
+    if not os.path.exists(path):
+        return names
+    with open(path, encoding="utf-8", newline="") as fh:
+        for line in csv.reader(fh):
+            if len(line) < 3 or not line[0].strip() or line[0].lstrip().startswith("#") or line[0] == "name":
+                continue
+            names[(line[0].strip(), line[1].strip().upper())] = line[2].strip()
+    return names
+
+
 def load_aliases(path: str) -> Dict[Tuple[str, str], Tuple[str, str]]:
     """CSV with 4 columns: name, nation/country, canonical name, canonical nation/country."""
     aliases: Dict[Tuple[str, str], Tuple[str, str]] = {}
@@ -239,6 +252,9 @@ class Build:
         # athletes of the validated result and competition jump lists: training and
         # trial rounds link to these, they do not add athletes of their own
         self.official_athletes: set = set()                       # (name, nation) after aliases
+        # names with native letters for the web app; the stored name stays as FIS writes it
+        self.athlete_display: Dict[Tuple[str, str], str] = {}
+        self.venue_display: Dict[Tuple[str, str], str] = {}
         self.recovered_nations: Counter = Counter()               # doc_type → rows
         self.recovered_names: Counter = Counter()                 # doc_type → rows
         self.names_by_words: Dict[Tuple[str, frozenset], set] = defaultdict(set)   # (nation, words) → names
@@ -734,7 +750,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
 
     # Dimension tables are complete only now
     for (name, country), venue_id in build.venues.items():
-        build.rows["venues"].append((venue_id, name, country))
+        build.rows["venues"].append((venue_id, name, country, build.venue_display.get((name, country))))
     for (raw_name, raw_country), (venue_id, source) in build.venue_variants.items():
         build.add("venue_name_variants", venue_id, raw_name, raw_country, source)
     for a in build.athletes.values():
@@ -742,7 +758,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
         gender = a["genders"].most_common(1)[0][0] if a["genders"] else None
         dob = a["dobs"].most_common(1)[0][0] if a["dobs"] else None
         build.rows["athletes"].append((a["id"], last, first, a["name"], a["nation"], gender, dob, a["club"],
-                                       a.get("fis_id")))
+                                       a.get("fis_id"), build.athlete_display.get((a["name"], a["nation"]))))
     for (raw_name, raw_nation), (athlete_id, source) in build.athlete_variants.items():
         build.add("athlete_name_variants", athlete_id, raw_name, raw_nation, source)
 
@@ -758,9 +774,9 @@ _JUMP_COLUMNS = (
 
 COLUMNS = {
     "seasons": "id, start_year, label",
-    "venues": "id, name, country",
+    "venues": "id, name, country, display_name",
     "venue_name_variants": "id, venue_id, name_variant, country, first_seen_file",
-    "athletes": "id, last_name, first_name, full_name, nationality, gender, birth_date, active_club, fis_id",
+    "athletes": "id, last_name, first_name, full_name, nationality, gender, birth_date, active_club, fis_id, display_name",
     "athlete_name_variants": "id, athlete_id, name_variant, nationality, first_seen_file",
     "competitions": "id, season_id, venue_id, fis_codex, circuit, gender, competition_date, raw_location, "
                     "raw_country, format, hill_size_m, xc_distance_km, event_name",
@@ -944,7 +960,11 @@ def main() -> int:
 
     build = Build(load_aliases(os.path.join(args.aliases_dir, "athletes.csv")),
                   load_aliases(os.path.join(args.aliases_dir, "venues.csv")))
-    log.info("Aliases: %d athletes, %d venues", len(build.athlete_aliases), len(build.venue_aliases))
+    build.athlete_display = load_display_names(os.path.join(args.aliases_dir, "athlete_display_names.csv"))
+    build.venue_display = load_display_names(os.path.join(args.aliases_dir, "venue_display_names.csv"))
+    log.info("Aliases: %d athletes, %d venues; display names: %d athletes, %d venues",
+             len(build.athlete_aliases), len(build.venue_aliases),
+             len(build.athlete_display), len(build.venue_display))
     build_database(args.output_dir, build, args.standings_dir)
     if args.sqlite:
         write_sqlite(build, args.sqlite)

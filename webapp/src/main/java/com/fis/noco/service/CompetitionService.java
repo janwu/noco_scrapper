@@ -202,7 +202,7 @@ public class CompetitionService {
             StandingsEntry entry = new StandingsEntry(
                     s.getRank(),
                     athlete != null ? athlete.getId() : null,
-                    athlete != null ? athlete.getFullName() : s.getRawName(),
+                    athlete != null ? athlete.getDisplayName() : s.getRawName(),
                     s.getRawNation(),
                     s.getPoints());
             entries.add(entry);

@@ -170,7 +170,7 @@ public class JumpResult {
 
     public String getDisplayName() {
         if (athlete != null && athlete.getFullName() != null) {
-            return athlete.getFullName();
+            return athlete.getDisplayName();
         }
         return rawName != null ? rawName : "";
     }

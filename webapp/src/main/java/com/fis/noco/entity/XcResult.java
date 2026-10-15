@@ -57,7 +57,7 @@ public class XcResult {
     public String getStatus() { return status; }
 
     public String getDisplayName() {
-        if (athlete != null && athlete.getFullName() != null) return athlete.getFullName();
+        if (athlete != null && athlete.getFullName() != null) return athlete.getDisplayName();
         return rawName != null ? rawName : "";
     }
 
