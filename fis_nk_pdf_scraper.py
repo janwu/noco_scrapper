@@ -80,6 +80,8 @@ CALENDAR_URL = (
 CIRCUITS = {
     "WC":  {"first_season": 2001, "output_dir": "fis_nk_pdfs",     "name": "World Cup"},
     "COC": {"first_season": 2009, "output_dir": "fis_nk_coc_pdfs", "name": "Continental Cup"},
+    # the World Cup B, renamed Continental Cup in 2008/09; FIS has PDFs of a few of its competitions
+    "WCB": {"first_season": 2001, "last_season": 2008, "output_dir": "fis_nk_wcb_pdfs", "name": "World Cup B"},
 }
 
 
@@ -325,20 +327,19 @@ def attachment_label(a) -> str:
     return re.sub(r"\(\s*[\d.,]+\s*kb\s*\)", "", label, flags=re.I).strip()
 
 
-def parse_event_page(event: dict, session: requests.Session) -> tuple:
+def read_event(event: dict, session: requests.Session):
     """
-    (pdfs, folder_name) of an event page.
+    (soup, folder_name, races, rid_by_codex) of an event page, or None if it cannot be read.
+    races: raceid -> {codex, date, name, gender, category}, in page order.
 
     A race row has several links to the same raceid (date, codex, name,
-    category, gender); their texts are merged to describe the race.  An
-    attachment belongs to the race of its data-ga-codex, else to the race row
-    above it.
+    category, gender); their texts are merged to describe the race.
     """
     try:
         soup = get_soup(event["url"], session)
     except Exception as e:
         print(f"  FAIL Could not fetch event page: {e}")
-        return [], event["eventid"]
+        return None
 
     location = parse_location(soup) or f"{event['place']}_{event['nation']}"
     date_from, date_to = parse_all_dates(soup, event["season"])
@@ -376,13 +377,13 @@ def parse_event_page(event: dict, session: requests.Session) -> tuple:
         if not codex:
             codex = next((m.group(1) for m in re.finditer(r"\b(\d{4})\b", merged)
                           if not 1980 <= int(m.group(1)) <= 2100), "")
-        gender_m = re.search(r"\b(?:WC|COC|PR)\b\s*\n?\s*\b([MWA])\b", merged)
+        gender_m = re.search(r"\b(?:WC|WCB|COC|PR)\b\s*\n?\s*\b([MWA])\b", merged)
         if gender_m:
             gender = gender_m.group(1)
         else:
             tokens = re.findall(r"\b([MWA])\b", merged)
             gender = tokens[-1] if tokens else "unknown"
-        cat_m = re.search(r"\b(WC|COC|PR)\b", merged)
+        cat_m = re.search(r"\b(WC|WCB|COC|PR)\b", merged)
         race_meta[rid] = {
             "codex": codex,
             "date": date_from_text(merged, event["season"]),
@@ -391,6 +392,18 @@ def parse_event_page(event: dict, session: requests.Session) -> tuple:
             "category": cat_m.group(1) if cat_m else "unknown",
         }
     rid_by_codex = {meta["codex"]: rid for rid, meta in race_meta.items() if meta["codex"]}
+    return soup, folder_name, race_meta, rid_by_codex
+
+
+def parse_event_page(event: dict, session: requests.Session) -> tuple:
+    """
+    (pdfs, folder_name) of an event page.  An attachment belongs to the race of
+    its data-ga-codex, else to the race row above it.
+    """
+    read = read_event(event, session)
+    if read is None:
+        return [], event["eventid"]
+    soup, folder_name, race_meta, rid_by_codex = read
 
     pdfs = []
     current_rid = None

@@ -1,6 +1,7 @@
 # Downloaded source PDFs (≈1.2 GB, re-downloadable with the scrapers)
 fis_nk_pdfs/
 fis_nk_coc_pdfs/
+fis_nk_wcb_pdfs/
 *.zip
 
 # Derived data: parsed JSON and the database built from it

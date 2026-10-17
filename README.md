@@ -10,6 +10,8 @@ run_parser.py            (fis_parser/)        PDFs      → output/**/*.json
 db/load_json.py          (db/aliases/*.csv)   JSON      → db/noco.db
 webapp/                                       db/noco.db → Vaadin site
 
+fis_nk_wcb_scraper.py                         weltcup-b.org + FIS → fis_nk_wcb_pdfs/
+   (World Cup B 2000/01–2007/08, the Continental Cup before it was renamed)
 fis_nk_standings_scraper.py                   FIS database → fis_nk_standings/*.json
                                               (official cup standings, also read by load_json.py)
 ```
@@ -39,6 +41,24 @@ Without `--seasons` the scrapers go through all seasons up to the current one;
 files already on disk are recognised by their FIS name (e.g. `2026NK4117ROF.pdf`)
 and not downloaded again. How the FIS pages are read is described at the top of
 `fis_nk_pdf_scraper.py`.
+
+## World Cup B (2000/01 – 2007/08)
+
+The second league was called World Cup B until 2008/09, when it became the
+Continental Cup. FIS has PDFs of only part of it (from 2004/05); the former
+coordinator of the series keeps all results at www.weltcup-b.org. Both go to
+`fis_nk_wcb_pdfs/`, in the layout of the other circuits:
+
+```
+python fis_nk_pdf_scraper.py --circuit WCB --from-season 2001 --to-season 2008   # FIS PDFs
+python fis_nk_wcb_scraper.py           # weltcup-b.org PDFs → fis_nk_wcb_pdfs/_raw/
+python fis_nk_wcb_scraper.py --file    # codex and date from the FIS database → fis_nk_wcb_pdfs/<season>/
+```
+
+The site names its files by venue and number ('Karpacz1.pdf', '_SP' / '_Sprung',
+'_Lauf', '_Training'); `fis_nk_wcb_files.py` gives each the codex of its
+competition (see there how) and skips lists FIS has itself. The lists of
+weltcup-b.org come from the organisers and have many different layouts.
 
 ## Rebuilding the data
 
