@@ -441,8 +441,14 @@ def describe_competition(docs: List[Tuple[dict, dict]]) -> dict:
         # jumping round, not a competition with a result list.
         fmt = "Provisional Round"
 
-    location = clean((rof or {}).get("location")) or first(lambda m, d: clean(d.get("location")))
-    country = clean((rof or {}).get("country")) or first(lambda m, d: clean(d.get("country")))
+    # venue from a list that was read (the ROF first): a list that failed validation may
+    # have taken a line of the header for the place ('Technical Delegate: Jarkko Laine')
+    readable = [d for _, d in ordered if not d.get("parse_errors")] + \
+        [d for _, d in ordered if d.get("parse_errors")]
+    place_doc = next((d for d in readable if clean(d.get("location"))), {})
+    location = clean(place_doc.get("location"))
+    country = clean(place_doc.get("country")) or next(
+        (clean(d.get("country")) for d in readable if clean(d.get("country"))), None)
     if not location or not country:
         place, ctry = venue_from_path(primary.get("source_file") or "")
         location, country = location or place, country or ctry
