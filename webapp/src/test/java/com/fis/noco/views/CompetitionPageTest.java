@@ -73,6 +73,17 @@ class CompetitionPageTest {
     }
 
     @Test
+    void worldCupBIsTheContinentalCupBefore2008() {
+        Assumptions.assumeTrue(new File("../db/noco.db").exists(), "database not built");
+        // Bardufoss 8 Dec 2001: the list of the organiser is not read, the ranking of the FIS database is
+        Long id = jdbc.queryForObject("select c.id from competitions c where c.circuit = 'COC' " +
+                "and c.competition_date = '2001-12-08'", Long.class);
+        var competition = competitionService.findById(id).orElseThrow();
+        assertEquals("World Cup B", competition.getCircuitLabel());
+        assertEquals(59, competitionService.countResultsForCompetition(id));
+    }
+
+    @Test
     void gapToTheFastest() {
         Double best = ResultDetailView.seconds("23:49.0");
         assertEquals(1429.0, best);

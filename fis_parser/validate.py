@@ -53,6 +53,9 @@ def row_identity_problem(row: dict, given_first: bool = False) -> Optional[str]:
     nation = row.get('nation')
     if not is_valid_athlete_name(name):
         return f"invalid athlete name {name!r}"
+    if re.search(r'\d|�', name):
+        # 'BAUD Frederic 75' (the bib in the name column), 'CHURAV� Pavel' (a letter the PDF lost)
+        return f"name holds a digit or a lost letter: {name!r}"
     if re.search(r'[()]', name):
         # 'ARMBRUSTER Nathalie (F)': a second athlete next to 'ARMBRUSTER Nathalie'
         return f"name holds a bracket: {name!r}"

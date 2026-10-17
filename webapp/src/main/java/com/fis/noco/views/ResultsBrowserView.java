@@ -52,7 +52,7 @@ public class ResultsBrowserView extends VerticalLayout {
         circuitSelect = new Select<>();
         circuitSelect.setLabel("Circuit");
         circuitSelect.setItems("WC", "COC");
-        circuitSelect.setItemLabelGenerator(c -> c.equals("WC") ? "World Cup" : "Continental Cup");
+        circuitSelect.setItemLabelGenerator(c -> c.equals("WC") ? "World Cup" : "Continental Cup / World Cup B");
         circuitSelect.setWidthFull();
 
         seasonSelect = new Select<>();
@@ -150,7 +150,9 @@ public class ResultsBrowserView extends VerticalLayout {
             return;
         }
 
-        String circuitLabel = circuit.equals("WC") ? "World Cup" : "Continental Cup";
+        String circuitLabel = circuit.equals("WC") ? "World Cup"
+                : season.getStartYear() != null && season.getStartYear() < 2008
+                ? "Continental Cup (World Cup B)" : "Continental Cup";
         gridTitle.setText(circuitLabel + " – " + season.getLabel());
 
         String gender = genderSelect.getValue();

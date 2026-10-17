@@ -52,7 +52,8 @@ log = logging.getLogger("loader")
 
 DB_DIR = os.path.dirname(os.path.abspath(__file__))
 
-CIRCUIT_BY_DIR = {"fis_nk_pdfs": "WC", "fis_nk_coc_pdfs": "COC"}
+# The World Cup B (until 2007/08) is the Continental Cup under its old name: one circuit
+CIRCUIT_BY_DIR = {"fis_nk_pdfs": "WC", "fis_nk_coc_pdfs": "COC", "fis_nk_wcb_pdfs": "COC"}
 JUMP_TABLE_BY_DOC_TYPE = {
     "RL": "jump_round_results",
     "RL1": "jump_round_results",
@@ -183,6 +184,7 @@ def file_meta(path: str, output_dir: str) -> Optional[dict]:
         "provisional": bool(re.search(r"_PR_[MWA]_[MWX]_|PCR\.json$", name)),
         "discipline_hint": fn.get("discipline_hint"),
         "basename": name,
+        "source_dir": rel[0],
     }
 
 
@@ -252,6 +254,8 @@ class Build:
         # athletes of the validated result and competition jump lists: training and
         # trial rounds link to these, they do not add athletes of their own
         self.official_athletes: set = set()                       # (name, nation) after aliases
+        self.fdb_used = 0                                         # competitions ranked from the FIS database
+        self.fdb_disagree: list = []                              # (file, top 3 of the PDF, top 3 of FIS)
         # names with native letters for the web app; the stored name stays as FIS writes it
         self.athlete_display: Dict[Tuple[str, str], str] = {}
         self.venue_display: Dict[Tuple[str, str], str] = {}
@@ -425,9 +429,12 @@ def describe_competition(docs: List[Tuple[dict, dict]]) -> dict:
         return None
 
     team = first(lambda m, d: m["team"])
-    if rof is not None and is_team_discipline(rof.get("discipline")):
-        team = rof["discipline"]
-    fmt = team or (rof or {}).get("discipline") or first(lambda m, d: m["discipline_hint"]) \
+    # the FIS database has individual rankings only: a list it ranks, not read, says nothing
+    rof_discipline = None if rof is not None and rof.get("parse_errors") \
+        and any(m["doc_type"] == "FDB" for m in metas) else (rof or {}).get("discipline")
+    if is_team_discipline(rof_discipline):
+        team = rof_discipline
+    fmt = team or rof_discipline or first(lambda m, d: m["discipline_hint"]) \
         or first(lambda m, d: d.get("discipline"))
     if rof is None and any(m["provisional"] for m in metas):
         # The provisional competition round has a codex of its own; it is a
@@ -552,7 +559,7 @@ def add_results(build: Build, comp: dict, comp_id: int, doc_id: int, meta: dict,
     if doc.get("parse_errors"):
         build.skipped_docs.append((f"{doc_type} failed validation: {doc['parse_errors'][0]}", source))
         return
-    if doc_type == "ROF":
+    if doc_type in ("ROF", "FDB"):
         if comp["team"]:
             add_team_results(build, comp, comp_id, doc_id, doc, source)
             return
@@ -678,15 +685,136 @@ def fill_hill_sizes(build: Build) -> None:
         log.info("Hill size taken from the same hill at the same event: %d competitions", filled)
 
 
+def _fold(text: str) -> str:
+    """'MÜNCHMEYER' / 'MUENCHMEYER' / 'Munchmeyer' → 'munchmeyer'; 'ØSTVIK' / 'OESTVIK' / 'OSTVIK' → 'ostvik'."""
+    s = to_ascii(text or "").lower()
+    for a, b in (("oe", "o"), ("ae", "a"), ("ue", "u"), ("aa", "a")):
+        s = s.replace(a, b)
+    return re.sub(r"[^a-z]", "", s)
+
+
+def _surname(name: str) -> str:
+    """The surname of 'SURNAME Firstname' (or of 'Surname Firstname', the first word)."""
+    words = (name or "").replace(",", " ").split()
+    caps = [w for w in words if w.isupper() and len(w) > 1]
+    return " ".join(caps) if caps else (words[0] if words else "")
+
+
+def _given(name: str) -> str:
+    words = (name or "").replace(",", " ").split()
+    return " ".join(w for w in words if not (w.isupper() and len(w) > 1))
+
+
+def fis_spelling(by_comp: Dict, build: Build) -> None:
+    """
+    World Cup B: the lists of weltcup-b.org and of the organisers spell names their
+    way ('MÜNCHMEYER Stephan', 'FADEJEV Aleksej', 'Braaten, Kenneth', 'MENZ Matthias,');
+    the ranking of the FIS database (doc type FDB) has the FIS spelling.  A row of
+    another list of the competition takes the FIS name of the one athlete of that
+    ranking with the same surname and nation (letters folded: ü = ue = u).  Team lists,
+    which have no ranking, look in all rankings and also compare the given name.
+
+    The FIS database gives Russians and Belarusians of those years as 'AIN' (neutral
+    athletes, as of today); they get the nation the lists of the competition print.
+    """
+    def words(name: str) -> frozenset:
+        return frozenset(w for w in (_fold(x) for x in re.split(r"[\s\-,]+", name or "")) if len(w) > 1)
+
+    fdb_rows = [r for docs in by_comp.values() for meta, doc in docs if meta["doc_type"] == "FDB"
+                for r in doc.get("combined_results") or []]
+    def resolve_ain() -> None:
+        """'AIN' in one ranking, the real nation in another or in any readable list."""
+        nations_of = defaultdict(set)
+        for docs in by_comp.values():
+            for meta, doc in docs:
+                if doc.get("parse_errors"):
+                    continue
+                rows = [(r, r.get("nation")) for key in ("combined_results", "jump_rounds", "xc_results")
+                        for r in doc.get(key) or []]
+                rows += [(m, t.get("nation")) for t in doc.get("team_results") or [] for m in t.get("members") or []]
+                for r, nation in rows:
+                    if r.get("name") and nation and nation.upper() not in ("AIN", "OAR", "RPF"):
+                        nations_of[words(r["name"])].add(nation.upper())
+        for r in fdb_rows:
+            if r["nation"] == "AIN":
+                nations = nations_of.get(words(r["name"]), set())
+                if len(nations) == 1:
+                    r["nation"] = next(iter(nations))
+
+    resolve_ain()
+    every = defaultdict(set)                  # nation → FIS names, all rankings
+    for r in fdb_rows:
+        every[r["nation"]].add(r["name"])
+    fixed = 0
+    for docs in by_comp.values():
+        if not any(meta.get("source_dir") == "fis_nk_wcb_pdfs" for meta, _ in docs):
+            continue
+        ranking = [r for meta, doc in docs if meta["doc_type"] == "FDB" for r in doc.get("combined_results") or []]
+        here = defaultdict(set)
+        for r in ranking:
+            here[_fold(_surname(r["name"]))].add((r["name"], r["nation"]))
+        printed = defaultdict(set)            # surname → nations printed in the PDFs of the competition
+        for meta, doc in docs:
+            if meta["doc_type"] == "FDB":
+                continue
+            for key in ("combined_results", "jump_rounds", "xc_results"):
+                for r in doc.get(key) or []:
+                    if r.get("name") and r.get("nation"):
+                        printed[_fold(_surname(r["name"]))].add(r["nation"].upper())
+            for t in doc.get("team_results") or []:
+                for m in t.get("members") or []:
+                    if m.get("name") and t.get("nation"):
+                        printed[_fold(_surname(m["name"]))].add(t["nation"].upper())
+        for r in ranking:
+            if r["nation"] == "AIN":
+                nations = (printed.get(_fold(_surname(r["name"]))) or set()) - {"AIN"}
+                if len(nations) == 1:
+                    r["nation"] = next(iter(nations))
+        for meta, doc in docs:
+            if meta["doc_type"] == "FDB":
+                continue
+            rows = [r for key in ("combined_results", "jump_rounds", "xc_results") for r in doc.get(key) or []]
+            members = [(m, t) for t in doc.get("team_results") or [] for m in t.get("members") or []]
+            for r, team in [(r, None) for r in rows] + members:
+                name = (r.get("name") or "").strip().rstrip(",.").strip()
+                if not name:
+                    continue
+                nation = (r.get("nation") or (team or {}).get("nation") or "").upper()
+                surname = _fold(_surname(name))
+                hits = {n for n, nat in here.get(surname, ()) if not nation or nat in (nation, "AIN")}
+                if not hits:
+                    # not in the ranking of the competition (a team, or no ranking): any World Cup B
+                    # ranking, the same words in any order ('AAM Torkild Rasmussen' / 'RASMUSSEN
+                    # Torkild Aam') or, with the same surname, the same start of the given name
+                    w = words(name)
+                    given = _fold(_given(name))[:2]
+                    hits = {n for n in every.get(nation, ()) if words(n) == w}
+                    if not hits:
+                        hits = {n for n in every.get(nation, ()) if _fold(_surname(n)) == surname
+                                and _fold(_given(n))[:2] == given}
+                if len(hits) == 1:
+                    fis_name = next(iter(hits))
+                    if fis_name != r.get("name"):
+                        r["name"] = fis_name
+                        fixed += 1
+                elif name != r.get("name"):
+                    r["name"] = name
+    # once more: the lists of other competitions now carry the FIS names too
+    resolve_ain()
+    if fixed:
+        log.info("World Cup B: %d rows take the FIS spelling of the name", fixed)
+
+
 def build_database(output_dir: str, build: Build, standings_dir: Optional[str] = None) -> None:
     by_comp = read_documents(output_dir, build)
     log.info("Read %d documents for %d competitions", sum(map(len, by_comp.values())), len(by_comp))
+    fis_spelling(by_comp, build)
 
     for docs in by_comp.values():
         for name, nations in names_with_nation(docs).items():
             build.nations_by_name[name] |= nations
         for meta, doc in docs:
-            if not doc.get("parse_errors") and meta["doc_type"] in ("ROF", "RL", "RL1", "RLQ", "PCR"):
+            if not doc.get("parse_errors") and meta["doc_type"] in ("ROF", "FDB", "RL", "RL1", "RLQ", "PCR"):
                 rows = [dict(m, nation=m.get("nation") or t.get("nation"))
                         for t in doc.get("team_results") or [] for m in t.get("members") or []] \
                     + (doc.get("combined_results") or []) + (doc.get("jump_rounds") or [])
@@ -694,7 +822,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
                     if r.get("name") and r.get("nation") and not row_identity_problem(r):
                         key = (clean(r["name"]), r["nation"].upper())
                         build.official_athletes.add(build.athlete_aliases.get(key, key))
-            if meta["doc_type"] == "ROF" and not doc.get("parse_errors") \
+            if meta["doc_type"] in ("ROF", "FDB") and not doc.get("parse_errors") \
                     and not meta["team"] and not is_team_discipline(doc.get("discipline")):
                 build.result_nations.update(
                     r["nation"].upper() for r in doc.get("combined_results") or []
@@ -702,7 +830,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
 
     # A name may also be looked up in its canonical spelling
     for name, nations in list(build.nations_by_name.items()):
-        for nation in nations:
+        for nation in list(nations):
             cname, cnation = build.athlete_aliases.get((name, nation), (name, nation))
             build.nations_by_name[cname].add(cnation)
 
@@ -733,6 +861,19 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
             if meta["doc_type"] == "ROF" and meta is not official:
                 build.skipped_docs.append(("second ROF for the same competition", meta["basename"]))
                 continue
+            if meta["doc_type"] == "FDB":
+                # the ranking of the FIS database (World Cup B): only where the result
+                # list could not be read, which has the jump and cross-country too
+                read = next((d for m, d in docs if m["doc_type"] == "ROF" and not d.get("parse_errors")), None)
+                if read is not None:
+                    pdf_top = [clean(r.get("name")) for r in sorted(
+                        (r for r in read.get("combined_results") or [] if r.get("rank")), key=lambda r: r["rank"])[:3]]
+                    fdb_top = [clean(r.get("name")) for r in (doc.get("combined_results") or [])[:3]]
+                    if pdf_top and pdf_top != fdb_top:
+                        build.fdb_disagree.append((meta["basename"], pdf_top, fdb_top))
+                    build.skipped_docs.append(("FIS ranking: the result list was read", meta["basename"]))
+                    continue
+                build.fdb_used += 1
             if meta["doc_type"] == "RL1" and any(m["doc_type"] == "RL" for m, _ in docs):
                 build.skipped_docs.append(("first round only, the RL holds both", meta["basename"]))
                 continue
@@ -894,6 +1035,11 @@ def report(build: Build, verbose: bool) -> None:
     log.info("Rows written:")
     for table in TABLE_ORDER:
         log.info("  %-24s %7d", table, len(build.rows[table]))
+
+    if build.fdb_used:
+        log.info("Competitions ranked from the FIS database (result list not readable): %d", build.fdb_used)
+    for name, pdf_top, fdb_top in build.fdb_disagree:
+        log.warning("  top 3 of %s differ from the FIS database: %s / %s", name, pdf_top, fdb_top)
 
     duplicates = possible_duplicates(build)
     if duplicates:

@@ -17,6 +17,7 @@ Step 2, file:      python fis_nk_wcb_scraper.py --file
 
     python fis_nk_wcb_scraper.py                  # download (skips what is there)
     python fis_nk_wcb_scraper.py --file           # file the downloaded PDFs
+    python fis_nk_wcb_scraper.py --fis-results    # the ranking of each competition from the FIS database
     python fis_nk_wcb_scraper.py --dry-run        # list what would be downloaded
 """
 import argparse
@@ -95,9 +96,14 @@ def main():
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--file", action="store_true", help="file the downloaded PDFs (step 2)")
+    parser.add_argument("--fis-results", action="store_true",
+                        help="store the ranking of every competition from the FIS database (step 3)")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    if args.file:
+    if args.fis_results:
+        from fis_nk_wcb_fisdb import fetch_all
+        fetch_all(OUTPUT)
+    elif args.file:
         from fis_nk_wcb_files import file_all
         file_all(OUTPUT, dry_run=args.dry_run)
     else:

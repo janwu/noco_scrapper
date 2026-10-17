@@ -57,7 +57,7 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
                 UI.getCurrent().navigate(ResultsBrowserView.class));
         backButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-        String circuitLabel = "WC".equals(competition.getCircuit()) ? "World Cup" : "Continental Cup";
+        String circuitLabel = competition.getCircuitLabel();
         String location = competition.getDisplayLocation();
         String country = competition.getDisplayCountry();
         String date = competition.getCompetitionDate() != null ? competition.getCompetitionDate() : "";

@@ -70,6 +70,13 @@ public class Competition {
     public Double getXcDistanceKm() { return xcDistanceKm; }
     public String getEventName() { return eventName; }
 
+    /** "World Cup", or "Continental Cup", which was called "World Cup B" until 2007/08. */
+    public String getCircuitLabel() {
+        if ("WC".equals(circuit)) return "World Cup";
+        return season != null && season.getStartYear() != null && season.getStartYear() < 2008
+                ? "World Cup B" : "Continental Cup";
+    }
+
     public String getDisplayLocation() {
         if (venue != null && venue.getName() != null && !venue.getName().isBlank()) {
             return venue.getDisplayName();

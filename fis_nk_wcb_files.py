@@ -4,15 +4,16 @@ fis_nk_wcb_scraper.py).
 
 The site names its files by venue and number: 'Karpacz1.pdf' (result),
 'Karpacz1_SP.pdf' / '_Sprung' (jump list), '_Lauf' (cross-country), '_Training'.
-All files of one number belong to one competition, which gets its codex like this:
+All files of one number belong to one competition.  Its codex is the one of the
+competition in the FIS database (category WCB) whose ranking (fis_nk_wcb_fisdb.py,
+step 3, run it first) has its first five surnames in this order in the result
+list; failing that, the n-th competition of the event, provided the date printed
+in the PDF is within three days of it.
 
-- if FIS has result PDFs of the event, the one with the same date and kind of
-  competition (team, mass start, sprint, individual) in its heading;  the FIS
-  database and its attachments disagree for some events (Chaux-Neuve 2007:
-  the database has 4122 as the sprint, the PDF 2007NK4122ROF is the Gundersen),
-  and the PDFs are what gets parsed;
-- else the n-th competition of the event in the FIS database (category WCB),
-  provided the date printed in the PDF is within three days of it.
+The ranking also corrects the FIS attachments: for some events they are filed
+under the wrong competition (Chaux-Neuve 2007: 2007NK4122ROF is the Gundersen,
+4122 is the sprint in the database and in its ranking).  Such PDFs are renamed
+to the right codex, and .renamed.json remembers it for fis_nk_pdf_scraper.py.
 
 A file is then copied to the layout of the FIS downloads
 
@@ -43,6 +44,8 @@ PLACE_ALIASES = {"hoydalsmo": "hoeydalsmo", "kthal": "klingenthal", "othal": "ob
 # dates in the PDF this far from the date in the FIS database still belong to the competition
 # (a training the days before; a few competitions were moved by a day or two)
 DAYS = 3
+# the first so many of a FIS ranking must stand in this order in a result list
+TOP = 5
 
 
 def _key(text: str) -> str:
@@ -147,9 +150,106 @@ def _fis_results(folder: Path, season: int, fis_names: set) -> list:
     return found
 
 
+def _fold(text: str) -> str:
+    s = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+    for a, b in (("oe", "o"), ("ae", "a"), ("ue", "u"), ("aa", "a")):
+        s = s.replace(a, b)
+    return re.sub(r"[^a-z]+", " ", s)
+
+
+def _rankings(root: Path, season: int) -> dict:
+    """codex → the surnames of the first three of its FIS ranking (folded)."""
+    top = {}
+    for f in (root / str(season)).rglob("*FDB.json") if (root / str(season)).exists() else []:
+        d = json.loads(f.read_text(encoding="utf-8"))
+        names = []
+        for r in d.get("combined_results", [])[:TOP]:
+            surname = " ".join(w for w in r["name"].split() if w.isupper() and len(w) > 1) or r["name"].split()[0]
+            names.append(_fold(surname).strip())
+        if len(names) >= 3:
+            top[d["codex"]] = names
+    return top
+
+
+def _ranked_in_order(text: str, names: list):
+    """Where the last of the names stands if they stand in this order in the text, else None."""
+    at = 0
+    for n in names:
+        i = text.find(" " + n + " ", at)
+        if i < 0:
+            return None
+        at = i + len(n)
+    return at
+
+
+def _codex_by_ranking(path: Path, codices, rankings: dict):
+    """The codex whose FIS ranking stands in this result list, if exactly one does."""
+    try:
+        with pdfplumber.open(path) as pdf:
+            text = " " + _fold(" ".join((pg.extract_text() or "") for pg in pdf.pages[:2])) + " "
+    except Exception:
+        return None
+    # a ranking can also stand further down in another list (the best of the sprint in the
+    # Gundersen): of several, the one whose names come first
+    hits = sorted((at, c) for c in codices if c in rankings
+                  for at in [_ranked_in_order(text, rankings[c])] if at is not None)
+    if not hits or (len(hits) > 1 and hits[1][0] - hits[0][0] < 200):
+        return None
+    return hits[0][1]
+
+
+def _fix_fis_attachments(root: Path, season: int, events: list, rankings: dict, fis_names: set, dry_run: bool) -> dict:
+    """Rename FIS PDFs filed under the wrong competition; returns {old name: new name}."""
+    renamed = {}
+    for folder, races in events:
+        by_codex = {r["codex"]: r for r in races}
+        base = root / str(season) / folder
+        moves = {}
+        for rof in base.rglob("*ROF.pdf") if base.exists() else []:
+            own = re.search(r"NK(\d{4})ROF\.pdf$", rof.name)
+            if not own or rof.name.rsplit("_", 1)[-1].lower() not in fis_names:
+                continue
+            right = _codex_by_ranking(rof, by_codex, rankings)
+            if right and right != own.group(1):
+                moves[own.group(1)] = right
+        # only a consistent exchange: no two to one codex, and the target is free or moves away itself
+        held = {re.search(r"NK(\d{4})ROF\.pdf$", p.name).group(1) for p in base.rglob("*ROF.pdf")
+                if re.search(r"NK(\d{4})ROF\.pdf$", p.name) and p.name.rsplit("_", 1)[-1].lower() in fis_names} \
+            if base.exists() else set()
+        targets = list(moves.values())
+        moves = {old: new for old, new in moves.items()
+                 if targets.count(new) == 1 and (new not in held or new in moves)}
+        for old, new in moves.items():
+            race = by_codex[new]
+            for p in base.rglob(f"*NK{old}*.pdf"):
+                if p.name.rsplit("_", 1)[-1].lower() not in fis_names:
+                    continue
+                doc_type = re.search(rf"NK{old}([A-Z0-9]+)\.pdf$", p.name).group(1)
+                g = race["gender"] if race["gender"] in ("M", "W") else "X"
+                new_name = f"{new}_{race['date']}_{race['name']}_{g}_{season}NK{new}{doc_type}.pdf"
+                renamed[p] = p.with_name(new_name)
+    if not dry_run:
+        # two steps, as two competitions may swap
+        temp = {p: p.with_name(p.name + ".moving") for p in renamed}
+        for p, t in temp.items():
+            p.rename(t)
+        for p, t in temp.items():
+            t.rename(renamed[p])
+    for p, q in renamed.items():
+        print(f"  FIS attachment renamed: {p.relative_to(root)}  →  {q.name}")
+    return {p.name.rsplit("_", 1)[-1].lower(): q.name.rsplit("_", 1)[-1].lower() for p, q in renamed.items()}
+
+
 def file_all(root: Path, dry_run: bool = False) -> None:
     session = requests.Session()
     fis_names = _fis_files(root)
+    renamed_path = root / ".renamed.json"
+    try:
+        renamed = json.loads(renamed_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        renamed = {}
+    # a renamed attachment is there under its new name only
+    fis_names = (fis_names - set(renamed)) | set(renamed.values())
     filed, skipped, unmatched = 0, 0, []
 
     # copies of an earlier run are made again; the FIS downloads stay
@@ -161,6 +261,10 @@ def file_all(root: Path, dry_run: bool = False) -> None:
     for raw_season in sorted((root / "_raw").iterdir()):
         season = int(raw_season.name[:4]) + 1                       # '2004_05' → 2005
         events = season_events(season, session)
+        rankings = _rankings(root, season)
+        moved = _fix_fis_attachments(root, season, events, rankings, fis_names, dry_run)
+        renamed.update(moved)
+        fis_names = (fis_names - set(moved)) | set(moved.values())
 
         groups = defaultdict(list)                                  # (place, n) → [(path, doc type)]
         for path in sorted((raw_season / "Ergebnisse").glob("*.pdf")):
@@ -182,14 +286,12 @@ def file_all(root: Path, dry_run: bool = False) -> None:
             dates, kind = _dates(head, season), kind_of(head)
 
             race, folder = None, None
-            # 1. FIS result PDFs of the event: same date and kind in their heading
-            for f, races in candidates:
-                hits = [c for c, d, k in _fis_results(root / str(season) / f, season, fis_names)
-                        if d and d in dates[:2] and (k == kind or "?" in (k, kind))]
-                if len(hits) == 1:
-                    race = next((r for r in races if r["codex"] == hits[0]), None)
-                    folder = f
-                    if race:
+            # 1. the competition whose FIS ranking stands in the result list
+            if any(t == "ROF" for _, t in files):
+                for f, races in candidates:
+                    codex = _codex_by_ranking(main, [r["codex"] for r in races], rankings)
+                    if codex:
+                        race, folder = next(r for r in races if r["codex"] == codex), f
                         break
             # 2. the n-th competition of the event, the date printed nearby
             if race is None:
@@ -220,6 +322,8 @@ def file_all(root: Path, dry_run: bool = False) -> None:
                     shutil.copy2(path, dest)
                 print(f"  {path.relative_to(root)}  →  {dest.relative_to(root)}")
                 filed += 1
+    if renamed and not dry_run:
+        renamed_path.write_text(json.dumps(renamed, indent=0, sort_keys=True), encoding="utf-8")
     print(f"filed {filed}, skipped {skipped} (FIS has that list), unmatched {len(unmatched)}")
     for path, why in unmatched:
         print(f"  unmatched: {path.relative_to(root)}: {why}")

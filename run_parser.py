@@ -22,6 +22,7 @@ import logging
 import multiprocessing
 import os
 import re
+import shutil
 import sys
 import traceback
 from collections import Counter
@@ -125,6 +126,8 @@ def find_pdfs(directories: List[str], doc_type_filter: Optional[str] = None) -> 
         if not base.exists():
             continue
         for pdf in sorted(base.rglob('*.pdf')):
+            if '_raw' in pdf.parts:
+                continue                    # downloads not yet filed (fis_nk_wcb_pdfs/_raw)
             if doc_type_filter:
                 from fis_parser.detector import detect_doc_type_from_filename
                 if detect_doc_type_from_filename(str(pdf)) != doc_type_filter:
@@ -155,7 +158,7 @@ def build_json_path(pdf: Path, input_dirs: List[str], output_dir: Path) -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description='Batch parse FIS Nordic Combined PDFs')
     parser.add_argument('--input-dirs', nargs='+',
-                        default=['fis_nk_pdfs', 'fis_nk_coc_pdfs'],
+                        default=['fis_nk_pdfs', 'fis_nk_coc_pdfs', 'fis_nk_wcb_pdfs'],
                         help='Directories containing PDFs')
     parser.add_argument('--output-dir', default='output',
                         help='Output directory for JSON files')
@@ -193,6 +196,20 @@ def main() -> int:
     for pdf in pdfs:
         json_out = str(build_json_path(pdf, args.input_dirs, output_dir))
         work.append((str(pdf), json_out, args.overwrite))
+
+    # Rankings from the FIS database (fis_nk_wcb_fisdb.py) go to output/ as they are
+    copied = 0
+    for d in args.input_dirs:
+        base = Path(d)
+        for src in sorted(base.rglob('*FDB.json')) if base.exists() else []:
+            if '_raw' in src.parts:
+                continue
+            dest = build_json_path(src, args.input_dirs, output_dir)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(src, dest)
+            copied += 1
+    if copied:
+        log.info("Copied %d rankings from the FIS database", copied)
 
     # Process
     total = len(work)

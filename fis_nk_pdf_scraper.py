@@ -480,6 +480,12 @@ class Downloads:
             folder = self.output_root / str(season)
             self.on_disk[season] = {p.name.rsplit("_", 1)[-1].lower() for p in folder.rglob("*.pdf")} \
                 if folder.exists() else set()
+            # attachments FIS filed under the wrong competition, renamed by fis_nk_wcb_files.py
+            try:
+                renamed = json.loads((self.output_root / ".renamed.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                renamed = {}
+            self.on_disk[season] |= {old for old, new in renamed.items() if new in self.on_disk[season]}
         return self.on_disk[season]
 
     def remember(self, attachment_id: str, name: str) -> None:

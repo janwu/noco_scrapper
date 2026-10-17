@@ -52,13 +52,29 @@ coordinator of the series keeps all results at www.weltcup-b.org. Both go to
 ```
 python fis_nk_pdf_scraper.py --circuit WCB --from-season 2001 --to-season 2008   # FIS PDFs
 python fis_nk_wcb_scraper.py           # weltcup-b.org PDFs → fis_nk_wcb_pdfs/_raw/
+python fis_nk_wcb_scraper.py --fis-results   # rankings of the FIS database → <codex>…FDB.json
 python fis_nk_wcb_scraper.py --file    # codex and date from the FIS database → fis_nk_wcb_pdfs/<season>/
+python run_parser.py --workers 7 --errors-only
+python db/load_json.py --sqlite db/noco.db
 ```
 
 The site names its files by venue and number ('Karpacz1.pdf', '_SP' / '_Sprung',
 '_Lauf', '_Training'); `fis_nk_wcb_files.py` gives each the codex of its
 competition (see there how) and skips lists FIS has itself. The lists of
-weltcup-b.org come from the organisers and have many different layouts.
+weltcup-b.org come from the organisers and have many different layouts, so
+`fis_nk_wcb_fisdb.py` also saves the ranking of each individual race from the
+FIS database (doc type FDB: rank, name, nation, gap; no jump or cross-country).
+`run_parser.py` copies these JSON files to `output/`.
+
+In the database World Cup B is the Continental Cup (circuit `COC`, seasons
+2000/01 – 2007/08); the web app calls those seasons "World Cup B". `load_json.py`
+takes the result of a competition from its PDF and only where that could not be
+read from the FDB ranking (it reports how often, and where both disagree). The
+other lists of the competition (jump, cross-country, team) take the FIS spelling
+of the names from the ranking (`fis_spelling`), and athletes the FIS database
+now gives as 'AIN' get the nation printed in the lists of those years. Team
+competitions have no FDB ranking; where the organiser's list is not read, they
+have no result.
 
 ## Rebuilding the data
 

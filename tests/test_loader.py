@@ -243,5 +243,45 @@ class EndToEnd(unittest.TestCase):
         self.assertEqual(conn.execute("pragma foreign_key_check").fetchall(), [])
 
 
+class WorldCupBSpelling(unittest.TestCase):
+    """World Cup B lists take the names of the FIS database ranking (FDB)."""
+
+    @staticmethod
+    def doc(doc_type, rows=(), teams=(), source_dir="fis_nk_wcb_pdfs", errors=()):
+        return ({"doc_type": doc_type, "source_dir": source_dir},
+                {"combined_results": list(rows), "team_results": list(teams), "parse_errors": list(errors)})
+
+    def spell(self, by_comp):
+        load_json.fis_spelling(by_comp, load_json.Build({}, {}))
+        return by_comp
+
+    def test_native_letters_and_trailing_comma_take_the_fis_name(self):
+        rof = self.doc("ROF", [{"rank": 1, "name": "MÜNCHMEYER Stephan", "nation": "GER"},
+                               {"rank": 2, "name": "MENZ Matthias,", "nation": "GER"}])
+        fdb = self.doc("FDB", [{"rank": 1, "name": "MUENCHMEYER Stefan", "nation": "GER"},
+                               {"rank": 2, "name": "MENZ Matthias", "nation": "GER"}])
+        self.spell({"c1": [rof, fdb]})
+        self.assertEqual([r["name"] for r in rof[1]["combined_results"]], ["MUENCHMEYER Stefan", "MENZ Matthias"])
+
+    def test_ain_takes_the_nation_printed_elsewhere(self):
+        fdb = self.doc("FDB", [{"rank": 1, "name": "FADEJEV Alexey", "nation": "AIN"}])
+        other = self.doc("ROF", [{"rank": 3, "name": "FADEJEV Aleksej", "nation": "RUS"}])
+        other_fdb = self.doc("FDB", [{"rank": 3, "name": "FADEJEV Alexey", "nation": "AIN"}])
+        self.spell({"c1": [fdb], "c2": [other, other_fdb]})
+        self.assertEqual(fdb[1]["combined_results"][0]["nation"], "RUS")
+
+    def test_team_member_matches_words_in_any_order(self):
+        fdb = self.doc("FDB", [{"rank": 5, "name": "SANNES HEGER Per", "nation": "NOR"}])
+        team = self.doc("ROF", teams=[{"rank": 1, "nation": "NOR", "members": [{"name": "HEGER Per Sannes"}]}])
+        self.spell({"c1": [fdb], "c2": [team]})
+        self.assertEqual(team[1]["team_results"][0]["members"][0]["name"], "SANNES HEGER Per")
+
+    def test_other_circuits_are_left_alone(self):
+        rof = self.doc("ROF", [{"rank": 1, "name": "MÜNCHMEYER Stephan", "nation": "GER"}], source_dir="fis_nk_pdfs")
+        fdb = self.doc("FDB", [{"rank": 1, "name": "MUENCHMEYER Stefan", "nation": "GER"}], source_dir="fis_nk_pdfs")
+        self.spell({"c1": [rof, fdb]})
+        self.assertEqual(rof[1]["combined_results"][0]["name"], "MÜNCHMEYER Stephan")
+
+
 if __name__ == "__main__":
     unittest.main()
