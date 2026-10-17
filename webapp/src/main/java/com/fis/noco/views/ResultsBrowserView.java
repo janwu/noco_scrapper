@@ -11,15 +11,27 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Route(value = "results", layout = MainLayout.class)
 @PageTitle("Results Browser | FIS Nordic Combined")
-public class ResultsBrowserView extends VerticalLayout {
+public class ResultsBrowserView extends VerticalLayout implements BeforeEnterObserver {
+
+    /** The last filter of the browser in this session, for the way back from a competition. */
+    private static final String LAST_FILTER = "resultsBrowser.filter";
+
+    /** Read before the defaults below overwrite it. */
+    private final QueryParameters remembered = lastFilter();
 
     private final CompetitionService competitionService;
     private final Grid<Competition> competitionGrid;
@@ -52,7 +64,7 @@ public class ResultsBrowserView extends VerticalLayout {
         circuitSelect = new Select<>();
         circuitSelect.setLabel("Circuit");
         circuitSelect.setItems("WC", "COC");
-        circuitSelect.setItemLabelGenerator(c -> c.equals("WC") ? "World Cup" : "Continental Cup / World Cup B");
+        circuitSelect.setItemLabelGenerator(c -> c.equals("WC") ? "World Cup" : "Continental Cup");
         circuitSelect.setWidthFull();
 
         seasonSelect = new Select<>();
@@ -74,9 +86,9 @@ public class ResultsBrowserView extends VerticalLayout {
         genderSelect.setValue("All");
         genderSelect.setWidthFull();
 
-        circuitSelect.addValueChangeListener(e -> loadCompetitions());
-        seasonSelect.addValueChangeListener(e -> loadCompetitions());
-        genderSelect.addValueChangeListener(e -> loadCompetitions());
+        circuitSelect.addValueChangeListener(e -> filterChanged(e.isFromClient()));
+        seasonSelect.addValueChangeListener(e -> filterChanged(e.isFromClient()));
+        genderSelect.addValueChangeListener(e -> filterChanged(e.isFromClient()));
 
         leftPanel.add(filterTitle, circuitSelect, seasonSelect, genderSelect);
         leftPanel.setAlignItems(Alignment.STRETCH);
@@ -137,6 +149,62 @@ public class ResultsBrowserView extends VerticalLayout {
             seasonSelect.setValue(seasons.get(0));
         }
         circuitSelect.setValue("WC");
+    }
+
+    /** ?circuit=COC&season=2001&gender=M (season = its start year) selects the filter. */
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        Map<String, List<String>> params = event.getLocation().getQueryParameters().getParameters();
+        if (params.isEmpty() && remembered != null) {
+            params = remembered.getParameters();      // from the menu: the filter of last time
+        }
+        String circuit = one(params, "circuit");
+        if ("WC".equals(circuit) || "COC".equals(circuit)) {
+            circuitSelect.setValue(circuit);
+        }
+        String season = one(params, "season");
+        if (season != null) {
+            seasonSelect.getListDataView().getItems()
+                    .filter(s -> season.equals(String.valueOf(s.getStartYear())))
+                    .findFirst().ifPresent(seasonSelect::setValue);
+        }
+        String gender = one(params, "gender");
+        if ("M".equals(gender) || "W".equals(gender) || "All".equals(gender)) {
+            genderSelect.setValue(gender);
+        }
+    }
+
+    private static String one(Map<String, List<String>> params, String name) {
+        List<String> values = params.get(name);
+        return values == null || values.isEmpty() ? null : values.get(0);
+    }
+
+    /** The query parameters of a filter; the gender only when one is chosen. */
+    public static QueryParameters filter(String circuit, Season season, String gender) {
+        Map<String, String> params = new LinkedHashMap<>();
+        if (circuit != null) params.put("circuit", circuit);
+        if (season != null && season.getStartYear() != null) params.put("season", String.valueOf(season.getStartYear()));
+        if (gender != null && !"All".equals(gender)) params.put("gender", gender);
+        return QueryParameters.simple(params);
+    }
+
+    /** The filter last used in the browser in this session, or null. */
+    public static QueryParameters lastFilter() {
+        VaadinSession session = VaadinSession.getCurrent();
+        return session == null ? null : (QueryParameters) session.getAttribute(LAST_FILTER);
+    }
+
+    private void filterChanged(boolean byUser) {
+        QueryParameters params = filter(circuitSelect.getValue(), seasonSelect.getValue(), genderSelect.getValue());
+        VaadinSession session = VaadinSession.getCurrent();
+        if (session != null) {
+            session.setAttribute(LAST_FILTER, params);
+        }
+        if (byUser) {
+            // the address shows the filter: reload and the browser's back button keep it
+            UI.getCurrent().getPage().getHistory().replaceState(null, "results?" + params.getQueryString());
+        }
+        loadCompetitions();
     }
 
     private void loadCompetitions() {

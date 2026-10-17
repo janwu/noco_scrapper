@@ -84,6 +84,16 @@ class CompetitionPageTest {
     }
 
     @Test
+    void resultsBrowserFilterInTheAddress() {
+        var season = competitionService.getAllSeasons().stream()
+                .filter(s -> Integer.valueOf(2001).equals(s.getStartYear())).findFirst();
+        Assumptions.assumeTrue(season.isPresent(), "database not built");
+        assertEquals("circuit=COC&gender=W&season=2001",
+                ResultsBrowserView.filter("COC", season.get(), "W").getQueryString());
+        assertEquals("circuit=WC&season=2001", ResultsBrowserView.filter("WC", season.get(), "All").getQueryString());
+    }
+
+    @Test
     void gapToTheFastest() {
         Double best = ResultDetailView.seconds("23:49.0");
         assertEquals(1429.0, best);

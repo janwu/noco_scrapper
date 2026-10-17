@@ -24,6 +24,7 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
@@ -53,8 +54,14 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
     }
 
     private void buildContent(Competition competition) {
+        // back to the filter chosen in the browser; without one, to the season of this competition
+        QueryParameters back = ResultsBrowserView.lastFilter();
+        if (back == null) {
+            back = ResultsBrowserView.filter(competition.getCircuit(), competition.getSeason(), null);
+        }
+        QueryParameters target = back;
         Button backButton = new Button("← Back to Results Browser", e ->
-                UI.getCurrent().navigate(ResultsBrowserView.class));
+                UI.getCurrent().navigate("results", target));
         backButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
         String circuitLabel = competition.getCircuitLabel();
