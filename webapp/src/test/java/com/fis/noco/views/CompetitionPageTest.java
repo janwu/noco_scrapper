@@ -84,6 +84,17 @@ class CompetitionPageTest {
     }
 
     @Test
+    void twoJumpRoundsAddUp() {
+        Assumptions.assumeTrue(new File("../db/noco.db").exists(), "database not built");
+        // Lillehammer 3 Dec 2005: KOIVURANTA 115.8 + 122.2 = 238.0, the jump points of the result list
+        Long id = jdbc.queryForObject("select id from competitions where circuit = 'WC' " +
+                "and competition_date = '2005-12-03' and raw_location = 'Lillehammer'", Long.class);
+        var jumps = competitionService.getJumpLists(id).values().iterator().next();
+        var koivuranta = jumps.stream().filter(j -> j.getDisplayName().startsWith("KOIVURANTA")).findFirst().orElseThrow();
+        assertEquals(238.0, JumpGrid.totals(jumps).get(JumpGrid.athleteKey(koivuranta)));
+    }
+
+    @Test
     void resultsBrowserFilterInTheAddress() {
         var season = competitionService.getAllSeasons().stream()
                 .filter(s -> Integer.valueOf(2001).equals(s.getStartYear())).findFirst();

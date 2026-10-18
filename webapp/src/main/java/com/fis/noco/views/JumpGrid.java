@@ -6,7 +6,9 @@ import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -15,6 +17,9 @@ import java.util.function.Function;
  * judges' marks, gate and wind compensation, points.  Columns the list does not
  * have (no marks before the mass start had them, no gate/wind before 2009/10)
  * are left out; the longest jump of the list is set in bold.
+ *
+ * With two rounds an athlete has a line per round: the round's points on each, the
+ * total of both and the start gap on the first only.
  */
 final class JumpGrid {
 
@@ -72,14 +77,25 @@ final class JumpGrid {
                     .setHeader("Wind m/s").setAutoWidth(true).setTextAlign(ColumnTextAlign.END);
             number(grid, jumps, "Wind Pts", JumpResult::getWindCompPts);
         }
-        grid.addComponentColumn(j -> {
-                    Span p = new Span(JumpResult.format(j.getTotalPoints()));
-                    p.getStyle().set("font-weight", "bold");
-                    return p;
-                }).setHeader("Points").setAutoWidth(true).setTextAlign(ColumnTextAlign.END)
-                .setComparator(j -> j.getTotalPoints() == null ? -1 : j.getTotalPoints());
+        if (twoRounds) {
+            Map<String, Double> totals = totals(jumps);
+            number(grid, jumps, "Round Pts", JumpResult::getTotalPoints);
+            grid.addComponentColumn(j -> {
+                        Span p = new Span(laterRound(j) ? "" : JumpResult.format(totals.get(athleteKey(j))));
+                        p.getStyle().set("font-weight", "bold");
+                        return p;
+                    }).setHeader("Total").setAutoWidth(true).setTextAlign(ColumnTextAlign.END)
+                    .setComparator(j -> totals.getOrDefault(athleteKey(j), -1.0));
+        } else {
+            grid.addComponentColumn(j -> {
+                        Span p = new Span(JumpResult.format(j.getTotalPoints()));
+                        p.getStyle().set("font-weight", "bold");
+                        return p;
+                    }).setHeader("Points").setAutoWidth(true).setTextAlign(ColumnTextAlign.END)
+                    .setComparator(j -> j.getTotalPoints() == null ? -1 : j.getTotalPoints());
+        }
         if (jumps.stream().anyMatch(j -> j.getPursuitTimeDiff() != null)) {
-            grid.addColumn(j -> j.getPursuitTimeDiff() == null ? "" : j.getPursuitTimeDiff())
+            grid.addColumn(j -> j.getPursuitTimeDiff() == null || twoRounds && laterRound(j) ? "" : j.getPursuitTimeDiff())
                     .setHeader("Start Gap").setAutoWidth(true);
         }
         if (jumps.stream().anyMatch(j -> !j.getStatus().isEmpty())) {
@@ -97,6 +113,26 @@ final class JumpGrid {
         }));
         grid.setItems(jumps);
         return grid;
+    }
+
+    /** The points of all rounds of each athlete (athleteKey), rounded to a tenth like the lists. */
+    static Map<String, Double> totals(List<JumpResult> jumps) {
+        Map<String, Double> totals = new HashMap<>();
+        for (JumpResult j : jumps) {
+            if (j.getTotalPoints() != null) totals.merge(athleteKey(j), j.getTotalPoints(), Double::sum);
+        }
+        totals.replaceAll((k, v) -> Math.round(v * 10) / 10.0);
+        return totals;
+    }
+
+    /** The second round's line of an athlete (the first carries total and start gap). */
+    private static boolean laterRound(JumpResult j) {
+        return j.getRoundNumber() != null && j.getRoundNumber() > 1;
+    }
+
+    /** One athlete in one list: the rounds of a jump list belong together by name and bib. */
+    static String athleteKey(JumpResult j) {
+        return j.getDisplayName() + "|" + j.getBib();
     }
 
     private static String rankOf(JumpResult j) {
