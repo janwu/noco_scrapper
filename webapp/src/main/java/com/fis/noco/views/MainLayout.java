@@ -57,7 +57,10 @@ public class MainLayout extends AppLayout {
         SideNavItem recordsLink = new SideNavItem("WC Records", RecordsView.class,
                 VaadinIcon.STAR.create());
 
-        nav.addItem(homeLink, athletesLink, resultsLink, standingsLink, recordsLink, venuesLink);
+        SideNavItem medalsLink = new SideNavItem("WSC Medals", MedalsView.class,
+                VaadinIcon.MEDAL.create());
+
+        nav.addItem(homeLink, athletesLink, resultsLink, standingsLink, recordsLink, medalsLink, venuesLink);
         nav.setWidthFull();
 
         Span appDescription = new Span("Results from FIS Nordic Combined competitions");
