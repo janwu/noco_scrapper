@@ -38,6 +38,7 @@ public class StandingsView extends VerticalLayout {
     private final RadioButtonGroup<String> genderGroup = new RadioButtonGroup<>();
     private final ComboBox<String[]> rankingBox = new ComboBox<>("Ranking");
     private final VerticalLayout content = new VerticalLayout();
+    private final Span note = new Span();
     private boolean updatingRankings;
 
     public StandingsView(CompetitionService competitionService) {
@@ -78,8 +79,7 @@ public class StandingsView extends VerticalLayout {
         controls.getStyle().set("flex-wrap", "wrap");
         controls.addClassNames(LumoUtility.Padding.Bottom.SMALL);
 
-        Span note = new Span("Official FIS standings. The columns on the right show the athlete's rank "
-                + "in each individual competition of the season.");
+        note.setText(NOTE);
         note.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
                 LumoUtility.Padding.Bottom.SMALL);
 
@@ -118,9 +118,15 @@ public class StandingsView extends VerticalLayout {
         showStandings();
     }
 
+    private static final String NOTE = "Official FIS standings. The columns on the right show the athlete's rank "
+            + "in each individual competition of the season.";
+
     private void showStandings() {
         content.removeAll();
         Season season = seasonBox.getValue();
+        // until 1998/99 the FIS database has the first 15 of a competition, the ones that scored
+        boolean top15 = season != null && season.getStartYear() != null && season.getStartYear() < 1999;
+        note.setText(top15 ? NOTE + " FIS has only the first 15 of most competitions of this season." : NOTE);
         String[] ranking = rankingBox.getValue();
         if (season == null || ranking == null) {
             content.add(new Span("FIS has no standings for this selection."));

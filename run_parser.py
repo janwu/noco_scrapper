@@ -197,7 +197,7 @@ def main() -> int:
         json_out = str(build_json_path(pdf, args.input_dirs, output_dir))
         work.append((str(pdf), json_out, args.overwrite))
 
-    # Rankings from the FIS database (fis_nk_wcb_fisdb.py) go to output/ as they are
+    # Rankings from the FIS database (fis_nk_fisdb.py) go to output/ as they are
     copied = 0
     for d in args.input_dirs:
         base = Path(d)

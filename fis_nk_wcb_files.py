@@ -5,7 +5,7 @@ fis_nk_wcb_scraper.py).
 The site names its files by venue and number: 'Karpacz1.pdf' (result),
 'Karpacz1_SP.pdf' / '_Sprung' (jump list), '_Lauf' (cross-country), '_Training'.
 All files of one number belong to one competition.  Its codex is the one of the
-competition in the FIS database (category WCB) whose ranking (fis_nk_wcb_fisdb.py,
+competition in the FIS database (category WCB) whose ranking (fis_nk_fisdb.py,
 step 3, run it first) has its first five surnames in this order in the result
 list; failing that, the n-th competition of the event, provided the date printed
 in the PDF is within three days of it.

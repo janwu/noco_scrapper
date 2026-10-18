@@ -92,5 +92,33 @@ class HillDataTest(unittest.TestCase):
         self.assertIsNone(self.hill("TD Assistant C Hill Size\nK-Point 120 m")[0])
 
 
+class FisDatabaseRankingTest(unittest.TestCase):
+    """fis_nk_fisdb.race_ranking: after the nation a gap (blue) or, before 2000/01, World Cup points."""
+
+    ROW = ('<a class="table-row"><div class="g-row">'
+           '<div class="bold">{rank}</div><div class="gray">{code}</div><div class="bold">{name}</div>'
+           '<div>{year}</div><div class="country country_flag">{nation}</div>{after}</div></a>')
+
+    def ranking(self, *rows):
+        import fis_nk_fisdb
+        html = '<div id="events-info-results">' + "".join(self.ROW.format(**r) for r in rows) + "</div>"
+        original = scraper.get_soup
+        scraper.get_soup = lambda url, session: BeautifulSoup(html, "html.parser")
+        try:
+            return fis_nk_fisdb.race_ranking("111", None)
+        finally:
+            scraper.get_soup = original
+
+    def test_points_of_the_early_world_cup(self):
+        rows = self.ranking(dict(rank=1, code=2, name="SULZENBACHER Klaus", year=1965, nation="AUT",
+                                 after='<div class="justify-right hidden-xs">25</div>'))
+        self.assertEqual((rows[0]["wc_points"], rows[0]["time_behind"]), (25, None))
+
+    def test_gap_to_the_winner(self):
+        rows = self.ranking(dict(rank=2, code=74, name="ACKERMANN Ronny", year=1977, nation="GER",
+                                 after='<div class="justify-right blue bold">0.8</div><div class="bold">+0</div>'))
+        self.assertEqual((rows[0]["wc_points"], rows[0]["time_behind"]), (None, "+0.8"))
+
+
 if __name__ == "__main__":
     unittest.main()

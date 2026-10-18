@@ -283,5 +283,39 @@ class WorldCupBSpelling(unittest.TestCase):
         self.assertEqual(rof[1]["combined_results"][0]["name"], "MÜNCHMEYER Stephan")
 
 
+class NationChanges(unittest.TestCase):
+    """GDR / FRG → GER, SOV → CIS → EST: one athlete, of the last nation."""
+
+    @staticmethod
+    def doc(day, *rows):
+        return ({"doc_type": "FDB", "file_date": day},
+                {"combined_results": [{"rank": i + 1, "name": n, "nation": nat} for i, (n, nat) in enumerate(rows)]})
+
+    def aliases(self, *docs, aliases=None):
+        build = load_json.Build(dict(aliases or {}), {})
+        load_json.nation_changes({str(i): [d] for i, d in enumerate(docs)}, build)
+        return build.athlete_aliases
+
+    def test_last_nation_of_the_lineage(self):
+        a = self.aliases(self.doc("1989-01-01", ("ABRATIS Thomas", "GDR")),
+                         self.doc("1991-01-01", ("ABRATIS Thomas", "FRG")),
+                         self.doc("1993-01-01", ("ABRATIS Thomas", "GER")))
+        self.assertEqual(a[("ABRATIS Thomas", "GDR")], ("ABRATIS Thomas", "GER"))
+        self.assertEqual(a[("ABRATIS Thomas", "FRG")], ("ABRATIS Thomas", "GER"))
+        self.assertNotIn(("ABRATIS Thomas", "GER"), a)
+
+    def test_native_letters_take_the_plain_spelling(self):
+        a = self.aliases(self.doc("1990-01-06", ("MüLLER Thomas", "FRG")),
+                         self.doc("1995-01-06", ("MUELLER Thomas", "GER")))
+        self.assertEqual(a[("MüLLER Thomas", "FRG")], ("MUELLER Thomas", "GER"))
+
+    def test_other_nations_and_the_alias_file_are_left_alone(self):
+        a = self.aliases(self.doc("1990-01-01", ("SMITH John", "USA"), ("NOVAK Jan", "TCH")),
+                         self.doc("1995-01-01", ("SMITH John", "CAN"), ("NOVAK Jan", "CZE")),
+                         aliases={("NOVAK Jan", "TCH"): ("NOVAK Jan", "SVK")})
+        self.assertNotIn(("SMITH John", "USA"), a)
+        self.assertEqual(a[("NOVAK Jan", "TCH")], ("NOVAK Jan", "SVK"))
+
+
 if __name__ == "__main__":
     unittest.main()

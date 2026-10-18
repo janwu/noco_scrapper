@@ -811,10 +811,72 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
         log.info("World Cup B: %d rows take the FIS spelling of the name", fixed)
 
 
+# Nations that became others: West and East Germany, Czechoslovakia, the Soviet
+# Union (CIS / GUS in 1992), Yugoslavia; 'AIN' are Russians and Belarusians today.
+NATION_LINEAGE = {code: group for group, codes in {
+    "GER": ("FRG", "BRD", "GDR", "DDR", "GER"),
+    "TCH": ("TCH", "CZE", "SVK"),
+    "SOV": ("SOV", "URS", "CIS", "GUS", "EUN", "RUS", "EST", "LAT", "LTU", "UKR", "BLR", "KAZ", "AIN"),
+    "YUG": ("YUG", "JUG", "SLO", "CRO", "SRB", "SCG", "BIH", "MKD"),
+}.items() for code in codes}
+
+
+def nation_changes(by_comp: Dict, build: Build) -> None:
+    """
+    One athlete under the nations of a country that split or united ('ABRATIS Thomas'
+    GDR, FRG, GER; 'LEVANDI Allar' SOV, CIS, EST): the same name in one lineage of
+    NATION_LINEAGE is one athlete, of the last nation, like a nation change in
+    db/aliases/athletes.csv; every result keeps the nation it was printed with.
+    A name with native letters ('MüLLER Thomas', from the early FIS database) is the
+    athlete of the one plain spelling of the lineage ('MUELLER Thomas').  Lines of
+    the alias file come first.
+    """
+    last = {}                                         # (name, nation) → last date printed
+    for docs in by_comp.values():
+        for meta, doc in docs:
+            if doc.get("parse_errors"):
+                continue
+            day = meta.get("file_date") or ""
+            rows = [(r, r.get("nation")) for key in ("combined_results", "jump_rounds", "xc_results")
+                    for r in doc.get(key) or []]
+            rows += [(m, t.get("nation")) for t in doc.get("team_results") or [] for m in t.get("members") or []]
+            for r, nation in rows:
+                name = clean(r.get("name"))
+                if name and nation and nation.upper() in NATION_LINEAGE:
+                    key = (name, nation.upper())
+                    last[key] = max(last.get(key, ""), day)
+
+    def plain(name: str) -> bool:
+        return name == to_ascii(name)
+
+    groups = defaultdict(list)                        # (folded name, lineage) → keys
+    for key in last:
+        groups[(_fold(key[0]), NATION_LINEAGE[key[1]])].append(key)
+    added = 0
+    for keys in groups.values():
+        if len(keys) < 2:
+            continue
+        # the last nation; 'AIN' only if there is no other (the FIS database of today)
+        nation = max(keys, key=lambda k: (k[1] != "AIN", last[k]))[1]
+        spellings = {k[0] for k in keys}
+        plain_ones = [n for n in spellings if plain(n)]
+        if len(spellings) > 1 and len(plain_ones) != 1:
+            continue                                  # two plain spellings: may be two people
+        target_name = plain_ones[0] if plain_ones else next(iter(spellings))
+        target = build.athlete_aliases.get((target_name, nation), (target_name, nation))
+        for key in keys:
+            if key != (target_name, nation) and key not in build.athlete_aliases:
+                build.athlete_aliases[key] = target
+                added += 1
+    if added:
+        log.info("Nations that split or united: %d names given the athlete's last nation", added)
+
+
 def build_database(output_dir: str, build: Build, standings_dir: Optional[str] = None) -> None:
     by_comp = read_documents(output_dir, build)
     log.info("Read %d documents for %d competitions", sum(map(len, by_comp.values())), len(by_comp))
     fis_spelling(by_comp, build)
+    nation_changes(by_comp, build)
 
     for docs in by_comp.values():
         for name, nations in names_with_nation(docs).items():

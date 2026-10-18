@@ -1,0 +1,397 @@
+{
+ "cup": "WC",
+ "season": 1984,
+ "gender": "M",
+ "source_url": "https://www.fis-ski.com/DB/nordic-combined/cup-standings.html?sectorcode=NK&seasoncode=1984&cupcode=WC&disciplinecode=ALL&gendercode=M&nationcode=",
+ "fetched": "2026-10-18",
+ "disciplines": {
+  "ALL": "Overall"
+ },
+ "rows": [
+  {
+   "competitor_id": "53385",
+   "name": "SANDBERG Tom",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 1,
+     "points": 103
+    }
+   }
+  },
+  {
+   "competitor_id": "14165",
+   "name": "DOTZAUER Uwe",
+   "nation": "GDR",
+   "standings": {
+    "ALL": {
+     "rank": 2,
+     "points": 89
+    }
+   }
+  },
+  {
+   "competitor_id": "1063",
+   "name": "ANDERSEN Geir",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 3,
+     "points": 82
+    }
+   }
+  },
+  {
+   "competitor_id": "42103",
+   "name": "MUELLER Thomas",
+   "nation": "FRG",
+   "standings": {
+    "ALL": {
+     "rank": 4,
+     "points": 72
+    }
+   }
+  },
+  {
+   "competitor_id": "49151",
+   "name": "PROSWIRNIN Alexander",
+   "nation": "SOV",
+   "standings": {
+    "ALL": {
+     "rank": 4,
+     "points": 72
+    }
+   }
+  },
+  {
+   "competitor_id": "40137",
+   "name": "MIETTINEN Rauno",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 6,
+     "points": 54
+    }
+   }
+  },
+  {
+   "competitor_id": "55151",
+   "name": "SCHWARZ Hubert",
+   "nation": "FRG",
+   "standings": {
+    "ALL": {
+     "rank": 7,
+     "points": 46
+    }
+   }
+  },
+  {
+   "competitor_id": "5743",
+   "name": "BOEGSETH Hallstein",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 8,
+     "points": 43
+    }
+   }
+  },
+  {
+   "competitor_id": "36480",
+   "name": "LYNCH Kerry",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 8,
+     "points": 43
+    }
+   }
+  },
+  {
+   "competitor_id": "65649",
+   "name": "WEINBUCH Hermann",
+   "nation": "FRG",
+   "standings": {
+    "ALL": {
+     "rank": 10,
+     "points": 42
+    }
+   }
+  },
+  {
+   "competitor_id": "59550",
+   "name": "SULZENBACHER Klaus",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 11,
+     "points": 41
+    }
+   }
+  },
+  {
+   "competitor_id": "1061",
+   "name": "ANDERSEN Espen",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 12,
+     "points": 40
+    }
+   }
+  },
+  {
+   "competitor_id": "33811",
+   "name": "LANGER Andreas",
+   "nation": "FRG",
+   "standings": {
+    "ALL": {
+     "rank": 12,
+     "points": 40
+    }
+   }
+  },
+  {
+   "competitor_id": "29411",
+   "name": "KARJALAINEN Jouko",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 14,
+     "points": 39
+    }
+   }
+  },
+  {
+   "competitor_id": "54672",
+   "name": "SCHMIEDER Gunter",
+   "nation": "GDR",
+   "standings": {
+    "ALL": {
+     "rank": 15,
+     "points": 34
+    }
+   }
+  },
+  {
+   "competitor_id": "6016",
+   "name": "BONDAR Sergej",
+   "nation": "SOV",
+   "standings": {
+    "ALL": {
+     "rank": 16,
+     "points": 31
+    }
+   }
+  },
+  {
+   "competitor_id": "19454",
+   "name": "GARIFULLIN Ildar",
+   "nation": "SOV",
+   "standings": {
+    "ALL": {
+     "rank": 17,
+     "points": 29
+    }
+   }
+  },
+  {
+   "competitor_id": "423",
+   "name": "AHERN Pat",
+   "nation": "USA",
+   "standings": {
+    "ALL": {
+     "rank": 18,
+     "points": 26
+    }
+   }
+  },
+  {
+   "competitor_id": "45258",
+   "name": "OPITZ Peter",
+   "nation": "GDR",
+   "standings": {
+    "ALL": {
+     "rank": 18,
+     "points": 26
+    }
+   }
+  },
+  {
+   "competitor_id": "37096",
+   "name": "MAJOROV Alexander",
+   "nation": "SOV",
+   "standings": {
+    "ALL": {
+     "rank": 20,
+     "points": 25
+    }
+   }
+  },
+  {
+   "competitor_id": "62504",
+   "name": "TSCHERVJAKOW Sergej",
+   "nation": "SOV",
+   "standings": {
+    "ALL": {
+     "rank": 21,
+     "points": 22
+    }
+   }
+  },
+  {
+   "competitor_id": "67476",
+   "name": "YLIPULLI Jukka",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 22,
+     "points": 17
+    }
+   }
+  },
+  {
+   "competitor_id": "32284",
+   "name": "KRAMER Dirk",
+   "nation": "FRG",
+   "standings": {
+    "ALL": {
+     "rank": 23,
+     "points": 15
+    }
+   }
+  },
+  {
+   "competitor_id": "26266",
+   "name": "HUNGER Heiko",
+   "nation": "GDR",
+   "standings": {
+    "ALL": {
+     "rank": 24,
+     "points": 12
+    }
+   }
+  },
+  {
+   "competitor_id": "65259",
+   "name": "WARG Oliver",
+   "nation": "GDR",
+   "standings": {
+    "ALL": {
+     "rank": 25,
+     "points": 11
+    }
+   }
+  },
+  {
+   "competitor_id": "24660",
+   "name": "HEUMANN Josef",
+   "nation": "FRG",
+   "standings": {
+    "ALL": {
+     "rank": 26,
+     "points": 9
+    }
+   }
+  },
+  {
+   "competitor_id": "29867",
+   "name": "KAWULOK Stanislaw",
+   "nation": "POL",
+   "standings": {
+    "ALL": {
+     "rank": 26,
+     "points": 9
+    }
+   }
+  },
+  {
+   "competitor_id": "170",
+   "name": "ABRAHAMSEN Knut Leo",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 28,
+     "points": 7
+    }
+   }
+  },
+  {
+   "competitor_id": "31836",
+   "name": "KOPAL Miroslav",
+   "nation": "TCH",
+   "standings": {
+    "ALL": {
+     "rank": 29,
+     "points": 6
+    }
+   }
+  },
+  {
+   "competitor_id": "66986",
+   "name": "WUCHER Peter",
+   "nation": "FRG",
+   "standings": {
+    "ALL": {
+     "rank": 30,
+     "points": 5
+    }
+   }
+  },
+  {
+   "competitor_id": "45021",
+   "name": "OLSEN Ivar",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 31,
+     "points": 4
+    }
+   }
+  },
+  {
+   "competitor_id": "25689",
+   "name": "HOPF Lothar",
+   "nation": "GDR",
+   "standings": {
+    "ALL": {
+     "rank": 32,
+     "points": 3
+    }
+   }
+  },
+  {
+   "competitor_id": "60814",
+   "name": "TATRANSKY Karol",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 32,
+     "points": 3
+    }
+   }
+  },
+  {
+   "competitor_id": "5267",
+   "name": "BJOERN Per",
+   "nation": "NOR",
+   "standings": {
+    "ALL": {
+     "rank": 34,
+     "points": 2
+    }
+   }
+  },
+  {
+   "competitor_id": "2498",
+   "name": "BAFIA Tadeusz",
+   "nation": "POL",
+   "standings": {
+    "ALL": {
+     "rank": 35,
+     "points": 1
+    }
+   }
+  }
+ ]
+}

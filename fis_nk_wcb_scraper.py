@@ -101,7 +101,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if args.fis_results:
-        from fis_nk_wcb_fisdb import fetch_all
+        from fis_nk_fisdb import fetch_all
         fetch_all(OUTPUT)
     elif args.file:
         from fis_nk_wcb_files import file_all

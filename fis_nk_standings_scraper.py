@@ -11,7 +11,7 @@ over the years (100-80-60, later 100-90-80), and events like the Ruka Tour
 or the Seefeld Triple score differently again.  FIS publishes the result of
 all that; this script fetches it.
 
-    python fis_nk_standings_scraper.py                       # all seasons 2002-2026
+    python fis_nk_standings_scraper.py                       # all seasons 1984-2026
     python fis_nk_standings_scraper.py --seasons 2025 2026   # refresh the current ones
     python fis_nk_standings_scraper.py --dry-run
 
@@ -49,7 +49,7 @@ URL = ("https://www.fis-ski.com/DB/nordic-combined/cup-standings.html"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 CUPS = ("WC", "COC")
 GENDERS = ("M", "W")
-FIRST_SEASON, LAST_SEASON = 2002, datetime.date.today().year + (datetime.date.today().month >= 7)
+FIRST_SEASON, LAST_SEASON = 1984, datetime.date.today().year + (datetime.date.today().month >= 7)
 REQUEST_DELAY_S = 1.0
 
 

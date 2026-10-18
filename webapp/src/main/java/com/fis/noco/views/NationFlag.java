@@ -23,7 +23,7 @@ public class NationFlag extends Span {
             Map.entry("AUT", "at"), Map.entry("BEL", "be"), Map.entry("BIH", "ba"), Map.entry("BLR", "by"),
             Map.entry("BUL", "bg"), Map.entry("CAN", "ca"), Map.entry("CHI", "cl"), Map.entry("CHN", "cn"),
             Map.entry("CRO", "hr"), Map.entry("CZE", "cz"), Map.entry("DEN", "dk"), Map.entry("ESP", "es"),
-            Map.entry("EST", "ee"), Map.entry("FIN", "fi"), Map.entry("FRA", "fr"), Map.entry("GBR", "gb"),
+            Map.entry("EST", "ee"), Map.entry("FIN", "fi"), Map.entry("FRA", "fr"), Map.entry("FRG", "de"), Map.entry("GBR", "gb"),
             Map.entry("GEO", "ge"), Map.entry("GER", "de"), Map.entry("GRE", "gr"), Map.entry("HUN", "hu"),
             Map.entry("IRL", "ie"), Map.entry("ISL", "is"), Map.entry("ITA", "it"), Map.entry("JPN", "jp"),
             Map.entry("KAZ", "kz"), Map.entry("KGZ", "kg"), Map.entry("KOR", "kr"), Map.entry("LAT", "lv"),
@@ -31,7 +31,7 @@ public class NationFlag extends Span {
             Map.entry("MGL", "mn"), Map.entry("MKD", "mk"), Map.entry("NED", "nl"), Map.entry("NOR", "no"),
             Map.entry("NZL", "nz"), Map.entry("POL", "pl"), Map.entry("POR", "pt"), Map.entry("ROU", "ro"),
             Map.entry("RUS", "ru"), Map.entry("SLO", "si"), Map.entry("SRB", "rs"), Map.entry("SUI", "ch"),
-            Map.entry("SVK", "sk"), Map.entry("SWE", "se"), Map.entry("THA", "th"), Map.entry("TUR", "tr"),
+            Map.entry("SVK", "sk"), Map.entry("SWE", "se"), Map.entry("TCH", "cz"), Map.entry("THA", "th"), Map.entry("TUR", "tr"),
             Map.entry("UKR", "ua"), Map.entry("USA", "us"), Map.entry("UZB", "uz"));
 
     /** Flag followed by the code — for tables, where similar flags are hard to tell apart. */

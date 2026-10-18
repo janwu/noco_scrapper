@@ -12,6 +12,8 @@ webapp/                                       db/noco.db → Vaadin site
 
 fis_nk_wcb_scraper.py                         weltcup-b.org + FIS → fis_nk_wcb_pdfs/
    (World Cup B 2000/01–2007/08, the Continental Cup before it was renamed)
+fis_nk_fisdb.py --circuit WC                  FIS database → fis_nk_pdfs/1984…2001/ (FDB rankings,
+                                              World Cup 1983/84–2000/01, which has no PDFs)
 fis_nk_standings_scraper.py                   FIS database → fis_nk_standings/*.json
                                               (official cup standings, also read by load_json.py)
 ```
@@ -42,6 +44,34 @@ files already on disk are recognised by their FIS name (e.g. `2026NK4117ROF.pdf`
 and not downloaded again. How the FIS pages are read is described at the top of
 `fis_nk_pdf_scraper.py`.
 
+## World Cup 1983/84 – 2000/01
+
+FIS has result PDFs of the World Cup from 2001/02. For the seasons before, the
+FIS database has the ranking of each individual race; until 1998/99 mostly the
+first 15 only, the ones that scored World Cup points:
+
+```
+python fis_nk_fisdb.py --circuit WC                       # rankings → fis_nk_pdfs/<season>/…FDB.json
+python fis_nk_standings_scraper.py --from-season 1984 --to-season 2001
+python run_parser.py --workers 7 --errors-only            # copies the rankings to output/
+python db/load_json.py --sqlite db/noco.db
+```
+
+Races of those years have no codex; their race id in the FIS database stands in
+for it. The ranking has rank, name, year of birth, nation and, depending on the
+year, the gap to the winner or the World Cup points of the race. The points stay
+in the JSON: the points rules changed several times (25-20-15… in the 1980s,
+from 1993/94 hundreds of points, today 100-90-80…), so the database has the
+official final standings of FIS only and never adds up points itself. Team
+competitions are not in these rankings, and seven races of 1999/2000 and
+2000/01 have no ranking in the FIS database.
+
+Athletes appear under nations that split or united: GDR and FRG, later GER;
+TCH, later CZE and SVK; SOV, CIS/GUS, later RUS, EST and others; YUG. `load_json.py`
+takes the same name within one such lineage as one athlete, of the last nation
+(`NATION_LINEAGE`, `nation_changes`); every result keeps the nation it was printed
+with. Venues are aliased to their country of today (Schonach BRD → GER).
+
 ## World Cup B (2000/01 – 2007/08)
 
 The second league was called World Cup B until 2008/09, when it became the
@@ -62,7 +92,7 @@ The site names its files by venue and number ('Karpacz1.pdf', '_SP' / '_Sprung',
 '_Lauf', '_Training'); `fis_nk_wcb_files.py` gives each the codex of its
 competition (see there how) and skips lists FIS has itself. The lists of
 weltcup-b.org come from the organisers and have many different layouts, so
-`fis_nk_wcb_fisdb.py` also saves the ranking of each individual race from the
+`fis_nk_fisdb.py` also saves the ranking of each individual race from the
 FIS database (doc type FDB: rank, name, nation, gap; no jump or cross-country).
 `run_parser.py` copies these JSON files to `output/`.
 
