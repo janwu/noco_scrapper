@@ -82,6 +82,9 @@ CIRCUITS = {
     "COC": {"first_season": 2009, "output_dir": "fis_nk_coc_pdfs", "name": "Continental Cup"},
     # the World Cup B, renamed Continental Cup in 2008/09; FIS has PDFs of a few of its competitions
     "WCB": {"first_season": 2001, "last_season": 2008, "output_dir": "fis_nk_wcb_pdfs", "name": "World Cup B"},
+    # every second year (and the Olympic Games until 1980, which were the World Championships too);
+    # the calendar lists all of them whatever the season asked for
+    "WSC": {"first_season": 1924, "output_dir": "fis_nk_wsc_pdfs", "name": "World Championships"},
 }
 
 
@@ -217,6 +220,10 @@ def get_events_for_season(circuit: str, season: int, session: requests.Session) 
         if not m or m.group(1) in seen_ids:
             continue
         seen_ids.add(m.group(1))
+        # the World Championship calendar has every season on one page
+        code = re.search(r"seasoncode=(\d{4})", href)
+        if code and int(code.group(1)) != season:
+            continue
 
         raw_text = a.get_text(" ", strip=True)
         nation_m = re.search(r"\b([A-Z]{3})\b", raw_text)
@@ -271,11 +278,12 @@ def event_name_from_text(text: str) -> str:
     file-name safe.
     """
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    junk = re.compile(r"^([DPMC]+|[MWA]|WC|COC|PR|review|\d{1,2}(st|nd|rd|th)?|\d{1,2}:\d{2})$", re.I)
+    junk = re.compile(r"^([DPMC]+|[DPMC]( [DPMC])+|[MWA]|WC|COC|WSC|PR|review|\d{1,2}(st|nd|rd|th)?|\d{1,2}:\d{2})$",
+                      re.I)
     date_re = re.compile(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b", re.I)
     status_re = re.compile(r"official results|cancelled|start list|postponed", re.I)
     event_re = re.compile(
-        r"\b(Hill|Sprint|Gundersen|Mass.?Start|Compact|Provisional|Team|Individual|Km|HS\d|NH|LH)\b", re.I)
+        r"\b(Hill|Sprint|Gundersen|Mass.?Start|Compact|Provisional|Team|Individual|Km|HS\d|NH|LH|Combined)\b", re.I)
 
     best = ""
     for line in lines:
@@ -377,13 +385,13 @@ def read_event(event: dict, session: requests.Session):
         if not codex:
             codex = next((m.group(1) for m in re.finditer(r"\b(\d{4})\b", merged)
                           if not 1980 <= int(m.group(1)) <= 2100), "")
-        gender_m = re.search(r"\b(?:WC|WCB|COC|PR)\b\s*\n?\s*\b([MWA])\b", merged)
+        gender_m = re.search(r"\b(?:WC|WCB|COC|WSC|OWG|PR)\b\s*\n?\s*\b([MWA])\b", merged)
         if gender_m:
             gender = gender_m.group(1)
         else:
             tokens = re.findall(r"\b([MWA])\b", merged)
             gender = tokens[-1] if tokens else "unknown"
-        cat_m = re.search(r"\b(WC|WCB|COC|PR)\b", merged)
+        cat_m = re.search(r"\b(WC|WCB|COC|WSC|OWG|PR)\b", merged)
         race_meta[rid] = {
             "codex": codex,
             "date": date_from_text(merged, event["season"]),

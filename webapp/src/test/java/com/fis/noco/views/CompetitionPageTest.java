@@ -84,6 +84,25 @@ class CompetitionPageTest {
     }
 
     @Test
+    void worldChampionshipsWithTheOlympicGamesUntil1980() {
+        Assumptions.assumeTrue(new File("../db/noco.db").exists(), "database not built");
+        // Chamonix 1924: the Olympic Games, counted as World Championships
+        Long chamonix = jdbc.queryForObject("select id from competitions where circuit = 'WSC' " +
+                "and competition_date like '1924-%'", Long.class);
+        var c1924 = competitionService.findById(chamonix).orElseThrow();
+        assertEquals("World Championships", c1924.getCircuitLabel());
+        assertTrue(c1924.isOlympic());
+        Long oslo = jdbc.queryForObject("select id from competitions where circuit = 'WSC' " +
+                "and competition_date like '1982-%' and format not like 'Team%'", Long.class);
+        assertTrue(!competitionService.findById(oslo).orElseThrow().isOlympic());
+        // one entry per World Championships year, 1924 to 2025
+        var seasons = competitionService.getSeasonsOfCircuit("WSC");
+        assertEquals(56, seasons.size());
+        assertEquals("circuit=WSC&season=1924", ResultsBrowserView.filter("WSC", seasons.get(seasons.size() - 1), null)
+                .getQueryString());
+    }
+
+    @Test
     void twoJumpRoundsAddUp() {
         Assumptions.assumeTrue(new File("../db/noco.db").exists(), "database not built");
         // Lillehammer 3 Dec 2005: KOIVURANTA 115.8 + 122.2 = 238.0, the jump points of the result list

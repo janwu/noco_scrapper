@@ -63,16 +63,18 @@ public class ResultsBrowserView extends VerticalLayout implements BeforeEnterObs
 
         circuitSelect = new Select<>();
         circuitSelect.setLabel("Circuit");
-        circuitSelect.setItems("WC", "COC");
-        circuitSelect.setItemLabelGenerator(c -> c.equals("WC") ? "World Cup" : "Continental Cup");
+        circuitSelect.setItems("WC", "COC", "WSC");
+        circuitSelect.setItemLabelGenerator(ResultsBrowserView::circuitName);
         circuitSelect.setWidthFull();
 
         seasonSelect = new Select<>();
         seasonSelect.setLabel("Season");
-        seasonSelect.setItemLabelGenerator(Season::getLabel);
+        // World Championships are named by their year, the cups by their season
+        seasonSelect.setItemLabelGenerator(s -> "WSC".equals(circuitSelect.getValue())
+                ? String.valueOf(s.getStartYear() + 1) : s.getLabel());
         seasonSelect.setWidthFull();
 
-        List<Season> seasons = competitionService.getAllSeasons();
+        List<Season> seasons = competitionService.getSeasonsOfCircuit("WC");
         seasonSelect.setItems(seasons);
 
         genderSelect = new Select<>();
@@ -86,7 +88,10 @@ public class ResultsBrowserView extends VerticalLayout implements BeforeEnterObs
         genderSelect.setValue("All");
         genderSelect.setWidthFull();
 
-        circuitSelect.addValueChangeListener(e -> filterChanged(e.isFromClient()));
+        circuitSelect.addValueChangeListener(e -> {
+            seasonsOf(e.getValue());
+            filterChanged(e.isFromClient());
+        });
         seasonSelect.addValueChangeListener(e -> filterChanged(e.isFromClient()));
         genderSelect.addValueChangeListener(e -> filterChanged(e.isFromClient()));
 
@@ -159,13 +164,13 @@ public class ResultsBrowserView extends VerticalLayout implements BeforeEnterObs
             params = remembered.getParameters();      // from the menu: the filter of last time
         }
         String circuit = one(params, "circuit");
-        if ("WC".equals(circuit) || "COC".equals(circuit)) {
+        if ("WC".equals(circuit) || "COC".equals(circuit) || "WSC".equals(circuit)) {
             circuitSelect.setValue(circuit);
         }
         String season = one(params, "season");
         if (season != null) {
             seasonSelect.getListDataView().getItems()
-                    .filter(s -> season.equals(String.valueOf(s.getStartYear())))
+                    .filter(s -> season.equals(seasonParam(circuitSelect.getValue(), s)))
                     .findFirst().ifPresent(seasonSelect::setValue);
         }
         String gender = one(params, "gender");
@@ -179,11 +184,36 @@ public class ResultsBrowserView extends VerticalLayout implements BeforeEnterObs
         return values == null || values.isEmpty() ? null : values.get(0);
     }
 
+    static String circuitName(String circuit) {
+        return switch (circuit) {
+            case "WC" -> "World Cup";
+            case "WSC" -> "World Championships";
+            default -> "Continental Cup";
+        };
+    }
+
+    /** The seasons of the circuit; the one chosen stays if the circuit has it, else the newest. */
+    private void seasonsOf(String circuit) {
+        if (circuit == null) return;
+        Season chosen = seasonSelect.getValue();
+        List<Season> seasons = competitionService.getSeasonsOfCircuit(circuit);
+        seasonSelect.setItems(seasons);
+        seasonSelect.setValue(seasons.stream()
+                .filter(s -> chosen != null && s.getId().equals(chosen.getId())).findFirst()
+                .orElse(seasons.isEmpty() ? null : seasons.get(0)));
+    }
+
+    /** The season in the address: the start year of a cup season, the year of a World Championships. */
+    static String seasonParam(String circuit, Season season) {
+        if (season == null || season.getStartYear() == null) return null;
+        return String.valueOf("WSC".equals(circuit) ? season.getStartYear() + 1 : season.getStartYear());
+    }
+
     /** The query parameters of a filter; the gender only when one is chosen. */
     public static QueryParameters filter(String circuit, Season season, String gender) {
         Map<String, String> params = new LinkedHashMap<>();
         if (circuit != null) params.put("circuit", circuit);
-        if (season != null && season.getStartYear() != null) params.put("season", String.valueOf(season.getStartYear()));
+        if (seasonParam(circuit, season) != null) params.put("season", seasonParam(circuit, season));
         if (gender != null && !"All".equals(gender)) params.put("gender", gender);
         return QueryParameters.simple(params);
     }
@@ -218,10 +248,13 @@ public class ResultsBrowserView extends VerticalLayout implements BeforeEnterObs
             return;
         }
 
-        String circuitLabel = circuit.equals("WC") ? "World Cup"
+        String circuitLabel = !circuit.equals("COC") ? circuitName(circuit)
                 : season.getStartYear() != null && season.getStartYear() < 2008
                 ? "Continental Cup (World Cup B)" : "Continental Cup";
-        gridTitle.setText(circuitLabel + " – " + season.getLabel());
+        boolean championships = circuit.equals("WSC");
+        int year = season.getStartYear() + 1;
+        gridTitle.setText(circuitLabel + " – " + (championships ? String.valueOf(year) : season.getLabel())
+                + (championships && Competition.OLYMPIC_CHAMPIONSHIPS.contains(year) ? " (Olympic Winter Games)" : ""));
 
         String gender = genderSelect.getValue();
         String genderFilter = (gender == null || "All".equals(gender)) ? null : gender;

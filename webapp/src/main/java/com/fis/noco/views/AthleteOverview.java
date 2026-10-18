@@ -35,7 +35,8 @@ import java.util.function.Function;
  */
 final class AthleteOverview extends VerticalLayout {
 
-    private static final Map<String, String> SCOPES = Map.of("World Cup", "WC", "Continental Cup", "COC");
+    private static final Map<String, String> SCOPES = Map.of("World Cup", "WC", "Continental Cup", "COC",
+            "World Championships", "WSC");
 
     private final AthleteProfile profile;
     private final Function<String, Component> careerBlocks;
@@ -53,15 +54,21 @@ final class AthleteOverview extends VerticalLayout {
         // one circuit at a time: World Cup, or Continental Cup for an athlete never in the World Cup
         boolean worldCup = profile.forCircuit("WC").bestResult().isPresent()
                 || !profile.forCircuit("WC").venues().isEmpty();
-        scope.setItems("World Cup", "Continental Cup");
-        scope.setValue(worldCup ? "World Cup" : "Continental Cup");
+        // World Championships for an athlete who was there; first for one who was in no cup
+        boolean championships = profile.forCircuit("WSC").bestResult().isPresent();
+        boolean cup = worldCup || profile.forCircuit("COC").bestResult().isPresent()
+                || !profile.forCircuit("COC").venues().isEmpty();
+        String first = worldCup ? "World Cup" : cup || !championships ? "Continental Cup" : "World Championships";
+        scope.setItems(championships ? List.of("World Cup", "Continental Cup", "World Championships")
+                : List.of("World Cup", "Continental Cup"));
+        scope.setValue(first);
         scope.addValueChangeListener(e -> show(SCOPES.get(e.getValue())));
         HorizontalLayout scopeRow = new HorizontalLayout(new Span("Show: "), scope);
         scopeRow.setAlignItems(Alignment.CENTER);
 
         content.setWidthFull();
         add(scopeRow, content);
-        show(worldCup ? "WC" : "COC");
+        show(SCOPES.get(first));
     }
 
     private void show(String circuit) {

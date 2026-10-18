@@ -47,13 +47,15 @@ from fis_parser.detector import (                      # noqa: E402
     parse_filename_metadata, team_discipline_from_filename, venue_from_path,
 )
 from fis_parser.validate import is_team_discipline, row_identity_problem   # noqa: E402
+from fis_parser.utils import team_name as fis_team_name                    # noqa: E402
 
 log = logging.getLogger("loader")
 
 DB_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # The World Cup B (until 2007/08) is the Continental Cup under its old name: one circuit
-CIRCUIT_BY_DIR = {"fis_nk_pdfs": "WC", "fis_nk_coc_pdfs": "COC", "fis_nk_wcb_pdfs": "COC"}
+CIRCUIT_BY_DIR = {"fis_nk_pdfs": "WC", "fis_nk_coc_pdfs": "COC", "fis_nk_wcb_pdfs": "COC",
+                  "fis_nk_wsc_pdfs": "WSC"}
 JUMP_TABLE_BY_DOC_TYPE = {
     "RL": "jump_round_results",
     "RL1": "jump_round_results",
@@ -160,7 +162,7 @@ def file_meta(path: str, output_dir: str) -> Optional[dict]:
         return None
 
     gender = rel[-2] if rel[-2] in ("M", "W") else None
-    mixed = re.search(r"_(?:WC|COC)_A_X_|_X_(?:\d{4}NK)?\d{4}[A-Z0-9]+\.json$|Mixed", name)
+    mixed = re.search(r"_(?:WC|COC|WSC)_A_X_|_X_(?:\d{4}NK)?\d{4}[A-Z0-9]+\.json$|Mixed", name)
     if mixed:
         gender = "X"
 
@@ -436,6 +438,9 @@ def describe_competition(docs: List[Tuple[dict, dict]]) -> dict:
         team = rof_discipline
     fmt = team or rof_discipline or first(lambda m, d: m["discipline_hint"]) \
         or first(lambda m, d: d.get("discipline"))
+    if not fmt and any(re.match(r"\d+_\d{8}_(Individual|Nordic_Combined)_", m["basename"]) for m in metas):
+        # before the Gundersen method (1985): jump and cross-country in points, no pursuit start
+        fmt = "Individual"
     if rof is None and any(m["provisional"] for m in metas):
         # The provisional competition round has a codex of its own; it is a
         # jumping round, not a competition with a result list.
@@ -613,8 +618,12 @@ def add_team_results(build: Build, comp: dict, comp_id: int, doc_id: int, doc: d
         for m in t.get("members") or []:
             name = clean(m.get("name"))
             # Mixed-nation teams run as 'FIS'; the athlete keeps his own nation
-            nation = team_nation if team_nation in build.result_nations \
+            nation = team_nation if team_nation in build.result_nations and team_nation != "FIS" \
                 else build.nation_for(name, comp["nations"])
+            # a team of two nations runs under one of them ('AUT/JPN'): the athlete keeps his own
+            own = build.nations_by_name.get(name) or set()
+            if own and team_nation not in own and len(own) == 1:
+                nation = next(iter(own))
             athlete_id = None
             row = {"name": name, "nation": nation}
             if nation and not row_identity_problem(row):
@@ -739,7 +748,7 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
                         for r in doc.get(key) or []]
                 rows += [(m, t.get("nation")) for t in doc.get("team_results") or [] for m in t.get("members") or []]
                 for r, nation in rows:
-                    if r.get("name") and nation and nation.upper() not in ("AIN", "OAR", "RPF"):
+                    if r.get("name") and nation and nation.upper() not in ("AIN", "OAR", "RPF", "FIS"):
                         nations_of[words(r["name"])].add(nation.upper())
         for r in fdb_rows:
             if r["nation"] == "AIN":
@@ -747,6 +756,31 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
                 if len(nations) == 1:
                     r["nation"] = next(iter(nations))
 
+    # the early FIS database writes native letters small in a surname: 'STRöMSTAD Th.' → 'STRÖMSTAD Th.'
+    def surname_case(name: str) -> str:
+        return " ".join(w.upper() if any(c.isupper() for c in w) and all(c.isupper() for c in w if c.isascii()
+                                                                          and c.isalpha()) else w
+                        for w in (name or "").split(" "))
+
+    for r in fdb_rows:
+        r["name"] = surname_case(r.get("name"))
+    for docs in by_comp.values():
+        for meta, doc in docs:
+            if meta["doc_type"] == "FDB":
+                for t in doc.get("team_results") or []:
+                    t["team_name"] = fis_team_name(t.get("team_name") or "")
+                    for m in t.get("members") or []:
+                        m["name"] = surname_case(m.get("name"))
+
+    # a team of the FIS database given as 'AIN' has its nation in its name ('Russia', 'Belarus II')
+    for docs in by_comp.values():
+        for meta, doc in docs:
+            if meta["doc_type"] == "FDB":
+                for t in doc.get("team_results") or []:
+                    if t.get("nation") == "AIN":
+                        name = (t.get("team_name") or "").lower()
+                        t["nation"] = "RUS" if name.startswith("russia") else \
+                            "BLR" if name.startswith("belarus") else "AIN"
     resolve_ain()
     every = defaultdict(set)                  # nation → FIS names, all rankings
     for r in fdb_rows:
@@ -816,7 +850,7 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
 NATION_LINEAGE = {code: group for group, codes in {
     "GER": ("FRG", "BRD", "GDR", "DDR", "GER"),
     "TCH": ("TCH", "CZE", "SVK"),
-    "SOV": ("SOV", "URS", "CIS", "GUS", "EUN", "RUS", "EST", "LAT", "LTU", "UKR", "BLR", "KAZ", "AIN"),
+    "SOV": ("SOV", "URS", "CIS", "GUS", "EUN", "RUS", "EST", "LAT", "LTU", "UKR", "BLR", "KAZ", "AIN", "RSF", "RPF", "OAR"),
     "YUG": ("YUG", "JUG", "SLO", "CRO", "SRB", "SCG", "BIH", "MKD"),
 }.items() for code in codes}
 
@@ -842,7 +876,7 @@ def nation_changes(by_comp: Dict, build: Build) -> None:
             rows += [(m, t.get("nation")) for t in doc.get("team_results") or [] for m in t.get("members") or []]
             for r, nation in rows:
                 name = clean(r.get("name"))
-                if name and nation and nation.upper() in NATION_LINEAGE:
+                if name and nation and nation.upper() != "FIS":
                     key = (name, nation.upper())
                     last[key] = max(last.get(key, ""), day)
 
@@ -851,13 +885,13 @@ def nation_changes(by_comp: Dict, build: Build) -> None:
 
     groups = defaultdict(list)                        # (folded name, lineage) → keys
     for key in last:
-        groups[(_fold(key[0]), NATION_LINEAGE[key[1]])].append(key)
+        groups[(_fold(key[0]), NATION_LINEAGE.get(key[1], key[1]))].append(key)
     added = 0
     for keys in groups.values():
         if len(keys) < 2:
             continue
         # the last nation; 'AIN' only if there is no other (the FIS database of today)
-        nation = max(keys, key=lambda k: (k[1] != "AIN", last[k]))[1]
+        nation = max(keys, key=lambda k: (k[1] not in ("AIN", "RSF", "RPF", "OAR"), last[k]))[1]
         spellings = {k[0] for k in keys}
         plain_ones = [n for n in spellings if plain(n)]
         if len(spellings) > 1 and len(plain_ones) != 1:

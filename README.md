@@ -12,8 +12,8 @@ webapp/                                       db/noco.db → Vaadin site
 
 fis_nk_wcb_scraper.py                         weltcup-b.org + FIS → fis_nk_wcb_pdfs/
    (World Cup B 2000/01–2007/08, the Continental Cup before it was renamed)
-fis_nk_fisdb.py --circuit WC                  FIS database → fis_nk_pdfs/1984…2001/ (FDB rankings,
-                                              World Cup 1983/84–2000/01, which has no PDFs)
+fis_nk_fisdb.py --circuit WC / WSC            FIS database → FDB rankings (World Cup 1983/84–2000/01,
+                                              which has no PDFs; World Championships 1924–2025)
 fis_nk_standings_scraper.py                   FIS database → fis_nk_standings/*.json
                                               (official cup standings, also read by load_json.py)
 ```
@@ -71,6 +71,30 @@ TCH, later CZE and SVK; SOV, CIS/GUS, later RUS, EST and others; YUG. `load_json
 takes the same name within one such lineage as one athlete, of the last nation
 (`NATION_LINEAGE`, `nation_changes`); every result keeps the nation it was printed
 with. Venues are aliased to their country of today (Schonach BRD → GER).
+
+## World Championships (1924 – 2025)
+
+The Nordic combined of every World Championships, and of the Olympic Winter Games
+until 1980, which counted as World Championships (1924, 1928, … 1980; from 1982
+they are held apart). FIS lists all of them in its World Championship calendar
+(category WSC), whatever season is asked for; the scrapers keep the events of the
+season asked for (`seasoncode` of the event link).
+
+```
+python fis_nk_pdf_scraper.py --circuit WSC --seasons 2003 2005 … 2025   # result PDFs, from 2003
+python fis_nk_fisdb.py --circuit WSC                  # rankings of every race → fis_nk_wsc_pdfs/<year>/…FDB.json
+python run_parser.py --workers 7 --errors-only
+python db/load_json.py --sqlite db/noco.db
+```
+
+In the database the circuit is `WSC`; a World Championships is one season (1924 =
+season 1923/24), the web app names it by its year and marks the Olympic years.
+Until 1984 a competition was jump and cross-country in points (format
+"Individual"); the early FIS database has the first six to fifteen only. Team
+competitions come from the FIS database too (`team_ranking`: a team line, then its
+athletes), also for the World Cup and World Cup B where no team PDF can be read.
+Teams of two nations run as 'FIS' in the database; their athletes keep their own
+nation.
 
 ## World Cup B (2000/01 – 2007/08)
 

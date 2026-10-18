@@ -146,6 +146,11 @@ public class CompetitionService {
         return seasonRepository.findAllByOrderByStartYearDesc();
     }
 
+    /** The seasons in which the circuit held a competition, newest first. */
+    public List<Season> getSeasonsOfCircuit(String circuit) {
+        return seasonRepository.findByCircuit(circuit);
+    }
+
     public List<Competition> getLatestWCCompetitions(String gender, int limit) {
         return competitionRepository.findLatestWCByGender(gender, PageRequest.of(0, limit));
     }

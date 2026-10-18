@@ -269,3 +269,12 @@ def is_valid_athlete_name(s: str) -> bool:
 def split_stat_fraction(s: str) -> Tuple[Optional[int], Optional[int]]:
     """'54/14' → (54, 14)."""
     return parse_fraction(s)
+
+
+def team_name(text: str) -> str:
+    """'NORWAY II' → 'Norway II', 'GERMANY' → 'Germany'; a code ('DDR', 'USA') and a roman number stay."""
+    words = text.upper().split()
+    roman = [bool(re.fullmatch(r"[IVX]+", w)) for w in words]
+    # a nation code is the one word besides a roman number: 'USA I', 'DDR'
+    code = sum(not r for r in roman) == 1 and len(next(w for w, r in zip(words, roman) if not r)) <= 3
+    return " ".join(w if r or code else w.capitalize() for w, r in zip(words, roman))

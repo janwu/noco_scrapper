@@ -38,12 +38,16 @@ from pathlib import Path
 import requests
 
 import fis_nk_pdf_scraper as fis
+from fis_parser.utils import team_name
 
 RESULTS_URL = "https://www.fis-ski.com/DB/general/results.html?sectorcode=NK&raceid={raceid}"
 CIRCUITS = {
     "WCB": {"seasons": range(2001, 2009), "root": Path(__file__).parent / "fis_nk_wcb_pdfs"},
     # the World Cup has result PDFs from 2001/02 (fis_nk_scraper.py)
     "WC": {"seasons": range(1984, 2002), "root": Path(__file__).parent / "fis_nk_pdfs"},
+    # every World Championships (and Olympic Games until 1980); PDFs from 2003
+    "WSC": {"seasons": [*range(1924, 1940), *range(1948, 1983, 2), 1984, *range(1985, 2026, 2)],
+            "root": Path(__file__).parent / "fis_nk_wsc_pdfs"},
 }
 SEASONS = CIRCUITS["WCB"]["seasons"]
 
@@ -100,6 +104,34 @@ def race_ranking(raceid: str, session: requests.Session) -> list:
     return rows
 
 
+def team_ranking(raceid: str, session: requests.Session) -> list:
+    """
+    The teams of a FIS result page: [{rank, nation, team_name, members: [{leg, name, birth_year}]}].
+    A team line has the rank and the nation ('NORWAY', NOR), the lines of its
+    athletes follow without a rank.
+    """
+    soup = fis.get_soup(RESULTS_URL.format(raceid=raceid), session)
+    box = soup.select_one("#events-info-results")
+    teams = []
+    for row in box.select("a.table-row") if box else []:
+        leaves = [d for d in row.select("div") if not d.select("div")]
+        cells = [d.get_text(" ", strip=True) for d in leaves]
+        nation_at = next((i for i, d in enumerate(leaves) if "country" in (d.get("class") or [])), None)
+        name_at = next((i for i, c in enumerate(cells) if re.search(r"[^\W\d_]{2}", c) and i != nation_at), None)
+        if name_at is None:
+            continue
+        if cells and cells[0].isdigit() and nation_at is not None and cells[nation_at]:
+            teams.append({"rank": int(cells[0]), "nation": cells[nation_at],
+                          # 'NORWAY II' → 'Norway Ii'… 'Norway II'; 'DDR', 'USA' stay
+                          "team_name": team_name(cells[name_at]), "members": []})
+        elif teams and not cells[0]:
+            year = next((c for c in cells[name_at + 1:] if re.fullmatch(r"(19|20)\d{2}", c)), None)
+            teams[-1]["members"].append({"leg": len(teams[-1]["members"]) + 1,
+                                         "name": re.sub(r"\s+", " ", cells[name_at]),
+                                         "birth_year": int(year) if year else None})
+    return teams
+
+
 def fetch_all(root: Path = None, seasons=None, circuit: str = "WCB", overwrite: bool = False) -> None:
     root = root or CIRCUITS[circuit]["root"]
     seasons = seasons or CIRCUITS[circuit]["seasons"]
@@ -126,30 +158,33 @@ def fetch_all(root: Path = None, seasons=None, circuit: str = "WCB", overwrite: 
             for raceid, race in races.items():
                 if not race["date"]:
                     continue
-                if re.search(r"\bteam\b", race["name"].replace("_", " "), re.IGNORECASE):
-                    continue                      # the database lists teams; the team PDFs are read instead
+                team = bool(re.search(r"\bteam\b", race["name"].replace("_", " "), re.IGNORECASE))
                 codex = race["codex"] or str(raceid).zfill(4)
                 g = race["gender"] if race["gender"] in ("M", "W") else "X"
                 name = f"{codex}_{race['date']}_{race['name']}_{g}_{season}NK{codex}FDB.json"
                 dest = root / str(season) / folder / (g if g != "X" else "unknown") / name
                 if dest.exists() and not overwrite:
                     continue
-                rows = race_ranking(raceid, session)
+                rows = team_ranking(raceid, session) if team else race_ranking(raceid, session)
                 if not rows:
                     empty += 1
                     print(f"  no ranking: {season} {folder} {race['name']}")
                     continue
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 d = race["date"]
+                # 'GARMISCH_PARTENKIRCHEN_OWG_WSC_GER': the Olympic Games that were World Championships
+                place = re.sub(r"_OWG(_WSC)?$", "", folder.split("_", 2)[-1].rsplit("_", 1)[0])
                 dest.write_text(json.dumps({
                     "doc_type": "FDB",
                     "source_file": RESULTS_URL.format(raceid=raceid),
                     "codex": codex,
                     "competition_date": f"{d[:4]}-{d[4:6]}-{d[6:]}",
-                    "location": folder.split("_", 2)[-1].rsplit("_", 1)[0].replace("_", " ").title(),
+                    "location": place.replace("_", " ").title(),
                     "country": folder.rsplit("_", 1)[-1],
                     "event_name": race["name"].replace("_", " "),
-                    "combined_results": rows,
+                    "discipline": "Team" if team else None,
+                    "combined_results": [] if team else rows,
+                    "team_results": rows if team else [],
                     "parse_errors": [],
                     "warnings": [],
                 }, ensure_ascii=False, indent=1), encoding="utf-8")

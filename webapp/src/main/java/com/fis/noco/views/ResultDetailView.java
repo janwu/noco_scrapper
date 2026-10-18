@@ -85,13 +85,20 @@ public class ResultDetailView extends VerticalLayout implements HasUrlParameter<
         addMeta(metaRow, "Circuit", circuitLabel);
         if (competition.getFormat() != null) addMeta(metaRow, "Format", competition.getFormat());
         if (competition.getGender() != null) addMeta(metaRow, "Gender", competition.getGender());
-        if (competition.getSeason() != null) addMeta(metaRow, "Season", competition.getSeason().getLabel());
+        if (competition.getSeason() != null && !"WSC".equals(competition.getCircuit()))
+            addMeta(metaRow, "Season", competition.getSeason().getLabel());
         if (competition.getXcDistanceKm() != null)
             addMeta(metaRow, "XC Distance", competition.getXcDistanceKm() + " km");
         if (competition.getHillSizeM() != null)
             addMeta(metaRow, "Hill Size", competition.getHillSizeM() + " m");
 
         add(backButton, header, metaRow);
+        if (competition.isOlympic()) {
+            Span olympic = new Span("Olympic Winter Games " + competition.getYear()
+                    + " — until 1980 the Olympic competitions were the World Championships as well.");
+            olympic.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
+            add(olympic);
+        }
 
         Component result;
         String resultTab;

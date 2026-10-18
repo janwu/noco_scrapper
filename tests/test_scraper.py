@@ -114,6 +114,27 @@ class FisDatabaseRankingTest(unittest.TestCase):
                                  after='<div class="justify-right hidden-xs">25</div>'))
         self.assertEqual((rows[0]["wc_points"], rows[0]["time_behind"]), (25, None))
 
+    def test_team_ranking(self):
+        import fis_nk_fisdb
+        html = ('<div id="events-info-results">'
+                '<a class="table-row"><div class="g-row"><div>1</div><div>1241</div><div>DDR</div><div></div>'
+                '<div class="country country_flag">GDR</div><div></div></div></a>'
+                '<a class="table-row"><div class="g-row"><div></div><div>32</div><div>DOTZAUER Uwe</div>'
+                '<div>1959</div><div class="country country_flag country"></div><div></div></div></a>'
+                '</div>')
+        original = scraper.get_soup
+        scraper.get_soup = lambda url, session: BeautifulSoup(html, "html.parser")
+        try:
+            teams = fis_nk_fisdb.team_ranking("661", None)
+        finally:
+            scraper.get_soup = original
+        self.assertEqual((teams[0]["rank"], teams[0]["nation"], teams[0]["team_name"]), (1, "GDR", "DDR"))
+        self.assertEqual(teams[0]["members"], [{"leg": 1, "name": "DOTZAUER Uwe", "birth_year": 1959}])
+
+    def test_race_name_of_the_early_championships(self):
+        self.assertEqual(scraper.event_name_from_text("D P C C\n04 Feb 1925\n4100\nNordic Combined\nNordic Combined WSC M"),
+                         "Nordic_Combined_WSC_M")
+
     def test_gap_to_the_winner(self):
         rows = self.ranking(dict(rank=2, code=74, name="ACKERMANN Ronny", year=1977, nation="GER",
                                  after='<div class="justify-right blue bold">0.8</div><div class="bold">+0</div>'))

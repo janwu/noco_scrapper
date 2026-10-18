@@ -158,7 +158,7 @@ def build_json_path(pdf: Path, input_dirs: List[str], output_dir: Path) -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description='Batch parse FIS Nordic Combined PDFs')
     parser.add_argument('--input-dirs', nargs='+',
-                        default=['fis_nk_pdfs', 'fis_nk_coc_pdfs', 'fis_nk_wcb_pdfs'],
+                        default=['fis_nk_pdfs', 'fis_nk_coc_pdfs', 'fis_nk_wcb_pdfs', 'fis_nk_wsc_pdfs'],
                         help='Directories containing PDFs')
     parser.add_argument('--output-dir', default='output',
                         help='Output directory for JSON files')
