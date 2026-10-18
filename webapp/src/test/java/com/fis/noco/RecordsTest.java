@@ -55,6 +55,15 @@ class RecordsTest {
     }
 
     @Test
+    void eastGermanyWithGermanyOnRequest() {
+        Map<String, Count> apart = byNation(records.nations("M", NationMode.AT_THE_TIME, false));
+        Map<String, Count> together = byNation(records.nations("M", NationMode.AT_THE_TIME, true));
+        assertFalse(together.containsKey("GDR"));
+        assertEquals(apart.get("GER").wins() + apart.get("GDR").wins(), together.get("GER").wins());
+        assertEquals(apart.get("GER").podiums() + apart.get("GDR").podiums(), together.get("GER").podiums());
+    }
+
+    @Test
     void athletesNationMovesSovietPodiumsToEstonia() {
         int atTheTime = byNation(records.nations("M", NationMode.AT_THE_TIME)).get("EST") == null ? 0
                 : byNation(records.nations("M", NationMode.AT_THE_TIME)).get("EST").podiums();

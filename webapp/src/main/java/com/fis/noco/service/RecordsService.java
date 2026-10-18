@@ -82,6 +82,11 @@ public class RecordsService {
 
     /** Wins, podiums and top 10 of each nation, most wins first. */
     public List<Count> nations(String gender, NationMode mode) {
+        return nations(gender, mode, false);
+    }
+
+    /** With {@code eastGermanyWithGermany} the GDR is counted with Germany too, like the FRG. */
+    public List<Count> nations(String gender, NationMode mode, boolean eastGermanyWithGermany) {
         List<Object[]> rows = jdbc.query("""
                 SELECT UPPER(r.raw_nation), a.nationality, r.rank, c.competition_date
                 """ + INDIVIDUAL_WC,
@@ -92,6 +97,7 @@ public class RecordsService {
         for (Object[] row : rows) {
             String nation = nationOf((String) row[0], (String) row[1], mode);
             if (nation == null) continue;
+            if (eastGermanyWithGermany && nation.equals("GDR")) nation = "GER";
             int rank = (Integer) row[2];
             int[] n = counts.computeIfAbsent(nation, k -> new int[3]);
             if (rank == 1) {

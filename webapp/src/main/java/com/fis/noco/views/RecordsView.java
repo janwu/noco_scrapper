@@ -4,6 +4,7 @@ import com.fis.noco.service.RecordsService;
 import com.fis.noco.service.RecordsService.Count;
 import com.fis.noco.service.RecordsService.NationMode;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -32,6 +33,8 @@ public class RecordsView extends VerticalLayout {
     private final RecordsService records;
     private final RadioButtonGroup<String> genderGroup = new RadioButtonGroup<>();
     private final RadioButtonGroup<NationMode> nationMode = new RadioButtonGroup<>();
+    private final Checkbox eastGermany = new Checkbox("Count East Germany (GDR) with Germany");
+    private final Span modeNote = new Span();
     private final FlexLayout athleteTables = new FlexLayout();
     private final Div nationTable = new Div();
 
@@ -59,13 +62,11 @@ public class RecordsView extends VerticalLayout {
         nationMode.setItemLabelGenerator(m -> m == NationMode.AT_THE_TIME ? "Nation at the time" : "Athlete's nation");
         nationMode.setValue(NationMode.AT_THE_TIME);
         nationMode.addValueChangeListener(e -> refreshNations());
-        Span modeNote = new Span();
         modeNote.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
-        modeNote.setText(MODE_NOTE.get(NationMode.AT_THE_TIME));
-        nationMode.addValueChangeListener(e -> modeNote.setText(MODE_NOTE.get(e.getValue())));
+        eastGermany.addValueChangeListener(e -> refreshNations());
         nationTable.setWidth("min(100%, 640px)");
 
-        add(title, note, genderGroup, athleteTables, nationsTitle, nationMode, modeNote, nationTable);
+        add(title, note, genderGroup, athleteTables, nationsTitle, nationMode, eastGermany, modeNote, nationTable);
         refresh();
     }
 
@@ -123,7 +124,13 @@ public class RecordsView extends VerticalLayout {
     }
 
     private void refreshNations() {
-        List<Count> nations = records.nations(gender(), nationMode.getValue());
+        List<Count> nations = records.nations(gender(), nationMode.getValue(), eastGermany.getValue());
+        modeNote.setText(!eastGermany.getValue() ? MODE_NOTE.get(nationMode.getValue())
+                : nationMode.getValue() == NationMode.AT_THE_TIME
+                ? "Counted for the nation the result was won for. West and East Germany (FRG, GDR) are counted "
+                  + "with Germany and Yugoslavia with Slovenia; the Soviet Union (SOV), the CIS of 1992 and "
+                  + "Czechoslovakia (TCH) are listed as states of their own."
+                : MODE_NOTE.get(NationMode.ATHLETE) + " East Germany (GDR) is counted with Germany.");
         Grid<Count> grid = new Grid<>(Count.class, false);
         grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
         grid.addColumn(c -> place(nations, c, Count::wins)).setHeader("#").setWidth("50px").setFlexGrow(0);
