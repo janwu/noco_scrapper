@@ -28,7 +28,6 @@ import java.util.function.ToIntFunction;
  */
 abstract class MedalTable extends VerticalLayout {
 
-    private static final int LIMIT = 30;
     private static final String GOLD = "#d4a72c", SILVER = "#9aa4ad", BRONZE = "#b0723c";
 
     private final MedalsService medals;
@@ -40,6 +39,7 @@ abstract class MedalTable extends VerticalLayout {
     private final Span modeNote = new Span();
     private final FlexLayout tables = new FlexLayout();
     private final Div athleteTable = new Div();
+    private final H3 athletesTitle = new H3();
     private final Div nationTable = new Div();
 
     MedalTable(MedalsService medals, String circuit, String heading, String scope) {
@@ -69,7 +69,7 @@ abstract class MedalTable extends VerticalLayout {
         eastGermany.addValueChangeListener(e -> refreshNations());
         modeNote.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
 
-        H3 athletesTitle = new H3("Athletes");
+        athletesTitle.setText("Athletes");
         athletesTitle.addClassNames(LumoUtility.Margin.Bottom.XSMALL);
         VerticalLayout athletes = new VerticalLayout(athletesTitle, athleteTable);
         athletes.setPadding(false);
@@ -105,7 +105,8 @@ abstract class MedalTable extends VerticalLayout {
         athleteTable.removeAll();
         athleteTable.setWidthFull();
         athleteTable.add(rows.isEmpty() ? new Span("No medals.")
-                : grid(rows.stream().limit(LIMIT).toList(), true));
+                : grid(rows, true));
+        athletesTitle.setText("Athletes (" + rows.size() + ")");
         refreshNations();
     }
 
@@ -153,7 +154,12 @@ abstract class MedalTable extends VerticalLayout {
         grid.addColumn(m -> m.firstYear().equals(m.lastYear()) ? m.firstYear() : m.firstYear() + "–" + m.lastYear())
                 .setHeader("Years").setWidth("110px").setFlexGrow(0);
         grid.setItems(rows);
-        grid.setAllRowsVisible(true);
+        // every medallist; a long list scrolls in its own box
+        if (rows.size() > 40) {
+            grid.setHeight("1000px");
+        } else {
+            grid.setAllRowsVisible(true);
+        }
         return grid;
     }
 

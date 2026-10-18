@@ -77,6 +77,18 @@ class MedalsTest {
     }
 
     @Test
+    void everyIndividualMedallistIsListed() {
+        for (String circuit : List.of("WSC", "OWG")) {
+            int medallists = jdbc.queryForObject("""
+                    SELECT COUNT(DISTINCT r.athlete_id) FROM combined_results r
+                    JOIN competitions c ON c.id = r.competition_id
+                    WHERE c.circuit = ? AND r.rank BETWEEN 1 AND 3 AND r.athlete_id IS NOT NULL
+                    AND (c.format IS NULL OR c.format NOT LIKE 'Team%')""", Integer.class, circuit);
+            assertEquals(medallists, medals.athletes(circuit, null, false).size(), circuit);
+        }
+    }
+
+    @Test
     void withoutTeamMedals() {
         List<Medals> rows = medals.athletes("WSC", "M", false);
         assertTrue(rows.stream().allMatch(m -> m.total(false) > 0));
