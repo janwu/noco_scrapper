@@ -56,6 +56,9 @@ def row_identity_problem(row: dict, given_first: bool = False) -> Optional[str]:
     if re.search(r'\d|�', name):
         # 'BAUD Frederic 75' (the bib in the name column), 'CHURAV� Pavel' (a letter the PDF lost)
         return f"name holds a digit or a lost letter: {name!r}"
+    if re.match(r'(LAP|DNS|DNF|DSQ|DNQ|NPS|NSA)\s+(Lapped|Did|Disq|Not)\b', name):
+        # the legend under the list: 'LAP Lapped', 'NPS Not permitted to start'
+        return f"status legend, not an athlete: {name!r}"
     if re.search(r'[()]', name):
         # 'ARMBRUSTER Nathalie (F)': a second athlete next to 'ARMBRUSTER Nathalie'
         return f"name holds a bracket: {name!r}"

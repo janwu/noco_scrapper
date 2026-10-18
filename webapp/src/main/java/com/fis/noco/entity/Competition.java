@@ -77,18 +77,28 @@ public class Competition {
     public static final java.util.Set<Integer> OLYMPIC_CHAMPIONSHIPS = java.util.Set.of(
             1924, 1928, 1932, 1936, 1948, 1952, 1956, 1960, 1964, 1968, 1972, 1976, 1980);
 
-    /** "World Cup", "World Championships", or "Continental Cup", which was called "World Cup B" until 2007/08. */
+    /** World Championships and Olympic Games: events named by their year, not by a season. */
+    public static boolean isChampionship(String circuit) {
+        return "WSC".equals(circuit) || "OWG".equals(circuit);
+    }
+
+    /**
+     * "World Cup", "World Championships", "Olympic Winter Games", or "Continental Cup",
+     * which was called "World Cup B" until 2007/08.
+     */
     public String getCircuitLabel() {
         if ("WC".equals(circuit)) return "World Cup";
         if ("WSC".equals(circuit)) return "World Championships";
+        if ("OWG".equals(circuit)) return "Olympic Winter Games";
         return season != null && season.getStartYear() != null && season.getStartYear() < 2008
                 ? "World Cup B" : "Continental Cup";
     }
 
-    /** The label for a table column: "World Cup", "World Ch.", "Cont. Cup". */
+    /** The label for a table column: "World Cup", "World Ch.", "Olympics", "Cont. Cup". */
     public String getCircuitShortLabel() {
         if ("WC".equals(circuit)) return "World Cup";
         if ("WSC".equals(circuit)) return isOlympic() ? "World Ch. (OWG)" : "World Ch.";
+        if ("OWG".equals(circuit)) return isOlympic() ? "Olympics (WSC)" : "Olympics";
         return "Cont. Cup";
     }
 
@@ -98,9 +108,9 @@ public class Competition {
                 ? Integer.valueOf(competitionDate.substring(0, 4)) : null;
     }
 
-    /** World Championships held as the Olympic Winter Games (until 1980). */
+    /** Olympic competitions that were the World Championships as well (until 1980), in either circuit. */
     public boolean isOlympic() {
-        return "WSC".equals(circuit) && getYear() != null && OLYMPIC_CHAMPIONSHIPS.contains(getYear());
+        return isChampionship(circuit) && getYear() != null && OLYMPIC_CHAMPIONSHIPS.contains(getYear());
     }
 
     public String getDisplayLocation() {

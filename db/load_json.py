@@ -55,7 +55,7 @@ DB_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # The World Cup B (until 2007/08) is the Continental Cup under its old name: one circuit
 CIRCUIT_BY_DIR = {"fis_nk_pdfs": "WC", "fis_nk_coc_pdfs": "COC", "fis_nk_wcb_pdfs": "COC",
-                  "fis_nk_wsc_pdfs": "WSC"}
+                  "fis_nk_wsc_pdfs": "WSC", "fis_nk_owg_pdfs": "OWG"}
 JUMP_TABLE_BY_DOC_TYPE = {
     "RL": "jump_round_results",
     "RL1": "jump_round_results",
@@ -162,7 +162,7 @@ def file_meta(path: str, output_dir: str) -> Optional[dict]:
         return None
 
     gender = rel[-2] if rel[-2] in ("M", "W") else None
-    mixed = re.search(r"_(?:WC|COC|WSC)_A_X_|_X_(?:\d{4}NK)?\d{4}[A-Z0-9]+\.json$|Mixed", name)
+    mixed = re.search(r"_(?:WC|COC|WSC|OWG)_A_X_|_X_(?:\d{4}NK)?\d{4}[A-Z0-9]+\.json$|Mixed", name)
     if mixed:
         gender = "X"
 
@@ -383,9 +383,9 @@ class Build:
 # Reading
 # ─────────────────────────────────────────────────────────────────────────────
 
-def read_documents(output_dir: str, build: Build) -> Dict[Tuple[str, int], List[Tuple[dict, dict]]]:
+def read_documents(output_dir: str, build: Build) -> Dict[Tuple[str, str, int], List[Tuple[dict, dict]]]:
     """All JSON files grouped by competition (codex, season); one entry per PDF."""
-    by_comp: Dict[Tuple[str, int], List[Tuple[dict, dict]]] = defaultdict(list)
+    by_comp: Dict[Tuple[str, str, int], List[Tuple[dict, dict]]] = defaultdict(list)
     seen = set()
     for path in sorted(glob.glob(os.path.join(output_dir, "**", "*.json"), recursive=True)):
         meta = file_meta(path, output_dir)
@@ -408,7 +408,7 @@ def read_documents(output_dir: str, build: Build) -> Dict[Tuple[str, int], List[
         if not meta["doc_type"]:
             build.skipped_docs.append(("no doc_type", path))
             continue
-        by_comp[(meta["codex"], meta["season_start"])].append((meta, doc))
+        by_comp[(meta["circuit"], meta["codex"], meta["season_start"])].append((meta, doc))
     return by_comp
 
 
@@ -748,7 +748,7 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
                         for r in doc.get(key) or []]
                 rows += [(m, t.get("nation")) for t in doc.get("team_results") or [] for m in t.get("members") or []]
                 for r, nation in rows:
-                    if r.get("name") and nation and nation.upper() not in ("AIN", "OAR", "RPF", "FIS"):
+                    if r.get("name") and nation and nation.upper() not in ("AIN", "OAR", "RPF", "RSF", "ROC", "FIS"):
                         nations_of[words(r["name"])].add(nation.upper())
         for r in fdb_rows:
             if r["nation"] == "AIN":
@@ -850,7 +850,7 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
 NATION_LINEAGE = {code: group for group, codes in {
     "GER": ("FRG", "BRD", "GDR", "DDR", "GER"),
     "TCH": ("TCH", "CZE", "SVK"),
-    "SOV": ("SOV", "URS", "CIS", "GUS", "EUN", "RUS", "EST", "LAT", "LTU", "UKR", "BLR", "KAZ", "AIN", "RSF", "RPF", "OAR"),
+    "SOV": ("SOV", "URS", "CIS", "GUS", "EUN", "RUS", "EST", "LAT", "LTU", "UKR", "BLR", "KAZ", "AIN", "RSF", "RPF", "OAR", "ROC"),
     "YUG": ("YUG", "JUG", "SLO", "CRO", "SRB", "SCG", "BIH", "MKD"),
 }.items() for code in codes}
 
@@ -891,7 +891,7 @@ def nation_changes(by_comp: Dict, build: Build) -> None:
         if len(keys) < 2:
             continue
         # the last nation; 'AIN' only if there is no other (the FIS database of today)
-        nation = max(keys, key=lambda k: (k[1] not in ("AIN", "RSF", "RPF", "OAR"), last[k]))[1]
+        nation = max(keys, key=lambda k: (k[1] not in ("AIN", "RSF", "RPF", "OAR", "ROC"), last[k]))[1]
         spellings = {k[0] for k in keys}
         plain_ones = [n for n in spellings if plain(n)]
         if len(spellings) > 1 and len(plain_ones) != 1:
@@ -940,7 +940,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
         for nation in nations:
             build.names_by_words[(nation, frozenset(name_words(name)))].add(name)
 
-    for (codex, season_start), docs in sorted(by_comp.items(), key=lambda kv: (kv[0][1], kv[0][0])):
+    for (_, codex, season_start), docs in sorted(by_comp.items(), key=lambda kv: (kv[0][2], kv[0][1], kv[0][0])):
         comp = describe_competition(docs)
         comp["nations"] = names_with_nation(docs)
         circuits = {m["circuit"] for m, _ in docs}

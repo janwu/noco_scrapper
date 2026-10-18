@@ -85,6 +85,8 @@ CIRCUITS = {
     # every second year (and the Olympic Games until 1980, which were the World Championships too);
     # the calendar lists all of them whatever the season asked for
     "WSC": {"first_season": 1924, "output_dir": "fis_nk_wsc_pdfs", "name": "World Championships"},
+    # the Olympic Winter Games; until 1980 their competitions were the World Championships too
+    "OWG": {"first_season": 1924, "output_dir": "fis_nk_owg_pdfs", "name": "Olympic Winter Games"},
 }
 
 

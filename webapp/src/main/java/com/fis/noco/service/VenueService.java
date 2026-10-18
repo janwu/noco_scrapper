@@ -56,4 +56,8 @@ public class VenueService {
     public List<Competition> getChampionshipCompetitionsAtVenue(Long venueId) {
         return competitionRepository.findByVenueIdAndCircuit(venueId, "WSC");
     }
+
+    public List<Competition> getOlympicCompetitionsAtVenue(Long venueId) {
+        return competitionRepository.findByVenueIdAndCircuit(venueId, "OWG");
+    }
 }

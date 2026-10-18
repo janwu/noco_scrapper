@@ -39,6 +39,8 @@ public class RecordsService {
             "FRG", "GER", "BRD", "GER", "DDR", "GDR",
             "YUG", "SLO", "JUG", "SLO", "GUS", "CIS", "EUN", "CIS", "URS", "SOV");
 
+    static final java.util.Set<String> NEUTRAL = java.util.Set.of("AIN", "RSF", "ROC", "OAR", "RPF");
+
     public record Count(Long athleteId, String name, String nation, int wins, int podiums, int top10,
                         String firstWin, String lastWin) {
     }
@@ -123,8 +125,9 @@ public class RecordsService {
     }
 
     static String nationOf(String printed, String athleteNation, NationMode mode) {
-        // 'AIN' is how the FIS database of today gives Russians and Belarusians of past years
-        boolean neutral = "AIN".equalsIgnoreCase(printed) && athleteNation != null;
+        // 'AIN' is how the FIS database of today gives Russians and Belarusians of past years;
+        // RSF, ROC, OAR, RPF the names Russia competed under at times (2018-2022)
+        boolean neutral = printed != null && NEUTRAL.contains(printed.toUpperCase()) && athleteNation != null;
         String nation = (mode == NationMode.ATHLETE || neutral) && athleteNation != null ? athleteNation : printed;
         if (nation == null) return null;
         nation = nation.toUpperCase();

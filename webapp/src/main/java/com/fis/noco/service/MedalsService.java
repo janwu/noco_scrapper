@@ -14,8 +14,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Medal tables of the World Championships (with the Olympic Games until 1980):
- * gold, silver and bronze of athletes and nations, individual and team.
+ * Medal tables of the World Championships (WSC, with the Olympic Games until 1980)
+ * and of the Olympic Winter Games (OWG): gold, silver and bronze of athletes and
+ * nations, individual and team.
  *
  * A team medal counts once for its nation and once for each athlete of the team.
  * Nations that no longer exist are counted as in {@link RecordsService.NationMode}.
@@ -50,23 +51,23 @@ public class MedalsService {
     }
 
     /** gender "M", "W", or null for all (mixed teams only then). */
-    private List<Medal> individual(String gender) {
+    private List<Medal> individual(String circuit, String gender) {
         return jdbc.query("""
                 SELECT a.id, COALESCE(a.display_name, a.full_name), a.nationality, UPPER(r.raw_nation),
                        r.rank, c.competition_date
                 FROM combined_results r
                 JOIN competitions c ON c.id = r.competition_id
                 JOIN athletes a ON a.id = r.athlete_id
-                WHERE c.circuit = 'WSC' AND r.rank BETWEEN 1 AND 3
+                WHERE c.circuit = ? AND r.rank BETWEEN 1 AND 3
                   AND (c.format IS NULL OR c.format NOT LIKE 'Team%')
                 """ + GENDER,
                 (rs, i) -> new Medal(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4),
                         rs.getInt(5), false, rs.getString(6)),
-                gender, gender);
+                circuit, gender, gender);
     }
 
     /** Team medals, one line per athlete of the team (athlete null for a team without its athletes). */
-    private List<Object[]> teamLines(String gender) {
+    private List<Object[]> teamLines(String circuit, String gender) {
         return jdbc.query("""
                 SELECT t.id, UPPER(t.nation), t.rank, c.competition_date,
                        a.id, COALESCE(a.display_name, a.full_name), a.nationality
@@ -74,17 +75,17 @@ public class MedalsService {
                 JOIN competitions c ON c.id = t.competition_id
                 LEFT JOIN team_members m ON m.team_result_id = t.id
                 LEFT JOIN athletes a ON a.id = m.athlete_id
-                WHERE c.circuit = 'WSC' AND t.rank BETWEEN 1 AND 3
+                WHERE c.circuit = ? AND t.rank BETWEEN 1 AND 3
                 """ + GENDER,
                 (rs, i) -> new Object[]{rs.getLong(1), rs.getString(2), rs.getInt(3), rs.getString(4),
                         rs.getObject(5) == null ? null : rs.getLong(5), rs.getString(6), rs.getString(7)},
-                gender, gender);
+                circuit, gender, gender);
     }
 
     /** Every athlete with a medal, best first (gold, silver, bronze; with or without team medals). */
-    public List<Medals> athletes(String gender, boolean teams) {
-        List<Medal> medals = new ArrayList<>(individual(gender));
-        for (Object[] line : teamLines(gender)) {
+    public List<Medals> athletes(String circuit, String gender, boolean teams) {
+        List<Medal> medals = new ArrayList<>(individual(circuit, gender));
+        for (Object[] line : teamLines(circuit, gender)) {
             if (line[4] != null) {
                 medals.add(new Medal((Long) line[4], (String) line[5], (String) line[6], (String) line[1],
                         (Integer) line[2], true, (String) line[3]));
@@ -98,14 +99,15 @@ public class MedalsService {
     }
 
     /** Medals of each nation; a team medal once per team. */
-    public List<Medals> nations(String gender, NationMode mode, boolean eastGermanyWithGermany, boolean teams) {
+    public List<Medals> nations(String circuit, String gender, NationMode mode, boolean eastGermanyWithGermany,
+                                boolean teams) {
         List<Medal> medals = new ArrayList<>();
-        for (Medal m : individual(gender)) {
+        for (Medal m : individual(circuit, gender)) {
             medals.add(new Medal(null, null, null, nation(m.printedNation(), m.athleteNation(), mode,
                     eastGermanyWithGermany), m.rank(), false, m.date()));
         }
         // a team: its printed nation, or (athlete's nation) the nation most of its athletes ended with
-        Map<Long, List<Object[]>> byTeam = teamLines(gender).stream()
+        Map<Long, List<Object[]>> byTeam = teamLines(circuit, gender).stream()
                 .collect(Collectors.groupingBy(l -> (Long) l[0], LinkedHashMap::new, Collectors.toList()));
         for (List<Object[]> lines : byTeam.values()) {
             Object[] first = lines.get(0);

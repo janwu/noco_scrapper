@@ -3,6 +3,7 @@ fis_nk_pdfs/
 fis_nk_coc_pdfs/
 fis_nk_wcb_pdfs/
 fis_nk_wsc_pdfs/
+fis_nk_owg_pdfs/
 *.zip
 
 # Derived data: parsed JSON and the database built from it

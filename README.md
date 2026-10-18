@@ -96,6 +96,22 @@ athletes), also for the World Cup and World Cup B where no team PDF can be read.
 Teams of two nations run as 'FIS' in the database; their athletes keep their own
 nation.
 
+## Olympic Winter Games (1924 – 2026)
+
+Like the World Championships, from the FIS calendar of category OWG (PDFs from 2002):
+
+```
+python fis_nk_pdf_scraper.py --circuit OWG --seasons 2002 2006 … 2026
+python fis_nk_fisdb.py --circuit OWG
+```
+
+Circuit `OWG` in the database. Until 1980 the Olympic competitions were the World
+Championships as well; FIS lists them in both calendars and so does the database:
+the same competition once as `OWG`, once as `WSC` (same codex: competitions are
+keyed by circuit, codex and season), and the web app notes it on both. The venue
+is the one of the Nordic combined (Torino → Pragelato, Beijing → Zhangjiakou, …);
+Russians of 2018–2022 (OAR, ROC) count for Russia like AIN and RSF.
+
 ## World Cup B (2000/01 – 2007/08)
 
 The second league was called World Cup B until 2008/09, when it became the

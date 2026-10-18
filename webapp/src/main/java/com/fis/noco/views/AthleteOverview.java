@@ -36,7 +36,7 @@ import java.util.function.Function;
 final class AthleteOverview extends VerticalLayout {
 
     private static final Map<String, String> SCOPES = Map.of("World Cup", "WC", "Continental Cup", "COC",
-            "World Championships", "WSC");
+            "World Championships", "WSC", "Olympic Games", "OWG");
 
     private final AthleteProfile profile;
     private final Function<String, Component> careerBlocks;
@@ -56,11 +56,15 @@ final class AthleteOverview extends VerticalLayout {
                 || !profile.forCircuit("WC").venues().isEmpty();
         // World Championships for an athlete who was there; first for one who was in no cup
         boolean championships = profile.forCircuit("WSC").bestResult().isPresent();
+        boolean olympics = profile.forCircuit("OWG").bestResult().isPresent();
         boolean cup = worldCup || profile.forCircuit("COC").bestResult().isPresent()
                 || !profile.forCircuit("COC").venues().isEmpty();
-        String first = worldCup ? "World Cup" : cup || !championships ? "Continental Cup" : "World Championships";
-        scope.setItems(championships ? List.of("World Cup", "Continental Cup", "World Championships")
-                : List.of("World Cup", "Continental Cup"));
+        String first = worldCup ? "World Cup" : cup || !(championships || olympics) ? "Continental Cup"
+                : championships ? "World Championships" : "Olympic Games";
+        List<String> scopes = new java.util.ArrayList<>(List.of("World Cup", "Continental Cup"));
+        if (championships) scopes.add("World Championships");
+        if (olympics) scopes.add("Olympic Games");
+        scope.setItems(scopes);
         scope.setValue(first);
         scope.addValueChangeListener(e -> show(SCOPES.get(e.getValue())));
         HorizontalLayout scopeRow = new HorizontalLayout(new Span("Show: "), scope);

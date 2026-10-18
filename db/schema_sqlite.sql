@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS competitions (
     event_name       TEXT
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_competitions_codex_season ON competitions(fis_codex, season_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_competitions_codex_season ON competitions(circuit, fis_codex, season_id);
 CREATE INDEX IF NOT EXISTS idx_competitions_season   ON competitions(season_id);
 CREATE INDEX IF NOT EXISTS idx_competitions_event    ON competitions(event_id);
 CREATE INDEX IF NOT EXISTS idx_competitions_date     ON competitions(competition_date);

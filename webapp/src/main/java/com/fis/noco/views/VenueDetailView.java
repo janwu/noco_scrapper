@@ -75,6 +75,7 @@ public class VenueDetailView extends VerticalLayout implements HasUrlParameter<L
         List<Competition> wcComps = venueService.getWorldCupCompetitionsAtVenue(venue.getId());
         List<Competition> cocComps = venueService.getContinentalCupCompetitionsAtVenue(venue.getId());
         List<Competition> wscComps = venueService.getChampionshipCompetitionsAtVenue(venue.getId());
+        List<Competition> owgComps = venueService.getOlympicCompetitionsAtVenue(venue.getId());
 
         TabSheet tabSheet = new TabSheet();
         tabSheet.setSizeFull();
@@ -83,6 +84,9 @@ public class VenueDetailView extends VerticalLayout implements HasUrlParameter<L
         tabSheet.add("Continental Cup (" + cocComps.size() + ")", createCompetitionsGrid(cocComps));
         if (!wscComps.isEmpty()) {
             tabSheet.add("World Championships (" + wscComps.size() + ")", createCompetitionsGrid(wscComps));
+        }
+        if (!owgComps.isEmpty()) {
+            tabSheet.add("Olympic Games (" + owgComps.size() + ")", createCompetitionsGrid(owgComps));
         }
 
         add(backButton, header, infoRow, tabSheet);

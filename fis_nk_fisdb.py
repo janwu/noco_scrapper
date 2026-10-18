@@ -48,6 +48,9 @@ CIRCUITS = {
     # every World Championships (and Olympic Games until 1980); PDFs from 2003
     "WSC": {"seasons": [*range(1924, 1940), *range(1948, 1983, 2), 1984, *range(1985, 2026, 2)],
             "root": Path(__file__).parent / "fis_nk_wsc_pdfs"},
+    # the Olympic Winter Games (every four years, none 1940 and 1944)
+    "OWG": {"seasons": [1924, 1928, 1932, 1936, *range(1948, 1993, 4), *range(1994, 2027, 4)],
+            "root": Path(__file__).parent / "fis_nk_owg_pdfs"},
 }
 SEASONS = CIRCUITS["WCB"]["seasons"]
 

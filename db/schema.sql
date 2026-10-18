@@ -106,7 +106,7 @@ CREATE TABLE competitions (
     season_id        INT          NOT NULL REFERENCES seasons(id),
     venue_id         INT          REFERENCES venues(id),   -- resolved canonical venue
     fis_codex        VARCHAR(20),                 -- from filename, e.g. "4139" (NOT globally unique — FIS reuses codex numbers across seasons)
-    UNIQUE (fis_codex, season_id),
+    UNIQUE (circuit, fis_codex, season_id),       -- the Olympic Games until 1980 are World Championships too: same codex
     circuit          VARCHAR(10)  NOT NULL,       -- 'WC' | 'COC'
     gender           CHAR(1),                     -- 'M' | 'W'
     competition_date DATE,

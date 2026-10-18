@@ -97,6 +97,7 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         List<CombinedResult> wcResults = athleteService.getWorldCupResults(athlete.getId());
         List<CombinedResult> cocResults = athleteService.getContinentalCupResults(athlete.getId());
         List<CombinedResult> wscResults = athleteService.getChampionshipResults(athlete.getId());
+        List<CombinedResult> owgResults = athleteService.getOlympicResults(athlete.getId());
 
         List<TeamMember> teamStarts = athleteService.getTeamStarts(athlete.getId());
         List<JumpResult> jumps = athleteService.getJumps(athlete.getId());
@@ -107,7 +108,8 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         TabSheet tabSheet = new TabSheet();
         tabSheet.setSizeFull();
         tabSheet.add("Overview", new AthleteOverview(profile,
-                circuit -> careerBlocks(athlete, circuit, wcResults, cocResults, wscResults, teamStarts, jumps)));
+                circuit -> careerBlocks(athlete, circuit, wcResults, cocResults, wscResults, owgResults,
+                        teamStarts, jumps)));
         if (!wcResults.isEmpty()) {
             tabSheet.add("Form", new AthleteFormPanel(athleteService, athlete, wcResults));
         }
@@ -115,6 +117,9 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         tabSheet.add("Continental Cup (" + cocResults.size() + ")", createFilteredResultsPanel(cocResults));
         if (!wscResults.isEmpty()) {
             tabSheet.add("World Championships (" + wscResults.size() + ")", createFilteredResultsPanel(wscResults));
+        }
+        if (!owgResults.isEmpty()) {
+            tabSheet.add("Olympic Games (" + owgResults.size() + ")", createFilteredResultsPanel(owgResults));
         }
         if (!teamStarts.isEmpty()) {
             tabSheet.add("Team (" + teamStarts.size() + ")", createTeamStartsPanel(teamStarts, athlete));
@@ -127,9 +132,10 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         expand(tabSheet);
     }
 
-    /** The career statistics of a circuit ("WC", "COC", "WSC"; null = all) for the overview tab. */
+    /** The career statistics of a circuit ("WC", "COC", "WSC", "OWG"; null = all) for the overview tab. */
     private HorizontalLayout careerBlocks(Athlete athlete, String circuit, List<CombinedResult> wcResults,
                                           List<CombinedResult> cocResults, List<CombinedResult> wscResults,
+                                          List<CombinedResult> owgResults,
                                           List<TeamMember> teamStarts, List<JumpResult> jumps) {
         HorizontalLayout row = new HorizontalLayout();
         row.setSpacing(true);
@@ -143,10 +149,14 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         if (circuit == null || circuit.equals("COC")) {
             row.add(buildStatsBlock("Continental Cup", cocResults, false, athlete.getBirthDate()));
         }
-        if ((circuit == null || circuit.equals("WSC")) && (!wscResults.isEmpty() || teamStarts.stream()
-                .anyMatch(m -> "WSC".equals(m.getTeamResult().getCompetition().getCircuit())))) {
-            row.add(buildMedalBlock(wscResults, teamStarts.stream()
-                    .filter(m -> "WSC".equals(m.getTeamResult().getCompetition().getCircuit())).toList()));
+        for (String championship : List.of("WSC", "OWG")) {
+            List<CombinedResult> individual = championship.equals("WSC") ? wscResults : owgResults;
+            List<TeamMember> teams = teamStarts.stream()
+                    .filter(m -> championship.equals(m.getTeamResult().getCompetition().getCircuit())).toList();
+            if ((circuit == null || circuit.equals(championship)) && (!individual.isEmpty() || !teams.isEmpty())) {
+                row.add(buildMedalBlock(championship.equals("WSC") ? "World Championships" : "Olympic Games",
+                        individual, teams));
+            }
         }
         List<TeamMember> teams = teamStarts.stream().filter(m -> circuit == null
                 || circuit.equals(m.getTeamResult().getCompetition().getCircuit())).toList();
@@ -228,7 +238,7 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
     }
 
     /** Medals at World Championships (and the Olympic Games until 1980), individual and team. */
-    private VerticalLayout buildMedalBlock(List<CombinedResult> individual, List<TeamMember> teams) {
+    private VerticalLayout buildMedalBlock(String title, List<CombinedResult> individual, List<TeamMember> teams) {
         VerticalLayout block = new VerticalLayout();
         block.setPadding(true);
         block.setSpacing(false);
@@ -237,7 +247,7 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
                 .set("border", "1px solid var(--lumo-contrast-20pct)")
                 .set("border-radius", "var(--lumo-border-radius-m)")
                 .set("background", "var(--lumo-contrast-5pct)");
-        H4 header = new H4("World Championships");
+        H4 header = new H4(title);
         header.addClassNames(LumoUtility.Margin.Bottom.XSMALL, LumoUtility.Margin.Top.NONE);
         block.add(header);
 
@@ -270,6 +280,7 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         long top3  = starts.stream().filter(m -> rankOf(m) != null && rankOf(m) <= 3).count();
         long wc    = starts.stream().filter(m -> "WC".equals(m.getTeamResult().getCompetition().getCircuit())).count();
         long wsc   = starts.stream().filter(m -> "WSC".equals(m.getTeamResult().getCompetition().getCircuit())).count();
+        long owg   = starts.stream().filter(m -> "OWG".equals(m.getTeamResult().getCompetition().getCircuit())).count();
 
         VerticalLayout block = new VerticalLayout();
         block.setPadding(true);
@@ -290,9 +301,12 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         stats.add(statBadge("Wins", wins));
         stats.add(statBadge("Top 3", top3));
         stats.add(statBadge("World Cup", wc));
-        stats.add(statBadge("Cont. Cup", starts.size() - wc - wsc));
+        stats.add(statBadge("Cont. Cup", starts.size() - wc - wsc - owg));
         if (wsc > 0) {
             stats.add(statBadge("World Ch.", wsc));
+        }
+        if (owg > 0) {
+            stats.add(statBadge("Olympics", owg));
         }
         block.add(stats);
         return block;

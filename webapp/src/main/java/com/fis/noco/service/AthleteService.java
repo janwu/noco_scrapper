@@ -61,7 +61,7 @@ public class AthleteService {
                     new Integer[]{toInt(row[1]), toInt(row[2]), toInt(row[3])});
         }
         List<AthleteProfile.RatedResult> rated = new ArrayList<>();
-        for (String circuit : List.of("WC", "COC", "WSC")) {
+        for (String circuit : List.of("WC", "COC", "WSC", "OWG")) {
             for (CombinedResult r : combinedResultRepository.findByAthleteIdAndCircuit(athleteId, circuit)) {
                 Integer[] f = fields.getOrDefault(r.getCompetition().getId(), new Integer[3]);
                 rated.add(new AthleteProfile.RatedResult(r, f[0], f[1], f[2]));
@@ -124,5 +124,10 @@ public class AthleteService {
     /** Individual results at World Championships (and the Olympic Games until 1980). */
     public List<CombinedResult> getChampionshipResults(Long athleteId) {
         return combinedResultRepository.findByAthleteIdAndCircuit(athleteId, "WSC");
+    }
+
+    /** Individual results at the Olympic Winter Games. */
+    public List<CombinedResult> getOlympicResults(Long athleteId) {
+        return combinedResultRepository.findByAthleteIdAndCircuit(athleteId, "OWG");
     }
 }
