@@ -42,7 +42,8 @@ from fis_parser.utils import team_name
 
 RESULTS_URL = "https://www.fis-ski.com/DB/general/results.html?sectorcode=NK&raceid={raceid}"
 CIRCUITS = {
-    "WCB": {"seasons": range(2001, 2009), "root": Path(__file__).parent / "fis_nk_wcb_pdfs"},
+    # 1990/91 - 1999/2000: the podium only (the FIS database has no more), 2000/01 - 2007/08: all
+    "WCB": {"seasons": range(1991, 2009), "root": Path(__file__).parent / "fis_nk_wcb_pdfs"},
     # the World Cup has result PDFs from 2001/02 (fis_nk_scraper.py)
     "WC": {"seasons": range(1984, 2002), "root": Path(__file__).parent / "fis_nk_pdfs"},
     # every World Championships (and Olympic Games until 1980); PDFs from 2003

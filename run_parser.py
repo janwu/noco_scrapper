@@ -202,7 +202,9 @@ def main() -> int:
     copied = 0
     for d in args.input_dirs:
         base = Path(d)
-        for src in sorted([*base.rglob('*FDB.json'), *base.rglob('*OLY.json')]) if base.exists() else []:
+        found = [*base.rglob('*FDB.json'), *base.rglob('*OLY.json'), *base.rglob('*WBL.json')] \
+            if base.exists() else []
+        for src in sorted(found):
             if '_raw' in src.parts:
                 continue
             dest = build_json_path(src, args.input_dirs, output_dir)

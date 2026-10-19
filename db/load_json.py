@@ -55,6 +55,9 @@ log = logging.getLogger("loader")
 DB_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # The World Cup B (until 2007/08) is the Continental Cup under its old name: one circuit
+# full result lists of other sources than FIS, taken where no FIS result list was read:
+# Olympedia (OLY, fis_nk_olympedia.py) and weltcup-b.org (WBL, fis_nk_wcb_1990s.py)
+FULL_LISTS = ("OLY", "WBL")
 CIRCUIT_BY_DIR = {"fis_nk_pdfs": "WC", "fis_nk_coc_pdfs": "COC", "fis_nk_wcb_pdfs": "COC",
                   "fis_nk_wsc_pdfs": "WSC", "fis_nk_owg_pdfs": "OWG"}
 JUMP_TABLE_BY_DOC_TYPE = {
@@ -259,6 +262,7 @@ class Build:
         self.official_athletes: set = set()                       # (name, nation) after aliases
         self.fdb_used = 0                                         # competitions ranked from the FIS database
         self.oly_used = 0                                         # Olympic results from Olympedia
+        self.wbl_used = 0                                         # World Cup B lists of weltcup-b.org (1990s)
         self.olympedia_names = 0                                  # 'HAUG Th' rows given 'HAUG Thorleif'
         self.fdb_disagree: list = []                              # (file, top 3 of the PDF, top 3 of FIS)
         # names with native letters for the web app; the stored name stays as FIS writes it
@@ -573,7 +577,7 @@ def add_results(build: Build, comp: dict, comp_id: int, doc_id: int, meta: dict,
     if doc.get("parse_errors"):
         build.skipped_docs.append((f"{doc_type} failed validation: {doc['parse_errors'][0]}", source))
         return
-    if doc_type in ("ROF", "FDB", "OLY"):
+    if doc_type in ("ROF", "FDB", *FULL_LISTS):
         if comp["team"]:
             add_team_results(build, comp, comp_id, doc_id, doc, source)
             return
@@ -1012,10 +1016,40 @@ def nation_changes(by_comp: Dict, build: Build) -> None:
         log.info("Nations that split or united: %d names given the athlete's last nation", added)
 
 
+def external_nations(by_comp: Dict, build: Build) -> None:
+    """
+    The organisers' lists of weltcup-b.org (WBL) print a wrong nation now and then
+    ('CECON, Andrea JPN'): a row takes the nation the athlete has in every FIS list,
+    if that is one and another.
+    """
+    nations = defaultdict(set)
+    for docs in by_comp.values():
+        for meta, doc in docs:
+            if meta["doc_type"] in FULL_LISTS or doc.get("parse_errors"):
+                continue
+            for key in ("combined_results", "jump_rounds", "xc_results"):
+                for r in doc.get(key) or []:
+                    if r.get("name") and r.get("nation"):
+                        nations[clean(r["name"])].add(r["nation"].upper())
+    fixed = 0
+    for docs in by_comp.values():
+        for meta, doc in docs:
+            if meta["doc_type"] != "WBL":
+                continue
+            for r in doc.get("combined_results") or []:
+                known = nations.get(clean(r.get("name")), set())
+                if len(known) == 1 and r.get("nation") not in known:
+                    r["nation"] = next(iter(known))
+                    fixed += 1
+    if fixed:
+        log.info("weltcup-b.org: %d rows take the nation of the FIS lists", fixed)
+
+
 def build_database(output_dir: str, build: Build, standings_dir: Optional[str] = None) -> None:
     by_comp = read_documents(output_dir, build)
     log.info("Read %d documents for %d competitions", sum(map(len, by_comp.values())), len(by_comp))
     fis_spelling(by_comp, build)
+    external_nations(by_comp, build)
     olympedia_names(by_comp, build)
     nation_changes(by_comp, build)
 
@@ -1023,7 +1057,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
         for name, nations in names_with_nation(docs).items():
             build.nations_by_name[name] |= nations
         for meta, doc in docs:
-            if not doc.get("parse_errors") and meta["doc_type"] in ("ROF", "FDB", "OLY", "RL", "RL1", "RLQ", "PCR"):
+            if not doc.get("parse_errors") and meta["doc_type"] in ("ROF", "FDB", *FULL_LISTS, "RL", "RL1", "RLQ", "PCR"):
                 rows = [dict(m, nation=m.get("nation") or t.get("nation"))
                         for t in doc.get("team_results") or [] for m in t.get("members") or []] \
                     + (doc.get("combined_results") or []) + (doc.get("jump_rounds") or [])
@@ -1031,7 +1065,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
                     if r.get("name") and r.get("nation") and not row_identity_problem(r):
                         key = (clean(r["name"]), r["nation"].upper())
                         build.official_athletes.add(build.athlete_aliases.get(key, key))
-            if meta["doc_type"] in ("ROF", "FDB", "OLY") and not doc.get("parse_errors") \
+            if meta["doc_type"] in ("ROF", "FDB", *FULL_LISTS) and not doc.get("parse_errors") \
                     and not meta["team"] and not is_team_discipline(doc.get("discipline")):
                 build.result_nations.update(
                     r["nation"].upper() for r in doc.get("combined_results") or []
@@ -1082,16 +1116,20 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
                         build.fdb_disagree.append((meta["basename"], pdf_top, fdb_top))
                     build.skipped_docs.append(("FIS ranking: the result list was read", meta["basename"]))
                     continue
-                if any(m["doc_type"] == "OLY" and not d.get("parse_errors") for m, d in docs):
-                    build.skipped_docs.append(("FIS ranking: Olympedia has the full result", meta["basename"]))
+                if any(m["doc_type"] in FULL_LISTS and not d.get("parse_errors") for m, d in docs):
+                    build.skipped_docs.append(("FIS ranking: a full list of another source", meta["basename"]))
                     continue
                 build.fdb_used += 1
-            if meta["doc_type"] == "OLY":
-                # Olympedia (Olympic Games 1924-1998): the full result, where no result list was read
+            if meta["doc_type"] in FULL_LISTS:
+                # Olympedia (Olympic Games 1924-1998), weltcup-b.org (World Cup B of the 1990s):
+                # the full result, where no result list of FIS was read
                 if any(m["doc_type"] == "ROF" and not d.get("parse_errors") for m, d in docs):
-                    build.skipped_docs.append(("Olympedia: the result list was read", meta["basename"]))
+                    build.skipped_docs.append((f"{meta['doc_type']}: the result list was read", meta["basename"]))
                     continue
-                build.oly_used += 1
+                if meta["doc_type"] == "OLY":
+                    build.oly_used += 1
+                else:
+                    build.wbl_used += 1
             if meta["doc_type"] == "RL1" and any(m["doc_type"] == "RL" for m, _ in docs):
                 build.skipped_docs.append(("first round only, the RL holds both", meta["basename"]))
                 continue
@@ -1274,6 +1312,8 @@ def report(build: Build, verbose: bool) -> None:
         log.info("Competitions ranked from the FIS database (result list not readable): %d", build.fdb_used)
     if build.oly_used:
         log.info("Olympic competitions from Olympedia (no result list read): %d", build.oly_used)
+    if build.wbl_used:
+        log.info("World Cup B competitions of the 1990s from weltcup-b.org: %d", build.wbl_used)
     if build.olympedia_names:
         log.info("Names with initials completed from Olympedia: %d", build.olympedia_names)
     for name, pdf_top, fdb_top in build.fdb_disagree:

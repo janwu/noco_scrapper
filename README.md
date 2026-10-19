@@ -134,6 +134,28 @@ from Olympedia, else from the FIS database; and a name with initials in the FIS
 database of those years takes the full name of the one Olympian of that nation and
 surname whose given names start with them (`olympedia_names`) — in every list.
 
+## World Cup B of the 1990s (1990/91 – 1999/2000)
+
+The FIS database has the World Cup B from 1990/91 — the podium of each competition
+only, no PDFs. `fis_nk_fisdb.py --circuit WCB` stores these rankings with the later
+ones. weltcup-b.org has the full lists of twelve competitions of 1996/97 –
+1999/2000 (Klingenthal, Lake Placid, Zakopane, Reit im Winkl), from the organisers
+in several layouts:
+
+```
+python fis_nk_fisdb.py --circuit WCB --seasons 1991 1992 … 2000
+python fis_nk_wcb_1990s.py            # weltcup-b.org lists → …WBL.json next to the FIS ranking
+python run_parser.py --workers 7 --errors-only
+python db/load_json.py --sqlite db/noco.db
+```
+
+A list is matched to its FIS competition by place and date and checked against the
+FIS podium (it is in its `warnings`). `load_json.py` takes it like an Olympedia
+result (`FULL_LISTS`) and gives an athlete whose nation the organiser printed wrong
+('CECON, Andrea JPN') the nation of the FIS lists. Two lists are not loaded: the
+Zakopane PDF of 1997 is a picture, and the "Zusatzwettkampf" of Klingenthal on
+13 March 1999 is no competition of the FIS calendar.
+
 ## World Cup B (2000/01 – 2007/08)
 
 The second league was called World Cup B until 2008/09, when it became the
