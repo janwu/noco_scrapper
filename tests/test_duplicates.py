@@ -28,6 +28,10 @@ class DuplicatesTest(unittest.TestCase):
         self.assertEqual(self.found(("SCHMID Jan", "SUI"), ("SCHMID Jan", "NOR")),
                          [("SCHMID Jan", "SCHMID Jan", "SUI / NOR")])
 
+    def test_given_name_spelled_another_way(self):
+        self.assertEqual(len(self.found(("SPILLANE John", "USA"), ("SPILLANE Johnny", "USA"))), 1)
+        self.assertEqual(len(self.found(("DUNDUKOV Andrej", "GUS"), ("DUNDUKOV Andrey", "EUN"))), 1)
+
     def test_different_people(self):
         self.assertEqual(self.found(("OFTEBRO Jens Luraas", "NOR"), ("OFTEBRO Einar Luraas", "NOR")), [])
         self.assertEqual(self.found(("KASAI Yuna", "JPN"), ("KASAI Haruka", "JPN")), [])

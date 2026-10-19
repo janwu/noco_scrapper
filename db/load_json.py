@@ -29,6 +29,7 @@ but its rows are not loaded.
 
 import argparse
 import csv
+import difflib
 import glob
 import json
 import logging
@@ -257,6 +258,8 @@ class Build:
         # trial rounds link to these, they do not add athletes of their own
         self.official_athletes: set = set()                       # (name, nation) after aliases
         self.fdb_used = 0                                         # competitions ranked from the FIS database
+        self.oly_used = 0                                         # Olympic results from Olympedia
+        self.olympedia_names = 0                                  # 'HAUG Th' rows given 'HAUG Thorleif'
         self.fdb_disagree: list = []                              # (file, top 3 of the PDF, top 3 of FIS)
         # names with native letters for the web app; the stored name stays as FIS writes it
         self.athlete_display: Dict[Tuple[str, str], str] = {}
@@ -570,7 +573,7 @@ def add_results(build: Build, comp: dict, comp_id: int, doc_id: int, meta: dict,
     if doc.get("parse_errors"):
         build.skipped_docs.append((f"{doc_type} failed validation: {doc['parse_errors'][0]}", source))
         return
-    if doc_type in ("ROF", "FDB"):
+    if doc_type in ("ROF", "FDB", "OLY"):
         if comp["team"]:
             add_team_results(build, comp, comp_id, doc_id, doc, source)
             return
@@ -782,9 +785,12 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
                         t["nation"] = "RUS" if name.startswith("russia") else \
                             "BLR" if name.startswith("belarus") else "AIN"
     resolve_ain()
-    every = defaultdict(set)                  # nation → FIS names, all rankings
+    # FIS names of all rankings, by nation and the words of the name, and by nation,
+    # surname and the start of the given name (looked up for every row: an index)
+    by_words, by_surname = defaultdict(set), defaultdict(set)
     for r in fdb_rows:
-        every[r["nation"]].add(r["name"])
+        by_words[(r["nation"], words(r["name"]))].add(r["name"])
+        by_surname[(r["nation"], _fold(_surname(r["name"])), _fold(_given(r["name"]))[:2])].add(r["name"])
     fixed = 0
     for docs in by_comp.values():
         if not any(meta.get("source_dir") == "fis_nk_wcb_pdfs" for meta, _ in docs):
@@ -828,10 +834,9 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
                     # Torkild Aam') or, with the same surname, the same start of the given name
                     w = words(name)
                     given = _fold(_given(name))[:2]
-                    hits = {n for n in every.get(nation, ()) if words(n) == w}
+                    hits = by_words.get((nation, w), set())
                     if not hits:
-                        hits = {n for n in every.get(nation, ()) if _fold(_surname(n)) == surname
-                                and _fold(_given(n))[:2] == given}
+                        hits = by_surname.get((nation, surname, given), set())
                 if len(hits) == 1:
                     fis_name = next(iter(hits))
                     if fis_name != r.get("name"):
@@ -843,6 +848,98 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
     resolve_ain()
     if fixed:
         log.info("World Cup B: %d rows take the FIS spelling of the name", fixed)
+
+
+def _split_initials(name: str):
+    """'NILSSON A.H.' → ('NILSSON', ['A', 'H']); 'HAUG Th' → ('HAUG', ['Th']); a full name → None."""
+    words = (name or "").split()
+    surname = []
+    while words and words[0].isupper() and "." not in words[0] and len(words[0]) > 1:
+        surname.append(words.pop(0))
+    given = " ".join(words)
+    tokens = [t for t in re.split(r"[\s.\-]+", given) if t]
+    if not surname or not tokens or any(len(t) > 2 for t in tokens):
+        return None
+    return " ".join(surname), tokens
+
+
+def olympedia_names(by_comp: Dict, build: Build) -> None:
+    """
+    The early FIS database gives many athletes with initials only ('HAUG Th',
+    'GRÖTTUMSBRAATEN J.', 'NILSSON A.H.'); Olympedia (doc type OLY) has the full name
+    of every Olympian ('HAUG Thorleif', 'NILSSON Axel-Herman').  A name with initials
+    takes the full name of the one Olympian of the same nation (lineage) and surname
+    whose given names start with these initials — in every list, also of World
+    Championships without Olympians.
+    """
+    # Olympedia writes names its way ('BREDESEN Trond Arne', 'ŠMEJC Petr'): the one FIS
+    # spelling of the same letters and nation (lineage) is taken where there is one
+    def lineage(nation: str) -> str:
+        return NATION_LINEAGE.get(nation.upper(), nation.upper())
+
+    fis_names = defaultdict(set)                      # (folded name, lineage) → FIS spellings
+    for docs in by_comp.values():
+        for meta, doc in docs:
+            if meta["doc_type"] == "OLY":
+                continue
+            rows = [(r, r.get("nation")) for key in ("combined_results", "jump_rounds", "xc_results")
+                    for r in doc.get(key) or []]
+            rows += [(m, t.get("nation")) for t in doc.get("team_results") or [] for m in t.get("members") or []]
+            for r, nation in rows:
+                name = clean(r.get("name"))
+                if name and nation and name.split()[0].isupper() and _split_initials(name) is None:
+                    fis_names[(_fold(name), lineage(nation))].add(name)
+    for docs in by_comp.values():
+        for meta, doc in docs:
+            if meta["doc_type"] != "OLY":
+                continue
+            rows = [(r, r.get("nation")) for r in doc.get("combined_results") or []]
+            rows += [(m, t.get("nation")) for t in doc.get("team_results") or [] for m in t.get("members") or []]
+            for r, nation in rows:
+                if r.get("name") and nation:
+                    known = fis_names.get((_fold(r["name"]), lineage(nation)), set())
+                    plain = {n for n in known if n == to_ascii(n)}
+                    if len(plain) == 1 and r["name"] not in plain:
+                        r["name"] = next(iter(plain))
+
+    olympians = defaultdict(set)                      # (folded surname, lineage) → full names
+    for docs in by_comp.values():
+        for meta, doc in docs:
+            if meta["doc_type"] != "OLY":
+                continue
+            rows = [(r, r.get("nation")) for r in doc.get("combined_results") or []]
+            rows += [(m, t.get("nation")) for t in doc.get("team_results") or [] for m in t.get("members") or []]
+            for r, nation in rows:
+                split = (r.get("name") or "").split()
+                surname = " ".join(w for w in split if w.isupper() and len(w) > 1)
+                if surname and nation:
+                    nation = nation.upper()
+                    olympians[(_fold(surname), NATION_LINEAGE.get(nation, nation))].add(r["name"])
+
+    def given_words(name: str) -> list:
+        return [_fold(w) for w in re.split(r"[\s\-]+", " ".join(w for w in name.split()
+                                                               if not (w.isupper() and len(w) > 1))) if w]
+
+    for docs in by_comp.values():
+        for meta, doc in docs:
+            # initials are a thing of the early FIS database ('LI Ji' of today is a full name)
+            if meta["doc_type"] != "FDB" or meta["season_start"] >= 1999:
+                continue
+            rows = [(r, r.get("nation")) for key in ("combined_results", "jump_rounds", "xc_results")
+                    for r in doc.get(key) or []]
+            rows += [(m, t.get("nation")) for t in doc.get("team_results") or [] for m in t.get("members") or []]
+            for r, nation in rows:
+                split = _split_initials(r.get("name"))
+                if not split or not nation:
+                    continue
+                surname, tokens = split
+                nation = nation.upper()
+                hits = {full for full in olympians.get((_fold(surname), NATION_LINEAGE.get(nation, nation)), ())
+                        if len(given_words(full)) >= len(tokens)
+                        and all(word.startswith(_fold(t)) for word, t in zip(given_words(full), tokens))}
+                if len(hits) == 1:
+                    r["name"] = next(iter(hits))
+                    build.olympedia_names += 1
 
 
 # Nations that became others: West and East Germany, Czechoslovakia, the Soviet
@@ -866,6 +963,7 @@ def nation_changes(by_comp: Dict, build: Build) -> None:
     the alias file come first.
     """
     last = {}                                         # (name, nation) → last date printed
+    born = defaultdict(set)                           # (name, nation) → years of birth printed
     for docs in by_comp.values():
         for meta, doc in docs:
             if doc.get("parse_errors"):
@@ -879,6 +977,10 @@ def nation_changes(by_comp: Dict, build: Build) -> None:
                 if name and nation and nation.upper() != "FIS":
                     key = (name, nation.upper())
                     last[key] = max(last.get(key, ""), day)
+                    year = r.get("birth_year") or (re.match(r"(1[89]|20)\d\d", str(r.get("date_of_birth") or ""))
+                                                   or [None])[0]
+                    if year:
+                        born[key].add(int(year))
 
     def plain(name: str) -> bool:
         return name == to_ascii(name)
@@ -890,11 +992,15 @@ def nation_changes(by_comp: Dict, build: Build) -> None:
     for keys in groups.values():
         if len(keys) < 2:
             continue
+        years = set().union(*(born[k] for k in keys))
+        if max(years, default=0) - min(years, default=0) > 1:
+            continue                                  # father and son: 'RYGL Ladislav' 1947 and 1976
         # the last nation; 'AIN' only if there is no other (the FIS database of today)
         nation = max(keys, key=lambda k: (k[1] not in ("AIN", "RSF", "RPF", "OAR", "ROC"), last[k]))[1]
         spellings = {k[0] for k in keys}
-        plain_ones = [n for n in spellings if plain(n)]
-        if len(spellings) > 1 and len(plain_ones) != 1:
+        # one plain spelling, 'Rygl Ladislav' (a mixed-case list) being 'RYGL Ladislav'
+        plain_ones = sorted({n for n in spellings if plain(n)}, key=lambda n: not n.split()[0].isupper())
+        if len(spellings) > 1 and len({n.upper() for n in plain_ones}) != 1:
             continue                                  # two plain spellings: may be two people
         target_name = plain_ones[0] if plain_ones else next(iter(spellings))
         target = build.athlete_aliases.get((target_name, nation), (target_name, nation))
@@ -910,13 +1016,14 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
     by_comp = read_documents(output_dir, build)
     log.info("Read %d documents for %d competitions", sum(map(len, by_comp.values())), len(by_comp))
     fis_spelling(by_comp, build)
+    olympedia_names(by_comp, build)
     nation_changes(by_comp, build)
 
     for docs in by_comp.values():
         for name, nations in names_with_nation(docs).items():
             build.nations_by_name[name] |= nations
         for meta, doc in docs:
-            if not doc.get("parse_errors") and meta["doc_type"] in ("ROF", "FDB", "RL", "RL1", "RLQ", "PCR"):
+            if not doc.get("parse_errors") and meta["doc_type"] in ("ROF", "FDB", "OLY", "RL", "RL1", "RLQ", "PCR"):
                 rows = [dict(m, nation=m.get("nation") or t.get("nation"))
                         for t in doc.get("team_results") or [] for m in t.get("members") or []] \
                     + (doc.get("combined_results") or []) + (doc.get("jump_rounds") or [])
@@ -924,7 +1031,7 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
                     if r.get("name") and r.get("nation") and not row_identity_problem(r):
                         key = (clean(r["name"]), r["nation"].upper())
                         build.official_athletes.add(build.athlete_aliases.get(key, key))
-            if meta["doc_type"] in ("ROF", "FDB") and not doc.get("parse_errors") \
+            if meta["doc_type"] in ("ROF", "FDB", "OLY") and not doc.get("parse_errors") \
                     and not meta["team"] and not is_team_discipline(doc.get("discipline")):
                 build.result_nations.update(
                     r["nation"].upper() for r in doc.get("combined_results") or []
@@ -975,7 +1082,16 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
                         build.fdb_disagree.append((meta["basename"], pdf_top, fdb_top))
                     build.skipped_docs.append(("FIS ranking: the result list was read", meta["basename"]))
                     continue
+                if any(m["doc_type"] == "OLY" and not d.get("parse_errors") for m, d in docs):
+                    build.skipped_docs.append(("FIS ranking: Olympedia has the full result", meta["basename"]))
+                    continue
                 build.fdb_used += 1
+            if meta["doc_type"] == "OLY":
+                # Olympedia (Olympic Games 1924-1998): the full result, where no result list was read
+                if any(m["doc_type"] == "ROF" and not d.get("parse_errors") for m, d in docs):
+                    build.skipped_docs.append(("Olympedia: the result list was read", meta["basename"]))
+                    continue
+                build.oly_used += 1
             if meta["doc_type"] == "RL1" and any(m["doc_type"] == "RL" for m, _ in docs):
                 build.skipped_docs.append(("first round only, the RL holds both", meta["basename"]))
                 continue
@@ -1122,14 +1238,30 @@ def possible_duplicates(build: Build) -> List[Tuple[str, str, str]]:
             s = s.replace(a, b)
         return frozenset(w for w in s.split() if len(w) > 1)
 
-    athletes = [(a["name"], a["nation"], words(a["name"])) for a in build.athletes.values()]
+    def split(name: str):
+        return (_fold(" ".join(x for x in name.split() if x.isupper() and len(x) > 1)),
+                _fold(" ".join(x for x in name.split() if not (x.isupper() and len(x) > 1))))
+
+    def born(a) -> Optional[int]:
+        dob = a["dobs"].most_common(1)[0][0] if a.get("dobs") else None
+        return int(dob[:4]) if dob and dob[:4].isdigit() else None
+
+    athletes = [(a["name"], a["nation"], words(a["name"]), split(a["name"]), born(a))
+                for a in build.athletes.values()]
     found = []
-    for i, (name, nation, w) in enumerate(athletes):
-        for other, other_nation, ow in athletes[i + 1:]:
+    for i, (name, nation, w, (sur, given), year) in enumerate(athletes):
+        for other, other_nation, ow, (osur, ogiven), oyear in athletes[i + 1:]:
             if nation == other_nation and (w == ow or (len(w) >= 2 and len(ow) >= 2 and (w < ow or ow < w))):
                 found.append((name, other, nation))
             elif nation != other_nation and w == ow and len(w) >= 2:
                 found.append((name, other, f"{nation} / {other_nation}"))
+            # the same surname and nation, the given name spelled another way
+            # ('SPILLANE John' / 'Johnny', 'DUNDUKOV Andrej' / 'Andrey') — unless born years apart
+            elif sur and sur == osur and given and ogiven \
+                    and NATION_LINEAGE.get(nation, nation) == NATION_LINEAGE.get(other_nation, other_nation) \
+                    and difflib.SequenceMatcher(None, given, ogiven).ratio() >= 0.75 \
+                    and not (year and oyear and abs(year - oyear) > 1):
+                found.append((name, other, nation if nation == other_nation else f"{nation} / {other_nation}"))
     return found
 
 
@@ -1140,6 +1272,10 @@ def report(build: Build, verbose: bool) -> None:
 
     if build.fdb_used:
         log.info("Competitions ranked from the FIS database (result list not readable): %d", build.fdb_used)
+    if build.oly_used:
+        log.info("Olympic competitions from Olympedia (no result list read): %d", build.oly_used)
+    if build.olympedia_names:
+        log.info("Names with initials completed from Olympedia: %d", build.olympedia_names)
     for name, pdf_top, fdb_top in build.fdb_disagree:
         log.warning("  top 3 of %s differ from the FIS database: %s / %s", name, pdf_top, fdb_top)
 

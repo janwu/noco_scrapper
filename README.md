@@ -112,6 +112,28 @@ keyed by circuit, codex and season), and the web app notes it on both. The venue
 is the one of the Nordic combined (Torino → Pragelato, Beijing → Zhangjiakou, …);
 Russians of 2018–2022 (OAR, ROC) count for Russia like AIN and RSF.
 
+### Olympedia (Olympic Games 1924 – 1998)
+
+FIS has no result PDF of the Games before 2002, and its database the first 6 to 15
+only, often with initials ('HAUG Th'). Olympedia has the full result of every
+Olympic competition — all athletes with jump points, cross-country time, DNS / DNF,
+the teams with their athletes — and the full names and birth dates:
+
+```
+python fis_nk_olympedia.py                 # after fis_nk_fisdb.py --circuit OWG and WSC
+python run_parser.py --workers 7 --errors-only
+python db/load_json.py --sqlite db/noco.db
+```
+
+Each competition goes next to its FIS ranking as doc type OLY (until 1980 also into
+`fis_nk_wsc_pdfs/`, the same competition being the World Championships). Olympedia
+allows a slow client only (one page every three seconds; it answers 429 otherwise);
+the athlete pages are cached in `fis_nk_owg_pdfs/_olympedia_athletes.json`.
+`load_json.py` takes a competition's result from a result list that was read, else
+from Olympedia, else from the FIS database; and a name with initials in the FIS
+database of those years takes the full name of the one Olympian of that nation and
+surname whose given names start with them (`olympedia_names`) — in every list.
+
 ## World Cup B (2000/01 – 2007/08)
 
 The second league was called World Cup B until 2008/09, when it became the

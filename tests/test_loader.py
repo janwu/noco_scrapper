@@ -283,6 +283,40 @@ class WorldCupBSpelling(unittest.TestCase):
         self.assertEqual(rof[1]["combined_results"][0]["name"], "MÜNCHMEYER Stephan")
 
 
+class OlympediaNames(unittest.TestCase):
+    """'HAUG Th' of the early FIS database takes the full name Olympedia has."""
+
+    @staticmethod
+    def doc(doc_type, season_start, *rows):
+        return ({"doc_type": doc_type, "season_start": season_start},
+                {"combined_results": [{"rank": i + 1, "name": n, "nation": nat} for i, (n, nat) in enumerate(rows)]})
+
+    def names(self, *docs):
+        build = load_json.Build({}, {})
+        load_json.olympedia_names({str(i): [d] for i, d in enumerate(docs)}, build)
+        return [r["name"] for _, d in docs for r in d["combined_results"]], build.olympedia_names
+
+    def test_initials_take_the_full_name(self):
+        oly = self.doc("OLY", 1923, ("HAUG Thorleif", "NOR"), ("NILSSON Axel-Herman", "SWE"),
+                       ("STRØMSTAD Thoralf", "NOR"))
+        fdb = self.doc("FDB", 1924, ("HAUG Th", "NOR"), ("NILSSON A.H.", "SWE"), ("STRÖMSTAD Th.", "NOR"))
+        names, n = self.names(oly, fdb)
+        self.assertEqual(names[3:], ["HAUG Thorleif", "NILSSON Axel-Herman", "STRØMSTAD Thoralf"])
+        self.assertEqual(n, 3)
+
+    def test_two_olympians_or_another_nation_leave_the_initials(self):
+        oly = self.doc("OLY", 1935, ("ERIKSSON Sven", "SWE"), ("ERIKSSON Sixten", "SWE"), ("HAUG Thorleif", "NOR"))
+        fdb = self.doc("FDB", 1936, ("ERIKSSON S.", "SWE"), ("HAUG Th", "SWE"))
+        names, n = self.names(oly, fdb)
+        self.assertEqual(names[3:], ["ERIKSSON S.", "HAUG Th"])
+        self.assertEqual(n, 0)
+
+    def test_modern_lists_are_left_alone(self):
+        oly = self.doc("OLY", 1997, ("LI Jiawen", "CHN"))
+        fdb = self.doc("FDB", 2021, ("LI Ji", "CHN"))
+        self.assertEqual(self.names(oly, fdb)[0][1], "LI Ji")
+
+
 class NationChanges(unittest.TestCase):
     """GDR / FRG → GER, SOV → CIS → EST: one athlete, of the last nation."""
 
