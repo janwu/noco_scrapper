@@ -1,0 +1,23 @@
+# Web app behind the shared proxy (~/projects/homeserver-proxy) at /noco/.
+# The proxy passes the path as it is; Spring serves under /noco.
+services:
+  noco-web:
+    build: .
+    image: noco-web:latest
+    container_name: noco-web
+    restart: unless-stopped
+    environment:
+      SERVER_SERVLET_CONTEXT_PATH: /noco
+      SPRING_DATASOURCE_URL: jdbc:sqlite:/data/noco.db
+      VAADIN_LAUNCH_BROWSER: "false"
+    volumes:
+      - ./db:/data
+    networks: [homeserver]
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  homeserver:
+    external: true
+    name: homeserver

@@ -1,0 +1,10 @@
+.git
+db
+output*
+fis_nk_*_pdfs
+fis_nk_pdfs
+webapp/node_modules
+webapp/target
+webapp/src/main/bundles
+webapp/frontend/generated
+**/__pycache__
