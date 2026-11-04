@@ -63,13 +63,14 @@ public class ResultsBrowserView extends VerticalLayout implements BeforeEnterObs
 
         circuitSelect = new Select<>();
         circuitSelect.setLabel("Circuit");
-        circuitSelect.setItems("WC", "COC", "WSC", "OWG");
+        circuitSelect.setItems("WC", "COC", "WSC", "OWG", "GP");
         circuitSelect.setItemLabelGenerator(ResultsBrowserView::circuitName);
         circuitSelect.setWidthFull();
 
         seasonSelect = new Select<>();
         seasonSelect.setLabel("Season");
-        // World Championships are named by their year, the cups by their season
+        // World Championships are named by their year, the cups (and the Summer Grand Prix,
+        // which counts for the winter after it) by their season
         seasonSelect.setItemLabelGenerator(s -> Competition.isChampionship(circuitSelect.getValue())
                 ? String.valueOf(s.getStartYear() + 1) : s.getLabel());
         seasonSelect.setWidthFull();
@@ -164,7 +165,7 @@ public class ResultsBrowserView extends VerticalLayout implements BeforeEnterObs
             params = remembered.getParameters();      // from the menu: the filter of last time
         }
         String circuit = one(params, "circuit");
-        if (List.of("WC", "COC", "WSC", "OWG").contains(circuit)) {
+        if (List.of("WC", "COC", "WSC", "OWG", "GP").contains(circuit)) {
             circuitSelect.setValue(circuit);
         }
         String season = one(params, "season");
@@ -189,6 +190,7 @@ public class ResultsBrowserView extends VerticalLayout implements BeforeEnterObs
             case "WC" -> "World Cup";
             case "WSC" -> "World Championships";
             case "OWG" -> "Olympic Winter Games";
+            case "GP" -> "Summer Grand Prix";
             default -> "Continental Cup";
         };
     }

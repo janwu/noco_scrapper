@@ -59,7 +59,8 @@ DB_DIR = os.path.dirname(os.path.abspath(__file__))
 # Olympedia (OLY, fis_nk_olympedia.py) and weltcup-b.org (WBL, fis_nk_wcb_1990s.py)
 FULL_LISTS = ("OLY", "WBL")
 CIRCUIT_BY_DIR = {"fis_nk_pdfs": "WC", "fis_nk_coc_pdfs": "COC", "fis_nk_wcb_pdfs": "COC",
-                  "fis_nk_wsc_pdfs": "WSC", "fis_nk_owg_pdfs": "OWG"}
+                  "fis_nk_wsc_pdfs": "WSC", "fis_nk_owg_pdfs": "OWG",
+                  "fis_nk_gp_pdfs": "GP"}
 JUMP_TABLE_BY_DOC_TYPE = {
     "RL": "jump_round_results",
     "RL1": "jump_round_results",
@@ -70,6 +71,8 @@ JUMP_TABLE_BY_DOC_TYPE = {
 }
 TRAINING_DOC_TYPES = ("RLT", "RLTR")
 KNOWN_STATUS = ("DNS", "DNF", "DSQ", "DNQ", "LAP", "NPS", "DQB")
+# source of a name variant that is in the database already (--add-circuit)
+EXISTING = "(in the database)"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -166,7 +169,7 @@ def file_meta(path: str, output_dir: str) -> Optional[dict]:
         return None
 
     gender = rel[-2] if rel[-2] in ("M", "W") else None
-    mixed = re.search(r"_(?:WC|COC|WSC|OWG)_A_X_|_X_(?:\d{4}NK)?\d{4}[A-Z0-9]+\.json$|Mixed", name)
+    mixed = re.search(r"_(?:WC|COC|WSC|OWG|GP)_A_X_|_X_(?:\d{4}NK)?\d{4}[A-Z0-9]+\.json$|Mixed", name)
     if mixed:
         gender = "X"
 
@@ -280,6 +283,7 @@ class Build:
         self.hill_class: Dict[int, Optional[str]] = {}          # competition id → NH, LH, ...
         self.rejected_rows: Counter = Counter()              # (doc_type, reason) → n
         self.rejected_examples: Dict[Tuple[str, str], List[str]] = defaultdict(list)
+        self.existing_max: Dict[str, int] = {}                  # table → highest id already in the database
 
     def new_id(self, table: str) -> int:
         self.next_id[table] += 1
@@ -390,11 +394,14 @@ class Build:
 # Reading
 # ─────────────────────────────────────────────────────────────────────────────
 
-def read_documents(output_dir: str, build: Build) -> Dict[Tuple[str, str, int], List[Tuple[dict, dict]]]:
+def read_documents(output_dir: str, build: Build,
+                   only_circuit: Optional[str] = None) -> Dict[Tuple[str, str, int], List[Tuple[dict, dict]]]:
     """All JSON files grouped by competition (codex, season); one entry per PDF."""
     by_comp: Dict[Tuple[str, str, int], List[Tuple[dict, dict]]] = defaultdict(list)
     seen = set()
-    for path in sorted(glob.glob(os.path.join(output_dir, "**", "*.json"), recursive=True)):
+    dirs = [d for d, c in CIRCUIT_BY_DIR.items() if c == only_circuit] if only_circuit else [""]
+    paths = [p for d in dirs for p in glob.glob(os.path.join(output_dir, d, "**", "*.json"), recursive=True)]
+    for path in sorted(paths):
         meta = file_meta(path, output_dir)
         if meta is None:
             build.skipped_docs.append(("not in <circuit>/<season>/… layout", path))
@@ -652,7 +659,7 @@ def names_with_nation(docs: List[Tuple[dict, dict]]) -> Dict[str, set]:
     return found
 
 
-def add_standings(build: Build, standings_dir: Optional[str]) -> None:
+def add_standings(build: Build, standings_dir: Optional[str], only_cup: Optional[str] = None) -> None:
     """
     Official cup standings downloaded by fis_nk_standings_scraper.py.
     Athletes are matched to those of the result lists; the FIS competitor id
@@ -664,6 +671,8 @@ def add_standings(build: Build, standings_dir: Optional[str]) -> None:
     for path in sorted(glob.glob(os.path.join(standings_dir, "*.json"))):
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
+        if only_cup and data["cup"] != only_cup:
+            continue
         season_end = int(data["season"])
         season_id = build.season(season_end - 1, f"{season_end - 1}/{season_end}")
         for row in data["rows"]:
@@ -757,6 +766,10 @@ def fis_spelling(by_comp: Dict, build: Build) -> None:
                 for r, nation in rows:
                     if r.get("name") and nation and nation.upper() not in ("AIN", "OAR", "RPF", "RSF", "ROC", "FIS"):
                         nations_of[words(r["name"])].add(nation.upper())
+        # --add-circuit: the athletes in the database (none in a full build)
+        for name, nation in build.athletes:
+            if nation not in ("AIN", "OAR", "RPF", "RSF", "ROC", "FIS"):
+                nations_of[words(name)].add(nation)
         for r in fdb_rows:
             if r["nation"] == "AIN":
                 nations = nations_of.get(words(r["name"]), set())
@@ -1045,8 +1058,9 @@ def external_nations(by_comp: Dict, build: Build) -> None:
         log.info("weltcup-b.org: %d rows take the nation of the FIS lists", fixed)
 
 
-def build_database(output_dir: str, build: Build, standings_dir: Optional[str] = None) -> None:
-    by_comp = read_documents(output_dir, build)
+def build_database(output_dir: str, build: Build, standings_dir: Optional[str] = None,
+                   only_circuit: Optional[str] = None) -> None:
+    by_comp = read_documents(output_dir, build, only_circuit)
     log.info("Read %d documents for %d competitions", sum(map(len, by_comp.values())), len(by_comp))
     fis_spelling(by_comp, build)
     external_nations(by_comp, build)
@@ -1143,21 +1157,26 @@ def build_database(output_dir: str, build: Build, standings_dir: Optional[str] =
             add_results(build, comp, comp_id, doc_id, meta, doc)
 
     fill_hill_sizes(build)
-    add_standings(build, standings_dir)
+    add_standings(build, standings_dir, only_circuit)
 
-    # Dimension tables are complete only now
+    # Dimension tables are complete only now (when adding to a database: the new rows only)
     for (name, country), venue_id in build.venues.items():
-        build.rows["venues"].append((venue_id, name, country, build.venue_display.get((name, country))))
+        if venue_id > build.existing_max.get("venues", 0):
+            build.rows["venues"].append((venue_id, name, country, build.venue_display.get((name, country))))
     for (raw_name, raw_country), (venue_id, source) in build.venue_variants.items():
-        build.add("venue_name_variants", venue_id, raw_name, raw_country, source)
+        if source is not EXISTING:
+            build.add("venue_name_variants", venue_id, raw_name, raw_country, source)
     for a in build.athletes.values():
+        if a.get("existing"):
+            continue
         last, first = split_name(a["name"])
         gender = a["genders"].most_common(1)[0][0] if a["genders"] else None
         dob = a["dobs"].most_common(1)[0][0] if a["dobs"] else None
         build.rows["athletes"].append((a["id"], last, first, a["name"], a["nation"], gender, dob, a["club"],
                                        a.get("fis_id"), build.athlete_display.get((a["name"], a["nation"]))))
     for (raw_name, raw_nation), (athlete_id, source) in build.athlete_variants.items():
-        build.add("athlete_name_variants", athlete_id, raw_name, raw_nation, source)
+        if source is not EXISTING:
+            build.add("athlete_name_variants", athlete_id, raw_name, raw_nation, source)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1236,6 +1255,118 @@ def write_sqlite(build: Build, db_path: str) -> None:
     except PermissionError:
         raise SystemExit(f"Cannot replace {db_path} — is the web app still running? "
                          f"The new database is at {tmp}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Adding one circuit to a database that is there (--add-circuit)
+# ─────────────────────────────────────────────────────────────────────────────
+# The database on the server is the central one: the results of the other circuits
+# are in it, their PDFs need not be on this machine.  A circuit is added by reading
+# what is there — seasons, venues, athletes with their name variants and nations —
+# so the same matching as in a full build links the new rows to them; then the
+# circuit's rows of an earlier run are deleted and the new ones inserted, in one
+# transaction.  Nothing of the other circuits is changed, except that an athlete
+# without birth date, gender, club or FIS id gets the one of the new lists.
+
+# tables with a competition_id, children first
+_COMPETITION_TABLES = ("combined_results", "jump_round_results", "training_jump_results",
+                       "trial_round_results", "xc_results", "team_results", "hill_data",
+                       "course_info", "weather_records")
+_ATHLETE_REFS = ("combined_results", "jump_round_results", "training_jump_results", "trial_round_results",
+                 "xc_results", "team_members", "cup_standings")
+
+
+def seed_from_sqlite(build: Build, db_path: str, circuit: str) -> None:
+    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    for table in TABLE_ORDER:
+        top = conn.execute(f"SELECT COALESCE(MAX(id), 0) FROM {table}").fetchone()[0]
+        build.existing_max[table] = top
+        build.next_id[table] = top
+    for sid, start in conn.execute("SELECT id, start_year FROM seasons"):
+        build.seasons[start] = sid
+    for vid, name, country in conn.execute("SELECT id, name, country FROM venues"):
+        build.venues[(name, country)] = vid
+    for vid, name, country in conn.execute("SELECT venue_id, name_variant, country FROM venue_name_variants"):
+        build.venue_variants[(name, country)] = (vid, EXISTING)
+    for aid, name, nation, gender, dob, club, fis_id in conn.execute(
+            "SELECT id, full_name, nationality, gender, birth_date, active_club, fis_id FROM athletes"):
+        a = build.athletes[(name, nation)] = {
+            "id": aid, "name": name, "nation": nation, "existing": True,
+            "genders": Counter(), "dobs": Counter(), "club": None, "club_date": "",
+            "old": {"gender": gender, "birth_date": dob, "active_club": club, "fis_id": fis_id}}
+        if fis_id:
+            a["fis_id"] = fis_id
+        build.nations_by_name[name].add(nation)
+    for aid, name, nation in conn.execute("SELECT athlete_id, name_variant, nationality FROM athlete_name_variants"):
+        build.athlete_variants[(name, nation)] = (aid, EXISTING)
+        if name and nation:
+            build.nations_by_name[name].add(nation)
+    # nations of validated result lists: jump lists of the new circuit are checked against them
+    build.result_nations.update(n.upper() for (n,) in conn.execute(
+        "SELECT DISTINCT raw_nation FROM combined_results WHERE raw_nation IS NOT NULL"))
+    n = conn.execute("SELECT COUNT(*) FROM competitions WHERE circuit = ?", (circuit,)).fetchone()[0]
+    conn.close()
+    log.info("Database %s: %d athletes, %d venues, %d seasons; %d %s competitions will be replaced",
+             db_path, len(build.athletes), len(build.venues), len(build.seasons), n, circuit)
+
+
+def _orphan_athletes(conn) -> set:
+    where = " AND ".join(f"NOT EXISTS (SELECT 1 FROM {t} WHERE athlete_id = a.id)" for t in _ATHLETE_REFS)
+    return {r[0] for r in conn.execute(f"SELECT id FROM athletes a WHERE {where}")}
+
+
+def add_circuit_sqlite(build: Build, db_path: str, circuit: str) -> None:
+    import shutil
+    backup = f"{db_path}.before-{circuit}-{datetime.now():%Y%m%d-%H%M%S}"
+    shutil.copy2(db_path, backup)
+    log.info("Backup: %s", backup)
+    conn = sqlite3.connect(db_path, timeout=60)
+    conn.execute("PRAGMA foreign_keys = ON")
+    orphans_before = _orphan_athletes(conn)
+    with conn:
+        comps = f"SELECT id FROM competitions WHERE circuit = '{circuit}'"
+        docs = f"SELECT id FROM competition_documents WHERE competition_id IN ({comps})"
+        conn.execute(f"DELETE FROM team_members WHERE team_result_id IN "
+                     f"(SELECT id FROM team_results WHERE competition_id IN ({comps}))")
+        for table in _COMPETITION_TABLES:
+            conn.execute(f"DELETE FROM {table} WHERE competition_id IN ({comps})")
+        for table in ("jury_officials", "jumping_judges"):
+            conn.execute(f"DELETE FROM {table} WHERE document_id IN ({docs})")
+        conn.execute(f"DELETE FROM competition_documents WHERE competition_id IN ({comps})")
+        conn.execute(f"DELETE FROM competitions WHERE circuit = '{circuit}'")
+        conn.execute("DELETE FROM cup_standings WHERE circuit = ?", (circuit,))
+        for table in TABLE_ORDER:
+            cols = COLUMNS[table]
+            marks = ", ".join("?" * (cols.count(",") + 1))
+            conn.executemany(f"INSERT INTO {table} ({cols}) VALUES ({marks})", build.rows[table])
+        # what the new lists know of athletes that are there already
+        filled = 0
+        for a in build.athletes.values():
+            if not a.get("existing"):
+                continue
+            old, new = a["old"], {
+                "gender": a["genders"].most_common(1)[0][0] if a["genders"] else None,
+                "birth_date": a["dobs"].most_common(1)[0][0] if a["dobs"] else None,
+                "active_club": a["club"], "fis_id": a.get("fis_id")}
+            for col, value in new.items():
+                if value and not old[col]:
+                    conn.execute(f"UPDATE athletes SET {col} = ? WHERE id = ?", (value, a["id"]))
+                    filled += 1
+        # athletes only an earlier run of this circuit had
+        gone = _orphan_athletes(conn) - orphans_before
+        for aid in gone:
+            conn.execute("DELETE FROM athlete_name_variants WHERE athlete_id = ?", (aid,))
+            conn.execute("DELETE FROM athletes WHERE id = ?", (aid,))
+        violations = conn.execute("PRAGMA foreign_key_check").fetchall()
+        if violations:
+            raise RuntimeError(f"{len(violations)} foreign key violations, e.g. {violations[:3]} — nothing written")
+    conn.close()
+    new_athletes = len(build.rows["athletes"])
+    log.info("%s added: %d competitions, %d results, %d team results, %d jump rows, %d standings rows; "
+             "%d new athletes, %d new venues; %d empty athlete fields filled; %d athletes of an earlier run removed",
+             circuit, len(build.rows["competitions"]), len(build.rows["combined_results"]),
+             len(build.rows["team_results"]), len(build.rows["jump_round_results"]),
+             len(build.rows["cup_standings"]), new_athletes, len(build.rows["venues"]), filled, len(gone))
 
 
 def write_postgres(build: Build, dsn: str) -> None:
@@ -1372,6 +1503,9 @@ def main() -> int:
     ap.add_argument("--standings-dir", default="fis_nk_standings",
                     help="Directory with cup standings JSON (default: fis_nk_standings)")
     ap.add_argument("--reset", action="store_true", help=argparse.SUPPRESS)   # always a full rebuild now
+    ap.add_argument("--add-circuit", metavar="CIRCUIT", choices=sorted(set(CIRCUIT_BY_DIR.values())),
+                    help="Add (or replace) one circuit in the existing --sqlite database instead of a "
+                         "full rebuild, e.g. --add-circuit GP; the other circuits stay as they are")
     ap.add_argument("--verbose", "-v", action="store_true")
     args = ap.parse_args()
     if not args.db and not args.sqlite:
@@ -1389,6 +1523,14 @@ def main() -> int:
     log.info("Aliases: %d athletes, %d venues; display names: %d athletes, %d venues",
              len(build.athlete_aliases), len(build.venue_aliases),
              len(build.athlete_display), len(build.venue_display))
+    if args.add_circuit:
+        if not args.sqlite or not os.path.exists(args.sqlite):
+            ap.error("--add-circuit needs an existing --sqlite database")
+        seed_from_sqlite(build, args.sqlite, args.add_circuit)
+        build_database(args.output_dir, build, args.standings_dir, only_circuit=args.add_circuit)
+        add_circuit_sqlite(build, args.sqlite, args.add_circuit)
+        report(build, args.verbose)
+        return 0
     build_database(args.output_dir, build, args.standings_dir)
     if args.sqlite:
         write_sqlite(build, args.sqlite)

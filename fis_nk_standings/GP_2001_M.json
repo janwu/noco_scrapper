@@ -1,0 +1,408 @@
+{
+ "cup": "GP",
+ "season": 2001,
+ "gender": "M",
+ "source_url": "https://www.fis-ski.com/DB/nordic-combined/cup-standings.html?sectorcode=NK&seasoncode=2001&cupcode=GP&disciplinecode=ALL&gendercode=M&nationcode=",
+ "fetched": "2026-11-04",
+ "disciplines": {
+  "ALL": "Overall"
+ },
+ "rows": [
+  {
+   "competitor_id": "21155",
+   "name": "GOTTWALD Felix",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 1,
+     "points": 485
+    }
+   }
+  },
+  {
+   "competitor_id": "33576",
+   "name": "LAJUNEN Samppa",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 2,
+     "points": 352
+    }
+   }
+  },
+  {
+   "competitor_id": "24644",
+   "name": "HETTICH Georg",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 3,
+     "points": 335
+    }
+   }
+  },
+  {
+   "competitor_id": "37466",
+   "name": "MANTILA Jari",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 4,
+     "points": 290
+    }
+   }
+  },
+  {
+   "competitor_id": "4891",
+   "name": "BIELER Christoph",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 5,
+     "points": 275
+    }
+   }
+  },
+  {
+   "competitor_id": "2310",
+   "name": "BAACKE Marko",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 6,
+     "points": 248
+    }
+   }
+  },
+  {
+   "competitor_id": "23594",
+   "name": "HASENEY Sebastian",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 6,
+     "points": 248
+    }
+   }
+  },
+  {
+   "competitor_id": "35890",
+   "name": "LOOSS Matthias",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 8,
+     "points": 247
+    }
+   }
+  },
+  {
+   "competitor_id": "52749",
+   "name": "RYGL Ladislav",
+   "nation": "CZE",
+   "standings": {
+    "ALL": {
+     "rank": 9,
+     "points": 239
+    }
+   }
+  },
+  {
+   "competitor_id": "50918",
+   "name": "RIEDER Ivan",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 10,
+     "points": 198
+    }
+   }
+  },
+  {
+   "competitor_id": "236",
+   "name": "ACKERMANN Ronny",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 11,
+     "points": 190
+    }
+   }
+  },
+  {
+   "competitor_id": "64660",
+   "name": "VONLANTHEN Lukas",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 12,
+     "points": 184
+    }
+   }
+  },
+  {
+   "competitor_id": "32384",
+   "name": "KREINER David",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 13,
+     "points": 130
+    }
+   }
+  },
+  {
+   "competitor_id": "13218",
+   "name": "DENIFL Wilhelm",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 14,
+     "points": 127
+    }
+   }
+  },
+  {
+   "competitor_id": "24069",
+   "name": "HEER Ronny",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 15,
+     "points": 122
+    }
+   }
+  },
+  {
+   "competitor_id": "16129",
+   "name": "EUGEN Christoph",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 16,
+     "points": 114
+    }
+   }
+  },
+  {
+   "competitor_id": "26335",
+   "name": "HURSCHLER Andreas",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 17,
+     "points": 100
+    }
+   }
+  },
+  {
+   "competitor_id": "49201",
+   "name": "PSENKO Michal",
+   "nation": "SVK",
+   "standings": {
+    "ALL": {
+     "rank": 18,
+     "points": 87
+    }
+   }
+  },
+  {
+   "competitor_id": "28943",
+   "name": "KAITAINEN Jouni",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 19,
+     "points": 78
+    }
+   }
+  },
+  {
+   "competitor_id": "31916",
+   "name": "KOERNER Manuel",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 20,
+     "points": 68
+    }
+   }
+  },
+  {
+   "competitor_id": "39499",
+   "name": "MEINHERZ Pascal",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 21,
+     "points": 65
+    }
+   }
+  },
+  {
+   "competitor_id": "7465",
+   "name": "BRUDER Christian",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 22,
+     "points": 49
+    }
+   }
+  },
+  {
+   "competitor_id": "32861",
+   "name": "KUISMA Antti",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 23,
+     "points": 44
+    }
+   }
+  },
+  {
+   "competitor_id": "47888",
+   "name": "PIKKOR Rauno",
+   "nation": "EST",
+   "standings": {
+    "ALL": {
+     "rank": 24,
+     "points": 43
+    }
+   }
+  },
+  {
+   "competitor_id": "29106",
+   "name": "KAMBER Roger",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 25,
+     "points": 40
+    }
+   }
+  },
+  {
+   "competitor_id": "25163",
+   "name": "HOEHLIG Marcel",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 26,
+     "points": 27
+    }
+   }
+  },
+  {
+   "competitor_id": "39690",
+   "name": "MENZ Matthias",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 26,
+     "points": 27
+    }
+   }
+  },
+  {
+   "competitor_id": "5003",
+   "name": "BINDER Christian",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 28,
+     "points": 18
+    }
+   }
+  },
+  {
+   "competitor_id": "32351",
+   "name": "KRAUSE Thomas",
+   "nation": "GER",
+   "standings": {
+    "ALL": {
+     "rank": 29,
+     "points": 14
+    }
+   }
+  },
+  {
+   "competitor_id": "47890",
+   "name": "PIKKOR Tambet",
+   "nation": "EST",
+   "standings": {
+    "ALL": {
+     "rank": 30,
+     "points": 12
+    }
+   }
+  },
+  {
+   "competitor_id": "22756",
+   "name": "HAGENAARS Patrick",
+   "nation": "AUT",
+   "standings": {
+    "ALL": {
+     "rank": 31,
+     "points": 10
+    }
+   }
+  },
+  {
+   "competitor_id": "42254",
+   "name": "MURER Cyrill",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 32,
+     "points": 8
+    }
+   }
+  },
+  {
+   "competitor_id": "29407",
+   "name": "KARINIEMI Raimo",
+   "nation": "FIN",
+   "standings": {
+    "ALL": {
+     "rank": 33,
+     "points": 7
+    }
+   }
+  },
+  {
+   "competitor_id": "32652",
+   "name": "KRYENBUEHL Christian",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 33,
+     "points": 7
+    }
+   }
+  },
+  {
+   "competitor_id": "13520",
+   "name": "DICA Peter",
+   "nation": "SVK",
+   "standings": {
+    "ALL": {
+     "rank": 35,
+     "points": 4
+    }
+   }
+  },
+  {
+   "competitor_id": "26337",
+   "name": "HURSCHLER Seppi",
+   "nation": "SUI",
+   "standings": {
+    "ALL": {
+     "rank": 36,
+     "points": 3
+    }
+   }
+  }
+ ]
+}

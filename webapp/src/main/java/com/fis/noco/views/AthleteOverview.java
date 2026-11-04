@@ -36,7 +36,7 @@ import java.util.function.Function;
 final class AthleteOverview extends VerticalLayout {
 
     private static final Map<String, String> SCOPES = Map.of("World Cup", "WC", "Continental Cup", "COC",
-            "World Championships", "WSC", "Olympic Games", "OWG");
+            "World Championships", "WSC", "Olympic Games", "OWG", "Summer Grand Prix", "GP");
 
     private final AthleteProfile profile;
     private final Function<String, Component> careerBlocks;
@@ -64,6 +64,7 @@ final class AthleteOverview extends VerticalLayout {
         List<String> scopes = new java.util.ArrayList<>(List.of("World Cup", "Continental Cup"));
         if (championships) scopes.add("World Championships");
         if (olympics) scopes.add("Olympic Games");
+        if (profile.forCircuit("GP").bestResult().isPresent()) scopes.add("Summer Grand Prix");
         scope.setItems(scopes);
         scope.setValue(first);
         scope.addValueChangeListener(e -> show(SCOPES.get(e.getValue())));

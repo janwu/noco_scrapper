@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-FIS Nordic Combined - result PDF scraper (World Cup and Continental Cup)
-=======================================================================
+FIS Nordic Combined - result PDF scraper (World Cup, Continental Cup, Grand Prix, ...)
+====================================================================================
 Downloads the result PDFs attached to the competitions in the FIS calendar.
 
     python fis_nk_pdf_scraper.py --circuit WC --seasons 2027
@@ -87,6 +87,11 @@ CIRCUITS = {
     "WSC": {"first_season": 1924, "output_dir": "fis_nk_wsc_pdfs", "name": "World Championships"},
     # the Olympic Winter Games; until 1980 their competitions were the World Championships too
     "OWG": {"first_season": 1924, "output_dir": "fis_nk_owg_pdfs", "name": "Olympic Winter Games"},
+    # the Summer Grand Prix (July - September, the first races of a FIS season: summer 2026 = 2027);
+    # its event pages also list children's races and others, only the GP ones and their
+    # provisional rounds are taken
+    "GP": {"first_season": 2001, "output_dir": "fis_nk_gp_pdfs", "name": "Grand Prix",
+           "categories": ("GP", "PR")},
 }
 
 
@@ -266,7 +271,7 @@ def date_from_text(text: str, season: int) -> str:
     if not m or m.group(2).lower()[:3] not in MONTH_MAP:
         return ""
     month = MONTH_MAP[m.group(2).lower()[:3]]
-    year = season - 1 if month >= 10 else season
+    year = season - 1 if month >= 7 else season
     try:
         return datetime.date(year, month, int(m.group(1))).strftime("%Y%m%d")
     except ValueError:
@@ -280,7 +285,7 @@ def event_name_from_text(text: str) -> str:
     file-name safe.
     """
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    junk = re.compile(r"^([DPMC]+|[DPMC]( [DPMC])+|[MWA]|WC|COC|WSC|PR|review|\d{1,2}(st|nd|rd|th)?|\d{1,2}:\d{2})$",
+    junk = re.compile(r"^([DPMC]+|[DPMC]( [DPMC])+|[MWA]|WC|COC|WSC|OWG|GP|CHI|PR|review|\d{1,2}(st|nd|rd|th)?|\d{1,2}:\d{2})$",
                       re.I)
     date_re = re.compile(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b", re.I)
     status_re = re.compile(r"official results|cancelled|start list|postponed", re.I)
@@ -314,7 +319,7 @@ def parse_all_dates(soup: BeautifulSoup, season: int) -> tuple:
                 continue
             month = MONTH_MAP[mon]
             try:
-                dates.append(datetime.date(season - 1 if month >= 10 else season, month, int(m.group(1))))
+                dates.append(datetime.date(season - 1 if month >= 7 else season, month, int(m.group(1))))
             except ValueError:
                 pass
     if not dates:
@@ -387,13 +392,13 @@ def read_event(event: dict, session: requests.Session):
         if not codex:
             codex = next((m.group(1) for m in re.finditer(r"\b(\d{4})\b", merged)
                           if not 1980 <= int(m.group(1)) <= 2100), "")
-        gender_m = re.search(r"\b(?:WC|WCB|COC|WSC|OWG|PR)\b\s*\n?\s*\b([MWA])\b", merged)
+        gender_m = re.search(r"\b(?:WC|WCB|COC|WSC|OWG|GP|CHI|PR)\b\s*\n?\s*\b([MWA])\b", merged)
         if gender_m:
             gender = gender_m.group(1)
         else:
             tokens = re.findall(r"\b([MWA])\b", merged)
             gender = tokens[-1] if tokens else "unknown"
-        cat_m = re.search(r"\b(WC|WCB|COC|WSC|OWG|PR)\b", merged)
+        cat_m = re.search(r"\b(WC|WCB|COC|WSC|OWG|GP|CHI|PR)\b", merged)
         race_meta[rid] = {
             "codex": codex,
             "date": date_from_text(merged, event["season"]),
@@ -430,9 +435,12 @@ def parse_event_page(event: dict, session: requests.Session) -> tuple:
         if not (attachment or legacy):
             continue
 
-        rid = rid_by_codex.get(a.get("data-ga-codex", ""), current_rid)
+        # the link may drop the leading zero of the codex ('251' for race 0251)
+        link_codex = a.get("data-ga-codex", "").strip()
+        link_codex = link_codex.zfill(4) if link_codex.isdigit() else link_codex
+        rid = rid_by_codex.get(link_codex, current_rid)
         meta = race_meta.get(rid, {})
-        codex = a.get("data-ga-codex") or meta.get("codex") or "0000"
+        codex = link_codex or meta.get("codex") or "0000"
         gender = a.get("data-ga-gender") or meta.get("gender") or "unknown"
         pdfs.append({
             "label": attachment_label(a),
@@ -601,7 +609,8 @@ def main(circuit: str = None, argv: list = None) -> None:
             events = get_events_for_season(circuit, season, session)
             for i, event in enumerate(events, 1):
                 all_pdfs, folder_name = parse_event_page(event, session)
-                result_pdfs = [p for p in all_pdfs if is_result_pdf(p)]
+                result_pdfs = [p for p in all_pdfs if is_result_pdf(p)
+                               and p["category"] in config.get("categories", (p["category"],))]
                 print(f"\n  [{i}/{len(events)}] {folder_name}")
                 print(f"  {len(all_pdfs)} total PDFs, {len(result_pdfs)} result-related")
                 if not result_pdfs:

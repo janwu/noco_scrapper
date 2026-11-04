@@ -83,13 +83,14 @@ public class Competition {
     }
 
     /**
-     * "World Cup", "World Championships", "Olympic Winter Games", or "Continental Cup",
+     * "World Cup", "World Championships", "Olympic Winter Games", "Summer Grand Prix" or "Continental Cup",
      * which was called "World Cup B" until 2007/08.
      */
     public String getCircuitLabel() {
         if ("WC".equals(circuit)) return "World Cup";
         if ("WSC".equals(circuit)) return "World Championships";
         if ("OWG".equals(circuit)) return "Olympic Winter Games";
+        if ("GP".equals(circuit)) return "Summer Grand Prix";
         return season != null && season.getStartYear() != null && season.getStartYear() < 2008
                 ? "World Cup B" : "Continental Cup";
     }
@@ -99,6 +100,7 @@ public class Competition {
         if ("WC".equals(circuit)) return "World Cup";
         if ("WSC".equals(circuit)) return isOlympic() ? "World Ch. (OWG)" : "World Ch.";
         if ("OWG".equals(circuit)) return isOlympic() ? "Olympics (WSC)" : "Olympics";
+        if ("GP".equals(circuit)) return "Grand Prix";
         return "Cont. Cup";
     }
 

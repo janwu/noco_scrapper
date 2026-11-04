@@ -51,10 +51,11 @@ public class StandingsView extends VerticalLayout {
         H2 title = new H2("Cup Standings");
         title.addClassNames(LumoUtility.Margin.Bottom.MEDIUM, LumoUtility.Margin.Top.SMALL);
 
-        circuitGroup.setItems("World Cup", "Continental Cup");
+        circuitGroup.setItems("World Cup", "Continental Cup", "Summer Grand Prix");
         circuitGroup.setValue("World Cup");
 
-        List<Season> seasons = competitionService.getAllSeasons();
+        // the seasons of the circuit (the Summer Grand Prix counts for the winter after it)
+        List<Season> seasons = competitionService.getSeasonsOfCircuit(circuit());
         seasonBox.setItems(seasons);
         seasonBox.setItemLabelGenerator(Season::getLabel);
         seasonBox.setWidth("160px");
@@ -66,7 +67,7 @@ public class StandingsView extends VerticalLayout {
         rankingBox.setItemLabelGenerator(r -> r[1]);
         rankingBox.setWidth("220px");
 
-        circuitGroup.addValueChangeListener(e -> selectionChanged());
+        circuitGroup.addValueChangeListener(e -> circuitChanged());
         seasonBox.addValueChangeListener(e -> selectionChanged());
         genderGroup.addValueChangeListener(e -> selectionChanged());
         rankingBox.addValueChangeListener(e -> {
@@ -94,7 +95,25 @@ public class StandingsView extends VerticalLayout {
     }
 
     private String circuit() {
-        return "World Cup".equals(circuitGroup.getValue()) ? "WC" : "COC";
+        return switch (circuitGroup.getValue()) {
+            case "World Cup" -> "WC";
+            case "Summer Grand Prix" -> "GP";
+            default -> "COC";
+        };
+    }
+
+    /** Another circuit: its seasons; the one chosen stays if the circuit has it, else the newest. */
+    private void circuitChanged() {
+        Season chosen = seasonBox.getValue();
+        List<Season> seasons = competitionService.getSeasonsOfCircuit(circuit());
+        seasonBox.setItems(seasons);
+        Season keep = seasons.stream().filter(s -> chosen != null && s.getId().equals(chosen.getId()))
+                .findFirst().orElse(seasons.isEmpty() ? null : seasons.get(0));
+        if (java.util.Objects.equals(keep, seasonBox.getValue())) {
+            selectionChanged();
+        } else {
+            seasonBox.setValue(keep);       // its listener calls selectionChanged()
+        }
     }
 
     private String gender() {

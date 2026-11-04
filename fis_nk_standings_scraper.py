@@ -3,7 +3,7 @@
 FIS Nordic Combined — cup standings scraper
 ============================================
 Downloads the official final standings of every season from the FIS
-database (World Cup and Continental Cup, men and women) and stores them
+database (World Cup, Continental Cup and Summer Grand Prix, men and women) and stores them
 as JSON, one file per cup / season / gender.
 
 Why not compute the standings from the results?  The points rules changed
@@ -47,7 +47,7 @@ except ImportError:
 URL = ("https://www.fis-ski.com/DB/nordic-combined/cup-standings.html"
        "?sectorcode=NK&seasoncode={season}&cupcode={cup}&disciplinecode=ALL&gendercode={gender}&nationcode=")
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-CUPS = ("WC", "COC")
+CUPS = ("WC", "COC", "GP")      # GP = Summer Grand Prix (from season 2001)
 GENDERS = ("M", "W")
 FIRST_SEASON, LAST_SEASON = 1984, datetime.date.today().year + (datetime.date.today().month >= 7)
 REQUEST_DELAY_S = 1.0
@@ -116,6 +116,7 @@ def main() -> int:
     ap.add_argument("--from-season", type=int, default=FIRST_SEASON)
     ap.add_argument("--to-season", type=int, default=LAST_SEASON)
     ap.add_argument("--output-dir", default="fis_nk_standings")
+    ap.add_argument("--cups", nargs="+", choices=CUPS, default=list(CUPS), help="Cups (default: all)")
     ap.add_argument("--dry-run", action="store_true", help="Fetch and report, write nothing")
     args = ap.parse_args()
 
@@ -126,7 +127,7 @@ def main() -> int:
 
     written = empty = 0
     for season in seasons:
-        for cup in CUPS:
+        for cup in args.cups:
             for gender in GENDERS:
                 try:
                     page = fetch(session, cup, season, gender)

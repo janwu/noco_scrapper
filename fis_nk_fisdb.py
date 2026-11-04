@@ -4,6 +4,7 @@ PDF to read (doc type FDB):
 
   World Cup B 2000/01 - 2007/08   step 3 of fis_nk_wcb_scraper.py (--fis-results)
   World Cup 1983/84 - 2000/01     python fis_nk_fisdb.py --circuit WC
+  Grand Prix 2000 - today         python fis_nk_fisdb.py --circuit GP
 
 Not every World Cup B competition has a result PDF that can be read: FIS has PDFs
 of half of them, and the lists of weltcup-b.org come from the organisers in many
@@ -52,6 +53,10 @@ CIRCUITS = {
     # the Olympic Winter Games (every four years, none 1940 and 1944)
     "OWG": {"seasons": [1924, 1928, 1932, 1936, *range(1948, 1993, 4), *range(1994, 2027, 4)],
             "root": Path(__file__).parent / "fis_nk_owg_pdfs"},
+    # the Summer Grand Prix from 2000 (season 2001); PDFs from the mid 2000s.  Its events also
+    # have children's races and provisional rounds: the GP races only.
+    "GP": {"seasons": range(2001, fis.current_season() + 1), "root": Path(__file__).parent / "fis_nk_gp_pdfs",
+           "categories": ("GP",)},
 }
 SEASONS = CIRCUITS["WCB"]["seasons"]
 
@@ -159,8 +164,9 @@ def fetch_all(root: Path = None, seasons=None, circuit: str = "WCB", overwrite: 
                 print(f"  FAIL event {event['url']}")
                 continue
             _, folder, races, _ = read
+            categories = CIRCUITS[circuit].get("categories")
             for raceid, race in races.items():
-                if not race["date"]:
+                if not race["date"] or (categories and race["category"] not in categories):
                     continue
                 team = bool(re.search(r"\bteam\b", race["name"].replace("_", " "), re.IGNORECASE))
                 codex = race["codex"] or str(raceid).zfill(4)

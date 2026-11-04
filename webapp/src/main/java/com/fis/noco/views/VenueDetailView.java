@@ -76,6 +76,7 @@ public class VenueDetailView extends VerticalLayout implements HasUrlParameter<L
         List<Competition> cocComps = venueService.getContinentalCupCompetitionsAtVenue(venue.getId());
         List<Competition> wscComps = venueService.getChampionshipCompetitionsAtVenue(venue.getId());
         List<Competition> owgComps = venueService.getOlympicCompetitionsAtVenue(venue.getId());
+        List<Competition> gpComps = venueService.getGrandPrixCompetitionsAtVenue(venue.getId());
 
         TabSheet tabSheet = new TabSheet();
         tabSheet.setSizeFull();
@@ -87,6 +88,9 @@ public class VenueDetailView extends VerticalLayout implements HasUrlParameter<L
         }
         if (!owgComps.isEmpty()) {
             tabSheet.add("Olympic Games (" + owgComps.size() + ")", createCompetitionsGrid(owgComps));
+        }
+        if (!gpComps.isEmpty()) {
+            tabSheet.add("Summer Grand Prix (" + gpComps.size() + ")", createCompetitionsGrid(gpComps));
         }
 
         add(backButton, header, infoRow, tabSheet);

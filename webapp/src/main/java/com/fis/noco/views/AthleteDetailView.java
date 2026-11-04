@@ -98,6 +98,7 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         List<CombinedResult> cocResults = athleteService.getContinentalCupResults(athlete.getId());
         List<CombinedResult> wscResults = athleteService.getChampionshipResults(athlete.getId());
         List<CombinedResult> owgResults = athleteService.getOlympicResults(athlete.getId());
+        List<CombinedResult> gpResults = athleteService.getGrandPrixResults(athlete.getId());
 
         List<TeamMember> teamStarts = athleteService.getTeamStarts(athlete.getId());
         List<JumpResult> jumps = athleteService.getJumps(athlete.getId());
@@ -109,7 +110,7 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         tabSheet.setSizeFull();
         tabSheet.add("Overview", new AthleteOverview(profile,
                 circuit -> careerBlocks(athlete, circuit, wcResults, cocResults, wscResults, owgResults,
-                        teamStarts, jumps)));
+                        gpResults, teamStarts, jumps)));
         if (!wcResults.isEmpty()) {
             tabSheet.add("Form", new AthleteFormPanel(athleteService, athlete, wcResults));
         }
@@ -120,6 +121,9 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         }
         if (!owgResults.isEmpty()) {
             tabSheet.add("Olympic Games (" + owgResults.size() + ")", createFilteredResultsPanel(owgResults));
+        }
+        if (!gpResults.isEmpty()) {
+            tabSheet.add("Summer Grand Prix (" + gpResults.size() + ")", createFilteredResultsPanel(gpResults));
         }
         if (!teamStarts.isEmpty()) {
             tabSheet.add("Team (" + teamStarts.size() + ")", createTeamStartsPanel(teamStarts, athlete));
@@ -132,10 +136,10 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         expand(tabSheet);
     }
 
-    /** The career statistics of a circuit ("WC", "COC", "WSC", "OWG"; null = all) for the overview tab. */
+    /** The career statistics of a circuit ("WC", "COC", "WSC", "OWG", "GP"; null = all) for the overview tab. */
     private HorizontalLayout careerBlocks(Athlete athlete, String circuit, List<CombinedResult> wcResults,
                                           List<CombinedResult> cocResults, List<CombinedResult> wscResults,
-                                          List<CombinedResult> owgResults,
+                                          List<CombinedResult> owgResults, List<CombinedResult> gpResults,
                                           List<TeamMember> teamStarts, List<JumpResult> jumps) {
         HorizontalLayout row = new HorizontalLayout();
         row.setSpacing(true);
@@ -148,6 +152,9 @@ public class AthleteDetailView extends VerticalLayout implements HasUrlParameter
         }
         if (circuit == null || circuit.equals("COC")) {
             row.add(buildStatsBlock("Continental Cup", cocResults, false, athlete.getBirthDate()));
+        }
+        if ((circuit == null && !gpResults.isEmpty()) || "GP".equals(circuit)) {
+            row.add(buildStatsBlock("Summer Grand Prix", gpResults, false, athlete.getBirthDate()));
         }
         for (String championship : List.of("WSC", "OWG")) {
             List<CombinedResult> individual = championship.equals("WSC") ? wscResults : owgResults;

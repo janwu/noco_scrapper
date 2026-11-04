@@ -58,3 +58,11 @@ Torino,ITA,Pragelato,ITA
 Vancouver Bc,CAN,Whistler Olympic Park,CAN
 Beijing,CHN,Zhangjiakou,CHN
 Milano Cortina,ITA,Val di Fiemme,ITA
+# Summer Grand Prix
+Val Di Fiemme,ITA,Val di Fiemme,ITA
+Oberhof Steinbach Hallenberg,GER,Oberhof,GER
+Steinbach Hallenberg,GER,Steinbach-Hallenberg,GER
+Tschagguns/Partenen,AUT,Tschagguns,AUT
+Tschagguns-Partenen,AUT,Tschagguns,AUT
+# the venue line of the 2019 PR list of Klingenthal (codex 4167) is read as the race director
+Race Director: OTTESEN Lasse,FIS,Klingenthal,GER

@@ -134,6 +134,37 @@ from Olympedia, else from the FIS database; and a name with initials in the FIS
 database of those years takes the full name of the one Olympian of that nation and
 surname whose given names start with them (`olympedia_names`) — in every list.
 
+## Summer Grand Prix (2000 – today)
+
+The FIS Summer Grand Prix (FIS category GP), held July to September on plastic and
+roller skis. It opens a FIS season, so the Grand Prix of summer 2026 belongs to
+season 2026/27 (folder `2027`), and the web app lists it as 2026/2027.
+Its event pages also list children's races and provisional rounds; the scraper
+takes the GP races and their provisional rounds only.
+
+```
+python fis_nk_pdf_scraper.py --circuit GP                 # result PDFs (from about 2004)
+python fis_nk_fisdb.py --circuit GP                       # FIS ranking of every GP race → fis_nk_gp_pdfs/…FDB.json
+python fis_nk_standings_scraper.py --cups GP --from-season 2001   # official Grand Prix standings
+python run_parser.py --workers 7 --errors-only --input-dirs fis_nk_gp_pdfs
+python db/load_json.py --sqlite db/noco.db --add-circuit GP
+```
+
+Circuit `GP` in the database. A result list that was read is taken; else the
+ranking of the FIS database.
+
+### Adding one circuit to the database (`--add-circuit`)
+
+The database on the home server is the central one: it holds every circuit, the
+PDFs and JSON of the others need not be on that machine. `--add-circuit GP` reads
+the seasons, venues and athletes (with their name variants) from the database, so
+the new lists are linked to the same athletes as in a full build (aliases and
+display names of `db/aliases/` apply), then replaces the rows of that circuit only
+— competitions, results, jumps, teams and cup standings — in one transaction. The
+other circuits are not changed; an athlete without birth date, gender, club or FIS id
+gets the one of the new lists. A copy of the database is kept as
+`db/noco.db.before-GP-<time>`. Restart the web app afterwards (`docker compose restart`).
+
 ## World Cup B of the 1990s (1990/91 – 1999/2000)
 
 The FIS database has the World Cup B from 1990/91 — the podium of each competition
